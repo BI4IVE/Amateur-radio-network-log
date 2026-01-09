@@ -149,6 +149,21 @@ export class LogManager {
   }> {
     return this.getSessionWithRecords(sessionId)
   }
+
+  // Search records by field for autocomplete
+  async searchRecordsByField(field: string, query: string): Promise<LogRecord[]> {
+    const db = await getDb()
+
+    // 使用 SQL 查询特定字段
+    const condition = (logRecords as any)[field]
+
+    return db
+      .select()
+      .from(logRecords)
+      .where(like(condition, `%${query}%`))
+      .orderBy((logRecords as any)[field])
+      .limit(50)
+  }
 }
 
 export const logManager = new LogManager()

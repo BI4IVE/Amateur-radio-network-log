@@ -87,6 +87,28 @@ export default function HomePage() {
   const [editSearchResults, setEditSearchResults] = useState<Participant[]>([])
   const [showEditSearchResults, setShowEditSearchResults] = useState(false)
 
+  // Field autocomplete states (from history records)
+  const [qthResults, setQthResults] = useState<string[]>([])
+  const [showQthResults, setShowQthResults] = useState(false)
+
+  const [equipmentResults, setEquipmentResults] = useState<string[]>([])
+  const [showEquipmentResults, setShowEquipmentResults] = useState(false)
+
+  const [antennaResults, setAntennaResults] = useState<string[]>([])
+  const [showAntennaResults, setShowAntennaResults] = useState(false)
+
+  const [powerResults, setPowerResults] = useState<string[]>([])
+  const [showPowerResults, setShowPowerResults] = useState(false)
+
+  const [signalResults, setSignalResults] = useState<string[]>([])
+  const [showSignalResults, setShowSignalResults] = useState(false)
+
+  const [reportResults, setReportResults] = useState<string[]>([])
+  const [showReportResults, setShowReportResults] = useState(false)
+
+  const [remarksResults, setRemarksResults] = useState<string[]>([])
+  const [showRemarksResults, setShowRemarksResults] = useState(false)
+
   useEffect(() => {
     // Check authentication
     const userStr = localStorage.getItem("user")
@@ -185,6 +207,23 @@ export default function HomePage() {
 
     setShowSearchResults(false)
     setSearchResults([])
+  }
+
+  // Search and select functions for each field from history records
+  const searchFieldValues = async (field: string, query: string, setResults: any) => {
+    if (query.length < 1) {
+      setResults([])
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/records/search?field=${field}&query=${encodeURIComponent(query)}`)
+      const data = await response.json()
+      setResults(data.values || [])
+    } catch (error) {
+      console.error(`Search ${field} error:`, error)
+      setResults([])
+    }
   }
 
   const searchParticipantsForEdit = async (query: string) => {
@@ -672,95 +711,312 @@ export default function HomePage() {
                   )}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     QTH
                   </label>
                   <input
                     type="text"
                     value={qth}
-                    onChange={(e) => setQth(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setQth(value)
+                      searchFieldValues("qth", value, setQthResults)
+                    }}
+                    onFocus={() => {
+                      if (qth.length >= 1) {
+                        searchFieldValues("qth", qth, setQthResults)
+                        setShowQthResults(true)
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowQthResults(false), 200)
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="位置信息"
+                    autoComplete="off"
                   />
+                  {showQthResults && qthResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {qthResults.map((value, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            setQth(value)
+                            setShowQthResults(false)
+                            setQthResults([])
+                          }}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                        >
+                          {value}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     设备
                   </label>
                   <input
                     type="text"
                     value={equipment}
-                    onChange={(e) => setEquipment(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setEquipment(value)
+                      searchFieldValues("equipment", value, setEquipmentResults)
+                    }}
+                    onFocus={() => {
+                      if (equipment.length >= 1) {
+                        searchFieldValues("equipment", equipment, setEquipmentResults)
+                        setShowEquipmentResults(true)
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowEquipmentResults(false), 200)
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="设备型号"
+                    autoComplete="off"
                   />
+                  {showEquipmentResults && equipmentResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {equipmentResults.map((value, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            setEquipment(value)
+                            setShowEquipmentResults(false)
+                            setEquipmentResults([])
+                          }}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                        >
+                          {value}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     天馈
                   </label>
                   <input
                     type="text"
                     value={antenna}
-                    onChange={(e) => setAntenna(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setAntenna(value)
+                      searchFieldValues("antenna", value, setAntennaResults)
+                    }}
+                    onFocus={() => {
+                      if (antenna.length >= 1) {
+                        searchFieldValues("antenna", antenna, setAntennaResults)
+                        setShowAntennaResults(true)
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowAntennaResults(false), 200)
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="天线类型"
+                    autoComplete="off"
                   />
+                  {showAntennaResults && antennaResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {antennaResults.map((value, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            setAntenna(value)
+                            setShowAntennaResults(false)
+                            setAntennaResults([])
+                          }}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                        >
+                          {value}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     功率
                   </label>
                   <input
                     type="text"
                     value={power}
-                    onChange={(e) => setPower(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setPower(value)
+                      searchFieldValues("power", value, setPowerResults)
+                    }}
+                    onFocus={() => {
+                      if (power.length >= 1) {
+                        searchFieldValues("power", power, setPowerResults)
+                        setShowPowerResults(true)
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowPowerResults(false), 200)
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="发射功率"
+                    autoComplete="off"
                   />
+                  {showPowerResults && powerResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {powerResults.map((value, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            setPower(value)
+                            setShowPowerResults(false)
+                            setPowerResults([])
+                          }}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                        >
+                          {value}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     信号
                   </label>
                   <input
                     type="text"
                     value={signal}
-                    onChange={(e) => setSignal(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setSignal(value)
+                      searchFieldValues("signal", value, setSignalResults)
+                    }}
+                    onFocus={() => {
+                      if (signal.length >= 1) {
+                        searchFieldValues("signal", signal, setSignalResults)
+                        setShowSignalResults(true)
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowSignalResults(false), 200)
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="信号报告"
+                    autoComplete="off"
                   />
+                  {showSignalResults && signalResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {signalResults.map((value, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            setSignal(value)
+                            setShowSignalResults(false)
+                            setSignalResults([])
+                          }}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                        >
+                          {value}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     报告
                   </label>
                   <input
                     type="text"
                     value={report}
-                    onChange={(e) => setReport(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setReport(value)
+                      searchFieldValues("report", value, setReportResults)
+                    }}
+                    onFocus={() => {
+                      if (report.length >= 1) {
+                        searchFieldValues("report", report, setReportResults)
+                        setShowReportResults(true)
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowReportResults(false), 200)
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="其他报告"
+                    autoComplete="off"
                   />
+                  {showReportResults && reportResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {reportResults.map((value, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            setReport(value)
+                            setShowReportResults(false)
+                            setReportResults([])
+                          }}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                        >
+                          {value}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     备注
                   </label>
                   <textarea
                     value={remarks}
-                    onChange={(e) => setRemarks(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setRemarks(value)
+                      searchFieldValues("remarks", value, setRemarksResults)
+                    }}
+                    onFocus={() => {
+                      if (remarks.length >= 1) {
+                        searchFieldValues("remarks", remarks, setRemarksResults)
+                        setShowRemarksResults(true)
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowRemarksResults(false), 200)
+                    }}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="备注信息"
+                    autoComplete="off"
                   />
+                  {showRemarksResults && remarksResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {remarksResults.map((value, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            setRemarks(value)
+                            setShowRemarksResults(false)
+                            setRemarksResults([])
+                          }}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                        >
+                          {value}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-4">
