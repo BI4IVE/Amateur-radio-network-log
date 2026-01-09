@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
+import { getDb } from "coze-coding-dev-sdk"
+import { logSessions } from "@/storage/database/shared/schema"
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,12 +26,34 @@ export async function GET(request: NextRequest) {
       (record) => new Date(record.createdAt) >= oneYearAgo
     )
 
+    // Get session IDs
+    const sessionIds = recentRecords.map(r => r.sessionId)
+
+    // Fetch session information
+    const db = await getDb()
+    const allSessions = await db
+      .select()
+      .from(logSessions)
+
+    // Create a map of sessionId -> controller callsign
+    const controllerMap = new Map()
+
+    // Map controllerId to controller callsign
+    // For now, we'll use the controllerName as the controller identifier
+    recentRecords.forEach(record => {
+      const session = allSessions.find(s => s.id === record.sessionId)
+      if (session) {
+        controllerMap.set(record.sessionId, session.controllerName)
+      }
+    })
+
     return NextResponse.json({
       callsign,
       totalParticipations: recentRecords.length,
       participationTimes: recentRecords.map((record) => ({
         time: record.createdAt,
         sessionId: record.sessionId,
+        controllerCallsign: controllerMap.get(record.sessionId) || "未知",
       })),
     })
   } catch (error) {

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 interface ParticipationRecord {
   time: string
   sessionId: string
+  controllerCallsign: string
 }
 
 export default function QueryPage() {
@@ -19,10 +20,15 @@ export default function QueryPage() {
     participationTimes: ParticipationRecord[]
   } | null>(null)
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
+
   const handleQuery = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setResult(null)
+    setCurrentPage(1)
     setLoading(true)
 
     try {
@@ -58,6 +64,18 @@ export default function QueryPage() {
 
   const handleBack = () => {
     router.push("/")
+  }
+
+  // Calculate pagination
+  const totalPages = result ? Math.ceil(result.participationTimes.length / itemsPerPage) : 0
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentRecords = result ? result.participationTimes.slice(startIndex, endIndex) : []
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page)
+    }
   }
 
   return (
@@ -134,26 +152,58 @@ export default function QueryPage() {
                   暂无参与记录
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {result.participationTimes.map((record, index) => (
-                    <div
-                      key={record.sessionId}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                          {result.totalParticipations - index}
+                <>
+                  <div className="space-y-2">
+                    {currentRecords.map((record, index) => (
+                      <div
+                        key={record.sessionId}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                            {result.totalParticipations - startIndex - index}
+                          </div>
+                          <div className="flex flex-col">
+                            <div className="text-sm text-black">
+                              {formatDate(record.time)}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-0.5">
+                              主控呼号: <span className="font-medium">{record.controllerCallsign}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-sm text-black">
-                          {formatDate(record.time)}
+                        <div className="text-xs text-gray-500">
+                          会话ID: {record.sessionId.slice(0, 8)}...
                         </div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        会话ID: {record.sessionId.slice(0, 8)}...
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="mt-6 flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        上一页
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm text-gray-700">
+                          第 {currentPage} / {totalPages} 页
+                        </span>
                       </div>
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        下一页
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </div>
