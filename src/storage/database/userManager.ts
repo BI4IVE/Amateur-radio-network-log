@@ -68,7 +68,8 @@ export class UserManager {
   async verifyPassword(username: string, password: string): Promise<boolean> {
     const user = await this.getUserByUsername(username)
     if (!user) return false
-    return user.password === password
+    // Convert both passwords to uppercase for case-insensitive comparison
+    return user.password.toUpperCase() === password.toUpperCase()
   }
 
   async getUserOptions(): Promise<

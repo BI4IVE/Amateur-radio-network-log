@@ -3,17 +3,17 @@ import { userManager } from "@/storage/database"
 
 export async function POST() {
   try {
-    // Check if admin user already exists
-    const existingAdmin = await userManager.getUserByUsername("admin")
+    // Check if admin user already exists (use uppercase for consistency)
+    const existingAdmin = await userManager.getUserByUsername("ADMIN")
 
     if (existingAdmin) {
       return NextResponse.json({ message: "管理员已存在" })
     }
 
-    // Create admin user
+    // Create admin user with uppercase username and password
     const admin = await userManager.createUser({
-      username: "admin",
-      password: "admin123",
+      username: "ADMIN",
+      password: "ADMIN123",
       name: "管理员",
       role: "admin",
       equipment: "默认设备",
