@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const allRecords: any[] = []
     for (const session of sessionsData) {
       try {
-        const sessionRecords = await logManager.getRecords(session.id)
+        const sessionRecords = await logManager.getLogRecordsBySessionId(session.id)
         const records = Array.isArray(sessionRecords) ? sessionRecords : (sessionRecords as any).records || []
         allRecords.push(...records)
       } catch (error) {
