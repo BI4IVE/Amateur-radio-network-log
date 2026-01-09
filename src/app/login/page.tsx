@@ -12,9 +12,20 @@ export default function LoginPage() {
 
   useEffect(() => {
     // Check if user is already logged in
-    const user = localStorage.getItem("user")
-    if (user) {
-      router.push("/")
+    try {
+      const userStr = localStorage.getItem("user")
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        if (user && user.username) {
+          router.push("/")
+        } else {
+          // Invalid user data, clear it
+          localStorage.removeItem("user")
+        }
+      }
+    } catch (error) {
+      // Invalid JSON in localStorage, clear it
+      localStorage.removeItem("user")
     }
   }, [router])
 
@@ -24,13 +35,18 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      console.log("Attempting login with:", { username, password })
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       })
 
+      console.log("Login response status:", response.status)
+
       const data = await response.json()
+      console.log("Login response data:", data)
 
       if (!response.ok) {
         setError(data.error || "登录失败")
@@ -39,11 +55,24 @@ export default function LoginPage() {
       }
 
       // Store user in localStorage
-      localStorage.setItem("user", JSON.stringify(data.user))
+      try {
+        localStorage.setItem("user", JSON.stringify(data.user))
+        console.log("User stored in localStorage:", data.user)
+      } catch (storageError) {
+        console.error("Failed to store user in localStorage:", storageError)
+        setError("无法保存登录信息，请检查浏览器设置")
+        setLoading(false)
+        return
+      }
+
+      // Reset loading state
+      setLoading(false)
 
       // Redirect to home
+      console.log("Redirecting to home...")
       router.push("/")
     } catch (err) {
+      console.error("Login error:", err)
       setError("网络错误，请重试")
       setLoading(false)
     }
@@ -71,7 +100,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="请输入用户名"
+                placeholder="请输入用户名（不区分大小写）"
                 required
               />
             </div>
@@ -86,7 +115,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="请输入密码"
+                placeholder="请输入密码（不区分大小写）"
                 required
               />
             </div>

@@ -1,4 +1,4 @@
-import { eq, and, SQL, like } from "drizzle-orm"
+import { eq, and, SQL, like, sql } from "drizzle-orm"
 import { getDb } from "coze-coding-dev-sdk"
 import { users, insertUserSchema, updateUserSchema } from "./shared/schema"
 import type { User, InsertUser, UpdateUser } from "./shared/schema"
@@ -13,7 +13,7 @@ export class UserManager {
 
   async getUserByUsername(username: string): Promise<User | null> {
     const db = await getDb()
-    const [user] = await db.select().from(users).where(eq(users.username, username))
+    const [user] = await db.select().from(users).where(sql`LOWER(${users.username}) = LOWER(${username})`)
     return user || null
   }
 
@@ -68,8 +68,8 @@ export class UserManager {
   async verifyPassword(username: string, password: string): Promise<boolean> {
     const user = await this.getUserByUsername(username)
     if (!user) return false
-    // Convert both passwords to uppercase for case-insensitive comparison
-    return user.password.toUpperCase() === password.toUpperCase()
+    // Case-insensitive password comparison
+    return user.password.toLowerCase() === password.toLowerCase()
   }
 
   async getUserOptions(): Promise<
