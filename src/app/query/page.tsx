@@ -283,7 +283,6 @@ export default function QueryPage() {
                       </p>
 
                       <div className="bg-white rounded-lg shadow-md p-6 mx-auto max-w-md">
-                        <p className="text-gray-600 text-sm mb-2">呼号</p>
                         <h3 className="text-5xl font-bold text-yellow-800 tracking-wider">
                           {result.callsign.toUpperCase()}
                         </h3>
@@ -296,11 +295,11 @@ export default function QueryPage() {
                         <p className="text-gray-700 text-lg">
                           济南黄河业余无线电台网活动
                         </p>
-                        <div className="py-4">
+                        <div className="flex items-center justify-center gap-4 py-4">
                           <p className="text-6xl font-bold text-yellow-800">
                             {result.totalParticipations}
                           </p>
-                          <p className="text-gray-600 text-xl mt-2">次</p>
+                          <p className="text-2xl text-gray-600">次</p>
                         </div>
                       </div>
                     </div>
@@ -311,7 +310,7 @@ export default function QueryPage() {
                       <div className="flex justify-center items-end gap-8">
                         <div className="text-center">
                           <p className="text-gray-700 font-semibold mb-2">签发机构</p>
-                          <p className="text-gray-600">济南黄河业余无线电台网</p>
+                          <p className="text-gray-600">济南黄河业余无线电中继台</p>
                         </div>
                         <div className="text-center">
                           <p className="text-gray-700 font-semibold mb-2">签发日期</p>
