@@ -164,6 +164,23 @@ export class LogManager {
       .orderBy((logRecords as any)[field])
       .limit(50)
   }
+
+  // Query records by callsign within one year
+  async getRecordsByCallsignInOneYear(callsign: string): Promise<LogRecord[]> {
+    const db = await getDb()
+
+    // Calculate one year ago from now
+    const oneYearAgo = new Date()
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+
+    return db
+      .select()
+      .from(logRecords)
+      .where(
+        eq(logRecords.callsign, callsign)
+      )
+      .orderBy(desc(logRecords.createdAt))
+  }
 }
 
 export const logManager = new LogManager()

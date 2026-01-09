@@ -504,6 +504,12 @@ export default function HomePage() {
             济南黄河业余无线电台网主控日志
           </h1>
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.push("/query")}
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              呼号查询
+            </button>
             <span className="text-sm text-gray-600">
               当前用户: {currentUser?.name} ({currentUser?.role === "admin" ? "管理员" : "主控"})
             </span>
