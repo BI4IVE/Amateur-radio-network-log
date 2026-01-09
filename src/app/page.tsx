@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 
 interface User {
@@ -118,6 +118,13 @@ export default function HomePage() {
   const [showRemarksResults, setShowRemarksResults] = useState(false)
   const [selectedRemarksIndex, setSelectedRemarksIndex] = useState(-1)
 
+  // Refs for required fields
+  const callsignRef = useRef<HTMLInputElement>(null)
+  const qthRef = useRef<HTMLInputElement>(null)
+  const antennaRef = useRef<HTMLInputElement>(null)
+  const powerRef = useRef<HTMLInputElement>(null)
+  const signalRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     // Check authentication
     const userStr = localStorage.getItem("user")
@@ -139,6 +146,21 @@ export default function HomePage() {
       setSessionTime(new Date().toISOString().slice(0, 16))
     }
   }, [currentUser])
+
+  // Handle CTRL+Enter to add record
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault()
+        addRecord()
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [callsign, qth, equipment, antenna, power, signal, report, remarks, currentSession])
 
   useEffect(() => {
     if (selectedControllerId) {
@@ -324,8 +346,34 @@ export default function HomePage() {
       return
     }
 
-    if (!callsign) {
+    // 验证必填字段
+    if (!callsign || callsign.trim() === "") {
       alert("请输入呼号")
+      callsignRef.current?.focus()
+      return
+    }
+
+    if (!qth || qth.trim() === "") {
+      alert("请输入QTH")
+      qthRef.current?.focus()
+      return
+    }
+
+    if (!antenna || antenna.trim() === "") {
+      alert("请输入天馈")
+      antennaRef.current?.focus()
+      return
+    }
+
+    if (!power || power.trim() === "") {
+      alert("请输入功率")
+      powerRef.current?.focus()
+      return
+    }
+
+    if (!signal || signal.trim() === "") {
+      alert("请输入信号")
+      signalRef.current?.focus()
       return
     }
 
@@ -397,38 +445,6 @@ export default function HomePage() {
   const handleLogout = () => {
     localStorage.removeItem("user")
     router.push("/login")
-  }
-
-  const createNewParticipant = async () => {
-    if (!callsign) {
-      alert("请输入呼号")
-      return
-    }
-
-    try {
-      const response = await fetch("/api/participants", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          callsign,
-          name: qth.split(" ")[0] || callsign,
-          qth,
-          equipment,
-          antenna,
-          power,
-          signal,
-          report,
-          remarks,
-        }),
-      })
-
-      const data = await response.json()
-      setParticipants([...participants, data.participant])
-      alert("参与人员已添加到数据库")
-    } catch (error) {
-      console.error("Create participant error:", error)
-      alert("添加参与人员失败")
-    }
   }
 
   const handleEditRecord = (record: LogRecord) => {
@@ -781,9 +797,10 @@ export default function HomePage() {
 
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    呼号
+                    呼号 *
                   </label>
                   <input
+                    ref={callsignRef}
                     type="text"
                     value={callsign}
                     onChange={(e) => {
@@ -847,9 +864,10 @@ export default function HomePage() {
 
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    QTH
+                    QTH *
                   </label>
                   <input
+                    ref={qthRef}
                     type="text"
                     value={qth}
                     onChange={(e) => {
@@ -985,9 +1003,10 @@ export default function HomePage() {
 
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    天馈
+                    天馈 *
                   </label>
                   <input
+                    ref={antennaRef}
                     type="text"
                     value={antenna}
                     onChange={(e) => {
@@ -1054,9 +1073,10 @@ export default function HomePage() {
 
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    功率
+                    功率 *
                   </label>
                   <input
+                    ref={powerRef}
                     type="text"
                     value={power}
                     onChange={(e) => {
@@ -1123,9 +1143,10 @@ export default function HomePage() {
 
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    信号
+                    信号 *
                   </label>
                   <input
+                    ref={signalRef}
                     type="text"
                     value={signal}
                     onChange={(e) => {
@@ -1328,48 +1349,26 @@ export default function HomePage() {
                   )}
                 </div>
 
-                <div className="flex gap-4">
-                  <button
-                    onClick={addRecord}
-                    className="flex items-center justify-center gap-2 flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                <button
+                  onClick={addRecord}
+                  className="flex items-center justify-center gap-2 w-full px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-4 h-4"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 4.5v15m7.5-7.5h-15"
-                      />
-                    </svg>
-                    添加记录
-                  </button>
-                  <button
-                    onClick={createNewParticipant}
-                    className="flex items-center justify-center gap-2 flex-1 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-4 h-4"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
-                      />
-                    </svg>
-                    保存到参与人员库
-                  </button>
-                </div>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 4.5v15m7.5-7.5h-15"
+                    />
+                  </svg>
+                  添加记录 (Ctrl+Enter)
+                </button>
               </div>
             </div>
 
