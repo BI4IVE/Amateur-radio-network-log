@@ -74,6 +74,10 @@ export default function HomePage() {
   const [records, setRecords] = useState<LogRecord[]>([])
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
 
+  // Edit mode
+  const [editingRecord, setEditingRecord] = useState<LogRecord | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+
   useEffect(() => {
     // Check authentication
     const userStr = localStorage.getItem("user")
@@ -189,8 +193,13 @@ export default function HomePage() {
       return
     }
 
+    if (!callsign) {
+      alert("请输入呼号")
+      return
+    }
+
     try {
-      const response = await fetch(`/api/sessions/${currentSession.id}/records`, {
+      const response = await fetch(`/api/sessions/${currentSession.id}/records/with-participant`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -208,6 +217,9 @@ export default function HomePage() {
       const data = await response.json()
       setRecords([...records, data.record])
 
+      // Reload participants to get updated data
+      loadParticipants()
+
       // Clear form
       setCallsign("")
       setQth("")
@@ -218,6 +230,9 @@ export default function HomePage() {
       setReport("")
       setRemarks("")
       setSelectedParticipantId("")
+
+      const message = data.updated ? "记录已添加并更新参与人员库" : "记录已添加并创建新参与人员"
+      alert(message)
     } catch (error) {
       console.error("Add record error:", error)
       alert("添加记录失败")
@@ -282,6 +297,86 @@ export default function HomePage() {
     } catch (error) {
       console.error("Create participant error:", error)
       alert("添加参与人员失败")
+    }
+  }
+
+  const handleEditRecord = (record: LogRecord) => {
+    setEditingRecord(record)
+    setShowEditModal(true)
+  }
+
+  const handleDeleteRecord = async (recordId: string) => {
+    if (!currentSession) return
+
+    if (!confirm("确定要删除这条记录吗？")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${currentSession.id}/records/${recordId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("删除失败")
+      }
+
+      setRecords(records.filter((r) => r.id !== recordId))
+      alert("记录已删除")
+    } catch (error) {
+      console.error("Delete record error:", error)
+      alert("删除记录失败")
+    }
+  }
+
+  const handleUpdateRecord = async () => {
+    if (!currentSession || !editingRecord) return
+
+    try {
+      const response = await fetch(`/api/sessions/${currentSession.id}/records/${editingRecord.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callsign: editingRecord.callsign,
+          qth: editingRecord.qth || null,
+          equipment: editingRecord.equipment || null,
+          antenna: editingRecord.antenna || null,
+          power: editingRecord.power || null,
+          signal: editingRecord.signal || null,
+          report: editingRecord.report || null,
+          remarks: editingRecord.remarks || null,
+        }),
+      })
+
+      const data = await response.json()
+
+      // Update records list
+      setRecords(records.map((r) => (r.id === editingRecord.id ? data.record : r)))
+
+      // Update participant in database as well
+      const participantResponse = await fetch(`/api/participants/upsert`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callsign: editingRecord.callsign,
+          name: editingRecord.qth?.split(" ")[0] || editingRecord.callsign,
+          qth: editingRecord.qth || null,
+          equipment: editingRecord.equipment || null,
+          antenna: editingRecord.antenna || null,
+          power: editingRecord.power || null,
+          signal: editingRecord.signal || null,
+          report: editingRecord.report || null,
+          remarks: editingRecord.remarks || null,
+        }),
+      })
+
+      loadParticipants()
+      setShowEditModal(false)
+      setEditingRecord(null)
+      alert("记录已更新并同步到参与人员库")
+    } catch (error) {
+      console.error("Update record error:", error)
+      alert("更新记录失败")
     }
   }
 
@@ -604,13 +699,16 @@ export default function HomePage() {
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         信号
                       </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        操作
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {records.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={6}
+                          colSpan={7}
                           className="px-4 py-8 text-center text-gray-500"
                         >
                           暂无记录
@@ -637,11 +735,167 @@ export default function HomePage() {
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
                             {record.signal || "-"}
                           </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditRecord(record)}
+                                className="text-indigo-600 hover:text-indigo-900"
+                              >
+                                编辑
+                              </button>
+                              <button
+                                onClick={() => handleDeleteRecord(record.id)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                删除
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && editingRecord && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+            <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <h2 className="text-lg font-semibold mb-4">编辑记录 - {editingRecord.callsign}</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    呼号
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRecord.callsign}
+                    onChange={(e) =>
+                      setEditingRecord({ ...editingRecord, callsign: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    QTH
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRecord.qth || ""}
+                    onChange={(e) =>
+                      setEditingRecord({ ...editingRecord, qth: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    设备
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRecord.equipment || ""}
+                    onChange={(e) =>
+                      setEditingRecord({ ...editingRecord, equipment: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    天馈
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRecord.antenna || ""}
+                    onChange={(e) =>
+                      setEditingRecord({ ...editingRecord, antenna: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    功率
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRecord.power || ""}
+                    onChange={(e) =>
+                      setEditingRecord({ ...editingRecord, power: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    信号
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRecord.signal || ""}
+                    onChange={(e) =>
+                      setEditingRecord({ ...editingRecord, signal: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    报告
+                  </label>
+                  <input
+                    type="text"
+                    value={editingRecord.report || ""}
+                    onChange={(e) =>
+                      setEditingRecord({ ...editingRecord, report: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    备注
+                  </label>
+                  <textarea
+                    value={editingRecord.remarks || ""}
+                    onChange={(e) =>
+                      setEditingRecord({ ...editingRecord, remarks: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleUpdateRecord}
+                    className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    更新
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false)
+                      setEditingRecord(null)
+                    }}
+                    className="flex-1 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    取消
+                  </button>
+                </div>
               </div>
             </div>
           </div>
