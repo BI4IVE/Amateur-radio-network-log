@@ -604,9 +604,9 @@ export default function HomePage() {
 
         {/* Record Entry Section */}
         {currentSession && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Input Form */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-6 lg:col-span-1">
               <h2 className="text-lg font-semibold mb-4">台网记录信息录入</h2>
               <div className="space-y-4">
                 <div>
@@ -781,7 +781,7 @@ export default function HomePage() {
             </div>
 
             {/* Records Display */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-6 lg:col-span-3">
               <h2 className="text-lg font-semibold mb-4">
                 台网记录列表 ({records.length}条)
               </h2>
@@ -805,6 +805,9 @@ export default function HomePage() {
                         设备
                       </th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        天馈
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         功率
                       </th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
@@ -819,7 +822,7 @@ export default function HomePage() {
                     {records.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={8}
+                          colSpan={9}
                           className="px-4 py-8 text-center text-gray-500"
                         >
                           暂无记录
@@ -842,6 +845,9 @@ export default function HomePage() {
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
                             {record.equipment || "-"}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                            {record.antenna || "-"}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
                             {record.power || "-"}
