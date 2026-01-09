@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
+import type { LogSession } from "@/storage/database/shared/schema"
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,14 +30,14 @@ export async function GET(request: NextRequest) {
     let filteredRecords = allRecords
 
     if (startDate || endDate) {
-      filteredRecords = allRecords.filter((record) => {
+      filteredRecords = allRecords.filter((record: any) => {
         const recordDate = new Date(record.createdAt)
         if (startDate && recordDate < new Date(startDate)) return false
         if (endDate && recordDate > new Date(endDate)) return false
         return true
       })
 
-      filteredSessions = sessionsData.filter((session) => {
+      filteredSessions = sessionsData.filter((session: LogSession) => {
         const sessionDate = new Date(session.sessionTime)
         if (startDate && sessionDate < new Date(startDate)) return false
         if (endDate && sessionDate > new Date(endDate)) return false
@@ -49,9 +50,9 @@ export async function GET(request: NextRequest) {
     const totalRecords = filteredRecords.length
 
     // 计算每个会话的记录数
-    const sessionStats = filteredSessions.map((session) => {
+    const sessionStats = filteredSessions.map((session: LogSession) => {
       const sessionRecords = filteredRecords.filter(
-        (record) => record.sessionId === session.id
+        (record: any) => record.sessionId === session.id
       )
       return {
         ...session,
