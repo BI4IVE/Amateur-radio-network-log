@@ -542,7 +542,7 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Controller Section */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">台网主控人员信息</h2>
+          <h2 className="text-lg font-semibold mb-4 text-black">台网主控人员信息</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {currentUser?.role === "admin" && (
               <div>
