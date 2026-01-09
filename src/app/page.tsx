@@ -36,6 +36,7 @@ interface LogRecord {
   signal: string | null
   report: string | null
   remarks: string | null
+  createdAt: string
 }
 
 interface Session {
@@ -516,7 +517,7 @@ export default function HomePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                主控姓名
+                主呼号
               </label>
               <input
                 type="text"
@@ -795,6 +796,9 @@ export default function HomePage() {
                         呼号
                       </th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        时间
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         QTH
                       </th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
@@ -815,20 +819,23 @@ export default function HomePage() {
                     {records.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={7}
+                          colSpan={8}
                           className="px-4 py-8 text-center text-gray-500"
                         >
                           暂无记录
                         </td>
                       </tr>
                     ) : (
-                      records.map((record, index) => (
+                      [...records].reverse().map((record, index) => (
                         <tr key={record.id}>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            {index + 1}
+                            {records.length - index}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                             {record.callsign}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                            {record.createdAt ? new Date(record.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }) : '-'}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
                             {record.qth || "-"}

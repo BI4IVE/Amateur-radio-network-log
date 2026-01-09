@@ -18,16 +18,28 @@ export async function GET(
     }
 
     // Prepare data for Excel export
-    const data = records.map((record) => ({
-      呼号: record.callsign,
-      QTH: record.qth || "",
-      设备: record.equipment || "",
-      天馈: record.antenna || "",
-      功率: record.power || "",
-      信号: record.signal || "",
-      报告: record.report || "",
-      备注: record.remarks || "",
-    }))
+    const data = records
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map((record, index) => ({
+        序号: index + 1,
+        呼号: record.callsign,
+        时间: new Date(record.createdAt).toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }),
+        QTH: record.qth || "",
+        设备: record.equipment || "",
+        天馈: record.antenna || "",
+        功率: record.power || "",
+        信号: record.signal || "",
+        报告: record.report || "",
+        备注: record.remarks || "",
+      }))
 
     // Create workbook
     const workbook = XLSX.utils.book_new()
