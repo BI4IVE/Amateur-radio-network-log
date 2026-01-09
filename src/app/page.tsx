@@ -699,10 +699,10 @@ export default function HomePage() {
                           onClick={() => selectParticipant(participant)}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
                         >
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-black">
                             {participant.callsign}
                           </div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-black">
                             {participant.qth || "未知位置"} - {participant.equipment || "未知设备"}
                           </div>
                         </div>
@@ -746,7 +746,7 @@ export default function HomePage() {
                             setShowQthResults(false)
                             setQthResults([])
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
                         >
                           {value}
                         </div>
@@ -790,7 +790,7 @@ export default function HomePage() {
                             setShowEquipmentResults(false)
                             setEquipmentResults([])
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
                         >
                           {value}
                         </div>
@@ -834,7 +834,7 @@ export default function HomePage() {
                             setShowAntennaResults(false)
                             setAntennaResults([])
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
                         >
                           {value}
                         </div>
@@ -878,7 +878,7 @@ export default function HomePage() {
                             setShowPowerResults(false)
                             setPowerResults([])
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
                         >
                           {value}
                         </div>
@@ -922,7 +922,7 @@ export default function HomePage() {
                             setShowSignalResults(false)
                             setSignalResults([])
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
                         >
                           {value}
                         </div>
@@ -966,7 +966,7 @@ export default function HomePage() {
                             setShowReportResults(false)
                             setReportResults([])
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
                         >
                           {value}
                         </div>
@@ -1010,7 +1010,7 @@ export default function HomePage() {
                             setShowRemarksResults(false)
                             setRemarksResults([])
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm"
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
                         >
                           {value}
                         </div>
@@ -1175,10 +1175,10 @@ export default function HomePage() {
                           onClick={() => selectParticipantForEdit(participant)}
                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
                         >
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-black">
                             {participant.callsign}
                           </div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-black">
                             {participant.qth || "未知位置"} - {participant.equipment || "未知设备"}
                           </div>
                         </div>
