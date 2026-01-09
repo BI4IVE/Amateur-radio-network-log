@@ -82,32 +82,41 @@ export default function HomePage() {
   // Autocomplete states
   const [searchResults, setSearchResults] = useState<Participant[]>([])
   const [showSearchResults, setShowSearchResults] = useState(false)
+  const [selectedSearchIndex, setSelectedSearchIndex] = useState(-1)
 
   // Edit autocomplete states
   const [editSearchResults, setEditSearchResults] = useState<Participant[]>([])
   const [showEditSearchResults, setShowEditSearchResults] = useState(false)
+  const [selectedEditSearchIndex, setSelectedEditSearchIndex] = useState(-1)
 
   // Field autocomplete states (from history records)
   const [qthResults, setQthResults] = useState<string[]>([])
   const [showQthResults, setShowQthResults] = useState(false)
+  const [selectedQthIndex, setSelectedQthIndex] = useState(-1)
 
   const [equipmentResults, setEquipmentResults] = useState<string[]>([])
   const [showEquipmentResults, setShowEquipmentResults] = useState(false)
+  const [selectedEquipmentIndex, setSelectedEquipmentIndex] = useState(-1)
 
   const [antennaResults, setAntennaResults] = useState<string[]>([])
   const [showAntennaResults, setShowAntennaResults] = useState(false)
+  const [selectedAntennaIndex, setSelectedAntennaIndex] = useState(-1)
 
   const [powerResults, setPowerResults] = useState<string[]>([])
   const [showPowerResults, setShowPowerResults] = useState(false)
+  const [selectedPowerIndex, setSelectedPowerIndex] = useState(-1)
 
   const [signalResults, setSignalResults] = useState<string[]>([])
   const [showSignalResults, setShowSignalResults] = useState(false)
+  const [selectedSignalIndex, setSelectedSignalIndex] = useState(-1)
 
   const [reportResults, setReportResults] = useState<string[]>([])
   const [showReportResults, setShowReportResults] = useState(false)
+  const [selectedReportIndex, setSelectedReportIndex] = useState(-1)
 
   const [remarksResults, setRemarksResults] = useState<string[]>([])
   const [showRemarksResults, setShowRemarksResults] = useState(false)
+  const [selectedRemarksIndex, setSelectedRemarksIndex] = useState(-1)
 
   useEffect(() => {
     // Check authentication
@@ -181,6 +190,7 @@ export default function HomePage() {
     if (query.length < 2) {
       setSearchResults([])
       setShowSearchResults(false)
+      setSelectedSearchIndex(-1)
       return
     }
 
@@ -189,9 +199,11 @@ export default function HomePage() {
       const data = await response.json()
       setSearchResults(data.participants || [])
       setShowSearchResults(true)
+      setSelectedSearchIndex(-1)
     } catch (error) {
       console.error("Search participants error:", error)
       setSearchResults([])
+      setSelectedSearchIndex(-1)
     }
   }
 
@@ -207,12 +219,14 @@ export default function HomePage() {
 
     setShowSearchResults(false)
     setSearchResults([])
+    setSelectedSearchIndex(-1)
   }
 
   // Search and select functions for each field from history records
-  const searchFieldValues = async (field: string, query: string, setResults: any) => {
+  const searchFieldValues = async (field: string, query: string, setResults: any, setIndex?: any) => {
     if (query.length < 1) {
       setResults([])
+      if (setIndex) setIndex(-1)
       return
     }
 
@@ -220,9 +234,11 @@ export default function HomePage() {
       const response = await fetch(`/api/records/search?field=${field}&query=${encodeURIComponent(query)}`)
       const data = await response.json()
       setResults(data.values || [])
+      if (setIndex) setIndex(-1)
     } catch (error) {
       console.error(`Search ${field} error:`, error)
       setResults([])
+      if (setIndex) setIndex(-1)
     }
   }
 
@@ -652,7 +668,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Input Form */}
             <div className="bg-white rounded-lg shadow p-6 lg:col-span-1">
-              <h2 className="text-lg font-semibold mb-4">台网记录信息录入</h2>
+              <h2 className="text-lg font-semibold mb-4 text-black">台网记录信息录入</h2>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -684,6 +700,25 @@ export default function HomePage() {
                       setCallsign(value)
                       searchParticipants(value)
                     }}
+                    onKeyDown={(e) => {
+                      if (showSearchResults && searchResults.length > 0) {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault()
+                          setSelectedSearchIndex((prev) =>
+                            prev < searchResults.length - 1 ? prev + 1 : prev
+                          )
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault()
+                          setSelectedSearchIndex((prev) => (prev > 0 ? prev - 1 : -1))
+                        } else if (e.key === "Enter" && selectedSearchIndex >= 0) {
+                          e.preventDefault()
+                          selectParticipant(searchResults[selectedSearchIndex])
+                        } else if (e.key === "Escape") {
+                          setShowSearchResults(false)
+                          setSelectedSearchIndex(-1)
+                        }
+                      }
+                    }}
                     onFocus={() => {
                       if (callsign.length >= 2) {
                         searchParticipants(callsign)
@@ -699,11 +734,13 @@ export default function HomePage() {
                   />
                   {showSearchResults && searchResults.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {searchResults.map((participant) => (
+                      {searchResults.map((participant, index) => (
                         <div
                           key={participant.id}
                           onClick={() => selectParticipant(participant)}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          className={`px-4 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                            index === selectedSearchIndex ? "bg-indigo-100" : "hover:bg-gray-100"
+                          }`}
                         >
                           <div className="font-medium text-black">
                             {participant.callsign}
@@ -727,11 +764,33 @@ export default function HomePage() {
                     onChange={(e) => {
                       const value = e.target.value
                       setQth(value)
-                      searchFieldValues("qth", value, setQthResults)
+                      searchFieldValues("qth", value, setQthResults, setSelectedQthIndex)
+                    }}
+                    onKeyDown={(e) => {
+                      if (showQthResults && qthResults.length > 0) {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault()
+                          setSelectedQthIndex((prev) =>
+                            prev < qthResults.length - 1 ? prev + 1 : prev
+                          )
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault()
+                          setSelectedQthIndex((prev) => (prev > 0 ? prev - 1 : -1))
+                        } else if (e.key === "Enter" && selectedQthIndex >= 0) {
+                          e.preventDefault()
+                          setQth(qthResults[selectedQthIndex])
+                          setShowQthResults(false)
+                          setQthResults([])
+                          setSelectedQthIndex(-1)
+                        } else if (e.key === "Escape") {
+                          setShowQthResults(false)
+                          setSelectedQthIndex(-1)
+                        }
+                      }
                     }}
                     onFocus={() => {
                       if (qth.length >= 1) {
-                        searchFieldValues("qth", qth, setQthResults)
+                        searchFieldValues("qth", qth, setQthResults, setSelectedQthIndex)
                         setShowQthResults(true)
                       }
                     }}
@@ -751,8 +810,11 @@ export default function HomePage() {
                             setQth(value)
                             setShowQthResults(false)
                             setQthResults([])
+                            setSelectedQthIndex(-1)
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
+                          className={`px-4 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black ${
+                            index === selectedQthIndex ? "bg-indigo-100" : "hover:bg-gray-100"
+                          }`}
                         >
                           {value}
                         </div>
@@ -771,11 +833,33 @@ export default function HomePage() {
                     onChange={(e) => {
                       const value = e.target.value
                       setEquipment(value)
-                      searchFieldValues("equipment", value, setEquipmentResults)
+                      searchFieldValues("equipment", value, setEquipmentResults, setSelectedEquipmentIndex)
+                    }}
+                    onKeyDown={(e) => {
+                      if (showEquipmentResults && equipmentResults.length > 0) {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault()
+                          setSelectedEquipmentIndex((prev) =>
+                            prev < equipmentResults.length - 1 ? prev + 1 : prev
+                          )
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault()
+                          setSelectedEquipmentIndex((prev) => (prev > 0 ? prev - 1 : -1))
+                        } else if (e.key === "Enter" && selectedEquipmentIndex >= 0) {
+                          e.preventDefault()
+                          setEquipment(equipmentResults[selectedEquipmentIndex])
+                          setShowEquipmentResults(false)
+                          setEquipmentResults([])
+                          setSelectedEquipmentIndex(-1)
+                        } else if (e.key === "Escape") {
+                          setShowEquipmentResults(false)
+                          setSelectedEquipmentIndex(-1)
+                        }
+                      }
                     }}
                     onFocus={() => {
                       if (equipment.length >= 1) {
-                        searchFieldValues("equipment", equipment, setEquipmentResults)
+                        searchFieldValues("equipment", equipment, setEquipmentResults, setSelectedEquipmentIndex)
                         setShowEquipmentResults(true)
                       }
                     }}
@@ -795,8 +879,11 @@ export default function HomePage() {
                             setEquipment(value)
                             setShowEquipmentResults(false)
                             setEquipmentResults([])
+                            setSelectedEquipmentIndex(-1)
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
+                          className={`px-4 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black ${
+                            index === selectedEquipmentIndex ? "bg-indigo-100" : "hover:bg-gray-100"
+                          }`}
                         >
                           {value}
                         </div>
@@ -815,11 +902,33 @@ export default function HomePage() {
                     onChange={(e) => {
                       const value = e.target.value
                       setAntenna(value)
-                      searchFieldValues("antenna", value, setAntennaResults)
+                      searchFieldValues("antenna", value, setAntennaResults, setSelectedAntennaIndex)
+                    }}
+                    onKeyDown={(e) => {
+                      if (showAntennaResults && antennaResults.length > 0) {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault()
+                          setSelectedAntennaIndex((prev) =>
+                            prev < antennaResults.length - 1 ? prev + 1 : prev
+                          )
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault()
+                          setSelectedAntennaIndex((prev) => (prev > 0 ? prev - 1 : -1))
+                        } else if (e.key === "Enter" && selectedAntennaIndex >= 0) {
+                          e.preventDefault()
+                          setAntenna(antennaResults[selectedAntennaIndex])
+                          setShowAntennaResults(false)
+                          setAntennaResults([])
+                          setSelectedAntennaIndex(-1)
+                        } else if (e.key === "Escape") {
+                          setShowAntennaResults(false)
+                          setSelectedAntennaIndex(-1)
+                        }
+                      }
                     }}
                     onFocus={() => {
                       if (antenna.length >= 1) {
-                        searchFieldValues("antenna", antenna, setAntennaResults)
+                        searchFieldValues("antenna", antenna, setAntennaResults, setSelectedAntennaIndex)
                         setShowAntennaResults(true)
                       }
                     }}
@@ -839,8 +948,11 @@ export default function HomePage() {
                             setAntenna(value)
                             setShowAntennaResults(false)
                             setAntennaResults([])
+                            setSelectedAntennaIndex(-1)
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
+                          className={`px-4 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black ${
+                            index === selectedAntennaIndex ? "bg-indigo-100" : "hover:bg-gray-100"
+                          }`}
                         >
                           {value}
                         </div>
@@ -859,11 +971,33 @@ export default function HomePage() {
                     onChange={(e) => {
                       const value = e.target.value
                       setPower(value)
-                      searchFieldValues("power", value, setPowerResults)
+                      searchFieldValues("power", value, setPowerResults, setSelectedPowerIndex)
+                    }}
+                    onKeyDown={(e) => {
+                      if (showPowerResults && powerResults.length > 0) {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault()
+                          setSelectedPowerIndex((prev) =>
+                            prev < powerResults.length - 1 ? prev + 1 : prev
+                          )
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault()
+                          setSelectedPowerIndex((prev) => (prev > 0 ? prev - 1 : -1))
+                        } else if (e.key === "Enter" && selectedPowerIndex >= 0) {
+                          e.preventDefault()
+                          setPower(powerResults[selectedPowerIndex])
+                          setShowPowerResults(false)
+                          setPowerResults([])
+                          setSelectedPowerIndex(-1)
+                        } else if (e.key === "Escape") {
+                          setShowPowerResults(false)
+                          setSelectedPowerIndex(-1)
+                        }
+                      }
                     }}
                     onFocus={() => {
                       if (power.length >= 1) {
-                        searchFieldValues("power", power, setPowerResults)
+                        searchFieldValues("power", power, setPowerResults, setSelectedPowerIndex)
                         setShowPowerResults(true)
                       }
                     }}
@@ -883,8 +1017,11 @@ export default function HomePage() {
                             setPower(value)
                             setShowPowerResults(false)
                             setPowerResults([])
+                            setSelectedPowerIndex(-1)
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
+                          className={`px-4 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black ${
+                            index === selectedPowerIndex ? "bg-indigo-100" : "hover:bg-gray-100"
+                          }`}
                         >
                           {value}
                         </div>
@@ -903,11 +1040,33 @@ export default function HomePage() {
                     onChange={(e) => {
                       const value = e.target.value
                       setSignal(value)
-                      searchFieldValues("signal", value, setSignalResults)
+                      searchFieldValues("signal", value, setSignalResults, setSelectedSignalIndex)
+                    }}
+                    onKeyDown={(e) => {
+                      if (showSignalResults && signalResults.length > 0) {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault()
+                          setSelectedSignalIndex((prev) =>
+                            prev < signalResults.length - 1 ? prev + 1 : prev
+                          )
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault()
+                          setSelectedSignalIndex((prev) => (prev > 0 ? prev - 1 : -1))
+                        } else if (e.key === "Enter" && selectedSignalIndex >= 0) {
+                          e.preventDefault()
+                          setSignal(signalResults[selectedSignalIndex])
+                          setShowSignalResults(false)
+                          setSignalResults([])
+                          setSelectedSignalIndex(-1)
+                        } else if (e.key === "Escape") {
+                          setShowSignalResults(false)
+                          setSelectedSignalIndex(-1)
+                        }
+                      }
                     }}
                     onFocus={() => {
                       if (signal.length >= 1) {
-                        searchFieldValues("signal", signal, setSignalResults)
+                        searchFieldValues("signal", signal, setSignalResults, setSelectedSignalIndex)
                         setShowSignalResults(true)
                       }
                     }}
@@ -927,8 +1086,11 @@ export default function HomePage() {
                             setSignal(value)
                             setShowSignalResults(false)
                             setSignalResults([])
+                            setSelectedSignalIndex(-1)
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
+                          className={`px-4 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black ${
+                            index === selectedSignalIndex ? "bg-indigo-100" : "hover:bg-gray-100"
+                          }`}
                         >
                           {value}
                         </div>
@@ -947,11 +1109,33 @@ export default function HomePage() {
                     onChange={(e) => {
                       const value = e.target.value
                       setReport(value)
-                      searchFieldValues("report", value, setReportResults)
+                      searchFieldValues("report", value, setReportResults, setSelectedReportIndex)
+                    }}
+                    onKeyDown={(e) => {
+                      if (showReportResults && reportResults.length > 0) {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault()
+                          setSelectedReportIndex((prev) =>
+                            prev < reportResults.length - 1 ? prev + 1 : prev
+                          )
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault()
+                          setSelectedReportIndex((prev) => (prev > 0 ? prev - 1 : -1))
+                        } else if (e.key === "Enter" && selectedReportIndex >= 0) {
+                          e.preventDefault()
+                          setReport(reportResults[selectedReportIndex])
+                          setShowReportResults(false)
+                          setReportResults([])
+                          setSelectedReportIndex(-1)
+                        } else if (e.key === "Escape") {
+                          setShowReportResults(false)
+                          setSelectedReportIndex(-1)
+                        }
+                      }
                     }}
                     onFocus={() => {
                       if (report.length >= 1) {
-                        searchFieldValues("report", report, setReportResults)
+                        searchFieldValues("report", report, setReportResults, setSelectedReportIndex)
                         setShowReportResults(true)
                       }
                     }}
@@ -971,8 +1155,11 @@ export default function HomePage() {
                             setReport(value)
                             setShowReportResults(false)
                             setReportResults([])
+                            setSelectedReportIndex(-1)
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
+                          className={`px-4 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black ${
+                            index === selectedReportIndex ? "bg-indigo-100" : "hover:bg-gray-100"
+                          }`}
                         >
                           {value}
                         </div>
@@ -990,11 +1177,33 @@ export default function HomePage() {
                     onChange={(e) => {
                       const value = e.target.value
                       setRemarks(value)
-                      searchFieldValues("remarks", value, setRemarksResults)
+                      searchFieldValues("remarks", value, setRemarksResults, setSelectedRemarksIndex)
+                    }}
+                    onKeyDown={(e) => {
+                      if (showRemarksResults && remarksResults.length > 0) {
+                        if (e.key === "ArrowDown") {
+                          e.preventDefault()
+                          setSelectedRemarksIndex((prev) =>
+                            prev < remarksResults.length - 1 ? prev + 1 : prev
+                          )
+                        } else if (e.key === "ArrowUp") {
+                          e.preventDefault()
+                          setSelectedRemarksIndex((prev) => (prev > 0 ? prev - 1 : -1))
+                        } else if (e.key === "Enter" && selectedRemarksIndex >= 0) {
+                          e.preventDefault()
+                          setRemarks(remarksResults[selectedRemarksIndex])
+                          setShowRemarksResults(false)
+                          setRemarksResults([])
+                          setSelectedRemarksIndex(-1)
+                        } else if (e.key === "Escape") {
+                          setShowRemarksResults(false)
+                          setSelectedRemarksIndex(-1)
+                        }
+                      }
                     }}
                     onFocus={() => {
                       if (remarks.length >= 1) {
-                        searchFieldValues("remarks", remarks, setRemarksResults)
+                        searchFieldValues("remarks", remarks, setRemarksResults, setSelectedRemarksIndex)
                         setShowRemarksResults(true)
                       }
                     }}
@@ -1015,8 +1224,11 @@ export default function HomePage() {
                             setRemarks(value)
                             setShowRemarksResults(false)
                             setRemarksResults([])
+                            setSelectedRemarksIndex(-1)
                           }}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black"
+                          className={`px-4 py-2 cursor-pointer border-b border-gray-100 last:border-b-0 text-sm text-black ${
+                            index === selectedRemarksIndex ? "bg-indigo-100" : "hover:bg-gray-100"
+                          }`}
                         >
                           {value}
                         </div>
@@ -1044,7 +1256,7 @@ export default function HomePage() {
 
             {/* Records Display */}
             <div className="bg-white rounded-lg shadow p-6 lg:col-span-3">
-              <h2 className="text-lg font-semibold mb-4">
+              <h2 className="text-lg font-semibold mb-4 text-black">
                 台网记录列表 ({records.length}条)
               </h2>
               <div className="overflow-x-auto">
