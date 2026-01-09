@@ -510,7 +510,7 @@ export default function HomePage() {
                 type="datetime-local"
                 value={sessionTime}
                 onChange={(e) => setSessionTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
               />
             </div>
 
@@ -522,7 +522,7 @@ export default function HomePage() {
                 type="text"
                 value={controllerName}
                 onChange={(e) => setControllerName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控人员姓名"
               />
             </div>
@@ -535,7 +535,7 @@ export default function HomePage() {
                 type="text"
                 value={controllerEquipment}
                 onChange={(e) => setControllerEquipment(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控设备"
               />
             </div>
@@ -548,7 +548,7 @@ export default function HomePage() {
                 type="text"
                 value={controllerAntenna}
                 onChange={(e) => setControllerAntenna(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控天线"
               />
             </div>
@@ -561,7 +561,7 @@ export default function HomePage() {
                 type="text"
                 value={controllerQth}
                 onChange={(e) => setControllerQth(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控位置"
               />
             </div>
@@ -615,7 +615,7 @@ export default function HomePage() {
                   <select
                     value={selectedParticipantId}
                     onChange={(e) => setSelectedParticipantId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   >
                     <option value="">选择参与人员</option>
                     {participants.map((p) => (
@@ -647,7 +647,7 @@ export default function HomePage() {
                       // Delay hiding results to allow clicking
                       setTimeout(() => setShowSearchResults(false), 200)
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="输入呼号搜索，例如: BI4K"
                     autoComplete="off"
                   />
@@ -679,7 +679,7 @@ export default function HomePage() {
                     type="text"
                     value={qth}
                     onChange={(e) => setQth(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="位置信息"
                   />
                 </div>
@@ -692,7 +692,7 @@ export default function HomePage() {
                     type="text"
                     value={equipment}
                     onChange={(e) => setEquipment(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="设备型号"
                   />
                 </div>
@@ -705,7 +705,7 @@ export default function HomePage() {
                     type="text"
                     value={antenna}
                     onChange={(e) => setAntenna(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="天线类型"
                   />
                 </div>
@@ -718,7 +718,7 @@ export default function HomePage() {
                     type="text"
                     value={power}
                     onChange={(e) => setPower(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="发射功率"
                   />
                 </div>
@@ -731,7 +731,7 @@ export default function HomePage() {
                     type="text"
                     value={signal}
                     onChange={(e) => setSignal(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="信号报告"
                   />
                 </div>
@@ -744,7 +744,7 @@ export default function HomePage() {
                     type="text"
                     value={report}
                     onChange={(e) => setReport(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="其他报告"
                   />
                 </div>
@@ -757,7 +757,7 @@ export default function HomePage() {
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="备注信息"
                   />
                 </div>
@@ -894,7 +894,7 @@ export default function HomePage() {
                     onBlur={() => {
                       setTimeout(() => setShowEditSearchResults(false), 200)
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="输入呼号搜索"
                     autoComplete="off"
                   />
@@ -928,7 +928,7 @@ export default function HomePage() {
                     onChange={(e) =>
                       setEditingRecord({ ...editingRecord, qth: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
                 </div>
 
@@ -942,7 +942,7 @@ export default function HomePage() {
                     onChange={(e) =>
                       setEditingRecord({ ...editingRecord, equipment: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
                 </div>
 
@@ -956,7 +956,7 @@ export default function HomePage() {
                     onChange={(e) =>
                       setEditingRecord({ ...editingRecord, antenna: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
                 </div>
 
@@ -970,7 +970,7 @@ export default function HomePage() {
                     onChange={(e) =>
                       setEditingRecord({ ...editingRecord, power: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
                 </div>
 
@@ -984,7 +984,7 @@ export default function HomePage() {
                     onChange={(e) =>
                       setEditingRecord({ ...editingRecord, signal: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
                 </div>
 
@@ -998,7 +998,7 @@ export default function HomePage() {
                     onChange={(e) =>
                       setEditingRecord({ ...editingRecord, report: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
                 </div>
 
@@ -1012,7 +1012,7 @@ export default function HomePage() {
                       setEditingRecord({ ...editingRecord, remarks: e.target.value })
                     }
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
                 </div>
 
