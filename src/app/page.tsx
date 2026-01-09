@@ -78,6 +78,14 @@ export default function HomePage() {
   const [editingRecord, setEditingRecord] = useState<LogRecord | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
+  // Autocomplete states
+  const [searchResults, setSearchResults] = useState<Participant[]>([])
+  const [showSearchResults, setShowSearchResults] = useState(false)
+
+  // Edit autocomplete states
+  const [editSearchResults, setEditSearchResults] = useState<Participant[]>([])
+  const [showEditSearchResults, setShowEditSearchResults] = useState(false)
+
   useEffect(() => {
     // Check authentication
     const userStr = localStorage.getItem("user")
@@ -144,6 +152,73 @@ export default function HomePage() {
     } catch (error) {
       console.error("Load participants error:", error)
     }
+  }
+
+  const searchParticipants = async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([])
+      setShowSearchResults(false)
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/participants/search?callsign=${encodeURIComponent(query)}`)
+      const data = await response.json()
+      setSearchResults(data.participants || [])
+      setShowSearchResults(true)
+    } catch (error) {
+      console.error("Search participants error:", error)
+      setSearchResults([])
+    }
+  }
+
+  const selectParticipant = (participant: Participant) => {
+    setCallsign(participant.callsign)
+    setQth(participant.qth || "")
+    setEquipment(participant.equipment || "")
+    setAntenna(participant.antenna || "")
+    setPower(participant.power || "")
+    setSignal(participant.signal || "")
+    setReport(participant.report || "")
+    setRemarks(participant.remarks || "")
+
+    setShowSearchResults(false)
+    setSearchResults([])
+  }
+
+  const searchParticipantsForEdit = async (query: string) => {
+    if (query.length < 2) {
+      setEditSearchResults([])
+      setShowEditSearchResults(false)
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/participants/search?callsign=${encodeURIComponent(query)}`)
+      const data = await response.json()
+      setEditSearchResults(data.participants || [])
+      setShowEditSearchResults(true)
+    } catch (error) {
+      console.error("Search participants error:", error)
+      setEditSearchResults([])
+    }
+  }
+
+  const selectParticipantForEdit = (participant: Participant) => {
+    setEditingRecord({
+      ...editingRecord!,
+      callsign: participant.callsign,
+      qth: participant.qth || null,
+      equipment: participant.equipment || null,
+      antenna: participant.antenna || null,
+      power: participant.power || null,
+      signal: participant.signal || null,
+      report: participant.report || null,
+      remarks: participant.remarks || null,
+    })
+
+    setShowEditSearchResults(false)
+    setEditSearchResults([])
   }
 
   useEffect(() => {
@@ -551,17 +626,49 @@ export default function HomePage() {
                   </select>
                 </div>
 
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     呼号
                   </label>
                   <input
                     type="text"
                     value={callsign}
-                    onChange={(e) => setCallsign(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setCallsign(value)
+                      searchParticipants(value)
+                    }}
+                    onFocus={() => {
+                      if (callsign.length >= 2) {
+                        searchParticipants(callsign)
+                      }
+                    }}
+                    onBlur={() => {
+                      // Delay hiding results to allow clicking
+                      setTimeout(() => setShowSearchResults(false), 200)
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                    placeholder="例如: BG5ABC"
+                    placeholder="输入呼号搜索，例如: BI4K"
+                    autoComplete="off"
                   />
+                  {showSearchResults && searchResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {searchResults.map((participant) => (
+                        <div
+                          key={participant.id}
+                          onClick={() => selectParticipant(participant)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">
+                            {participant.callsign}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {participant.qth || "未知位置"} - {participant.equipment || "未知设备"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -767,18 +874,48 @@ export default function HomePage() {
             <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <h2 className="text-lg font-semibold mb-4">编辑记录 - {editingRecord.callsign}</h2>
               <div className="space-y-4">
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     呼号
                   </label>
                   <input
                     type="text"
                     value={editingRecord.callsign}
-                    onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, callsign: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setEditingRecord({ ...editingRecord, callsign: value })
+                      searchParticipantsForEdit(value)
+                    }}
+                    onFocus={() => {
+                      if (editingRecord.callsign.length >= 2) {
+                        searchParticipantsForEdit(editingRecord.callsign)
+                      }
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => setShowEditSearchResults(false), 200)
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="输入呼号搜索"
+                    autoComplete="off"
                   />
+                  {showEditSearchResults && editSearchResults.length > 0 && (
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {editSearchResults.map((participant) => (
+                        <div
+                          key={participant.id}
+                          onClick={() => selectParticipantForEdit(participant)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">
+                            {participant.callsign}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {participant.qth || "未知位置"} - {participant.equipment || "未知设备"}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
