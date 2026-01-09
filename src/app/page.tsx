@@ -1717,9 +1717,34 @@ export default function HomePage() {
 
         {/* Admin Link */}
         {currentUser?.role === "admin" && (
-          <div className="mt-6">
+          <div className="mt-6 flex gap-4">
             <button
-              onClick={() => router.push("/admin")}
+              onClick={() => router.push("/admin/stats")}
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z"
+                />
+              </svg>
+              台网统计
+            </button>
+            <button
+              onClick={() => router.push("/admin/tools")}
               className="flex items-center gap-2 px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
             >
               <svg
@@ -1736,7 +1761,7 @@ export default function HomePage() {
                   d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 5.472m0 0a9.66 9.66 0 01-1.336-2.224M12 12.75A6.994 6.994 0 005.25 7.5m13.5 5.25a6.994 6.994 0 00-6.75-6.75M5.25 7.5a7.5 7.5 0 0014.25 0"
                 />
               </svg>
-              用户管理
+              管理工具
             </button>
           </div>
         )}
