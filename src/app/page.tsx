@@ -1,66 +1,664 @@
-import type { Metadata } from "next";
+"use client"
 
-export const metadata: Metadata = {
-  title: "扣子编程 - AI 开发伙伴",
-  description: "扣子编程，你的 AI 开发伙伴已就位",
-};
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
-export default function Home() {
+interface User {
+  id: string
+  username: string
+  name: string
+  equipment: string | null
+  antenna: string | null
+  qth: string | null
+  role: string
+}
+
+interface Participant {
+  id: string
+  callsign: string
+  name: string | null
+  equipment: string | null
+  qth: string | null
+  antenna: string | null
+  power: string | null
+  signal: string | null
+  report: string | null
+  remarks: string | null
+}
+
+interface LogRecord {
+  id: string
+  callsign: string
+  qth: string | null
+  equipment: string | null
+  antenna: string | null
+  power: string | null
+  signal: string | null
+  report: string | null
+  remarks: string | null
+}
+
+interface Session {
+  id: string
+  controllerName: string
+  controllerEquipment: string | null
+  controllerAntenna: string | null
+  controllerQth: string | null
+  sessionTime: string
+}
+
+export default function HomePage() {
+  const router = useRouter()
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [users, setUsers] = useState<User[]>([])
+  const [selectedControllerId, setSelectedControllerId] = useState("")
+  const [sessionTime, setSessionTime] = useState("")
+  const [controllerName, setControllerName] = useState("")
+  const [controllerEquipment, setControllerEquipment] = useState("")
+  const [controllerAntenna, setControllerAntenna] = useState("")
+  const [controllerQth, setControllerQth] = useState("")
+  const [useExistingData, setUseExistingData] = useState(true)
+
+  // Record input
+  const [selectedParticipantId, setSelectedParticipantId] = useState("")
+  const [callsign, setCallsign] = useState("")
+  const [qth, setQth] = useState("")
+  const [equipment, setEquipment] = useState("")
+  const [antenna, setAntenna] = useState("")
+  const [power, setPower] = useState("")
+  const [signal, setSignal] = useState("")
+  const [report, setReport] = useState("")
+  const [remarks, setRemarks] = useState("")
+
+  const [participants, setParticipants] = useState<Participant[]>([])
+  const [records, setRecords] = useState<LogRecord[]>([])
+  const [currentSession, setCurrentSession] = useState<Session | null>(null)
+
+  useEffect(() => {
+    // Check authentication
+    const userStr = localStorage.getItem("user")
+    if (!userStr) {
+      router.push("/login")
+      return
+    }
+    const user = JSON.parse(userStr)
+    setCurrentUser(user)
+
+    // Initialize admin if needed
+    initializeAdmin()
+  }, [router])
+
+  useEffect(() => {
+    if (currentUser) {
+      loadUsers()
+      loadParticipants()
+      setSessionTime(new Date().toISOString().slice(0, 16))
+    }
+  }, [currentUser])
+
+  useEffect(() => {
+    if (selectedControllerId) {
+      const user = users.find((u) => u.id === selectedControllerId)
+      if (user) {
+        setControllerName(user.name)
+        if (useExistingData) {
+          setControllerEquipment(user.equipment || "")
+          setControllerAntenna(user.antenna || "")
+          setControllerQth(user.qth || "")
+        }
+      }
+    }
+  }, [selectedControllerId, users, useExistingData])
+
+  const initializeAdmin = async () => {
+    try {
+      await fetch("/api/init", { method: "POST" })
+    } catch (error) {
+      console.error("Init admin error:", error)
+    }
+  }
+
+  const loadUsers = async () => {
+    try {
+      const response = await fetch("/api/users")
+      const data = await response.json()
+      setUsers(data.users || [])
+
+      if (currentUser && currentUser.role === "user") {
+        setSelectedControllerId(currentUser.id)
+      }
+    } catch (error) {
+      console.error("Load users error:", error)
+    }
+  }
+
+  const loadParticipants = async () => {
+    try {
+      const response = await fetch("/api/participants")
+      const data = await response.json()
+      setParticipants(data.participants || [])
+    } catch (error) {
+      console.error("Load participants error:", error)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedParticipantId) {
+      const participant = participants.find((p) => p.id === selectedParticipantId)
+      if (participant && useExistingData) {
+        setCallsign(participant.callsign)
+        setQth(participant.qth || "")
+        setEquipment(participant.equipment || "")
+        setAntenna(participant.antenna || "")
+        setPower(participant.power || "")
+        setSignal(participant.signal || "")
+        setReport(participant.report || "")
+        setRemarks(participant.remarks || "")
+      }
+    }
+  }, [selectedParticipantId, participants, useExistingData])
+
+  const startNewSession = async () => {
+    try {
+      const response = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          controllerId: selectedControllerId,
+          controllerName,
+          controllerEquipment: controllerEquipment || null,
+          controllerAntenna: controllerAntenna || null,
+          controllerQth: controllerQth || null,
+          sessionTime: new Date(sessionTime).toISOString(),
+        }),
+      })
+
+      const data = await response.json()
+      setCurrentSession(data.session)
+      setRecords([])
+      alert("新台网会话已创建")
+    } catch (error) {
+      console.error("Start session error:", error)
+      alert("创建会话失败")
+    }
+  }
+
+  const addRecord = async () => {
+    if (!currentSession) {
+      alert("请先创建台网会话")
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${currentSession.id}/records`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callsign,
+          qth: qth || null,
+          equipment: equipment || null,
+          antenna: antenna || null,
+          power: power || null,
+          signal: signal || null,
+          report: report || null,
+          remarks: remarks || null,
+        }),
+      })
+
+      const data = await response.json()
+      setRecords([...records, data.record])
+
+      // Clear form
+      setCallsign("")
+      setQth("")
+      setEquipment("")
+      setAntenna("")
+      setPower("")
+      setSignal("")
+      setReport("")
+      setRemarks("")
+      setSelectedParticipantId("")
+    } catch (error) {
+      console.error("Add record error:", error)
+      alert("添加记录失败")
+    }
+  }
+
+  const exportToExcel = async () => {
+    if (!currentSession) {
+      alert("没有可导出的会话")
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${currentSession.id}/export`)
+      const blob = await response.blob()
+
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `台网日志_${new Date(currentSession.sessionTime).toISOString().split("T")[0]}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Export error:", error)
+      alert("导出失败")
+    }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("user")
+    router.push("/login")
+  }
+
+  const createNewParticipant = async () => {
+    if (!callsign) {
+      alert("请输入呼号")
+      return
+    }
+
+    try {
+      const response = await fetch("/api/participants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callsign,
+          name: qth.split(" ")[0] || callsign,
+          qth,
+          equipment,
+          antenna,
+          power,
+          signal,
+          report,
+          remarks,
+        }),
+      })
+
+      const data = await response.json()
+      setParticipants([...participants, data.participant])
+      alert("参与人员已添加到数据库")
+    } catch (error) {
+      console.error("Create participant error:", error)
+      alert("添加参与人员失败")
+    }
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white text-black transition-colors duration-300 dark:bg-black dark:text-white">
-      {/* 主容器 */}
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between px-16 py-32 sm:items-start">
-        {/* 头部：Logo 和 产品名称 */}
-        <div className="flex items-center gap-3">
-          {/* 注意：生产环境建议使用 next/image 并配置 remotePatterns */}
-          <img
-            className="dark:invert"
-            src="https://lf3-static.bytednsdoc.com/obj/eden-cn/hkpzboz/coze_logo.png"
-            alt="扣子编程 Logo"
-            width={40}
-            height={40}
-            style={{ width: "40px", height: "40px", objectFit: "contain" }}
-          />
-          <span className="text-xl font-bold tracking-tight text-black dark:text-zinc-50">
-            扣子编程
-          </span>
-        </div>
-
-        {/* 中间内容区：主标题和副标题 */}
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-black dark:text-zinc-50">
-            扣子编程，你的 AI 开发伙伴已就位
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-xl font-bold text-gray-900">
+            济南黄河业余无线电台网主控日志
           </h1>
-          <p className="max-w-2xl text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            当前是空白入口文件，项目正在开发中，请稍候...
-            <br />
-            开发完成后界面将自动更新。如未自动更新成功，可以手动点击右上角刷新或重启按钮查看效果。
-          </p>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">
+              当前用户: {currentUser?.name} ({currentUser?.role === "admin" ? "管理员" : "主控"})
+            </span>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              退出
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Controller Section */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">台网主控人员信息</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {currentUser?.role === "admin" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  主控人员
+                </label>
+                <select
+                  value={selectedControllerId}
+                  onChange={(e) => setSelectedControllerId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">选择主控人员</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.username})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                台网时间
+              </label>
+              <input
+                type="datetime-local"
+                value={sessionTime}
+                onChange={(e) => setSessionTime(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                主控姓名
+              </label>
+              <input
+                type="text"
+                value={controllerName}
+                onChange={(e) => setControllerName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="主控人员姓名"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                设备
+              </label>
+              <input
+                type="text"
+                value={controllerEquipment}
+                onChange={(e) => setControllerEquipment(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="主控设备"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                天线
+              </label>
+              <input
+                type="text"
+                value={controllerAntenna}
+                onChange={(e) => setControllerAntenna(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="主控天线"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                QTH
+              </label>
+              <input
+                type="text"
+                value={controllerQth}
+                onChange={(e) => setControllerQth(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="主控位置"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 flex gap-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={useExistingData}
+                onChange={(e) => setUseExistingData(e.target.checked)}
+                className="mr-2"
+              />
+              <span className="text-sm text-gray-700">使用数据库中的信息</span>
+            </label>
+
+            <button
+              onClick={startNewSession}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              创建新台网会话
+            </button>
+
+            {currentSession && (
+              <>
+                <button
+                  onClick={exportToExcel}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  导出Excel
+                </button>
+                <span className="text-sm text-gray-600 self-center">
+                  会话ID: {currentSession.id}
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* 底部按钮区 */}
-        <div className="flex w-full flex-col gap-4 text-base font-medium sm:w-auto sm:flex-row">
-          {/* 按钮 1：前往首页 */}
-          <a
-            className="flex h-12 w-full min-w-[160px] items-center justify-center gap-2 rounded-full bg-black px-8 text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200 md:w-auto"
-            href="https://code.coze.cn/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            前往首页
-          </a>
+        {/* Record Entry Section */}
+        {currentSession && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Input Form */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">台网记录信息录入</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    参与人员（可选）
+                  </label>
+                  <select
+                    value={selectedParticipantId}
+                    onChange={(e) => setSelectedParticipantId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="">选择参与人员</option>
+                    {participants.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.callsign} - {p.name || "未命名"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          {/* 按钮 2：查看文档 */}
-          <a
-            className="flex h-12 w-full min-w-[160px] items-center justify-center rounded-full border border-solid border-black/[.08] px-8 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-auto"
-            href="https://docs.coze.cn/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            查看文档
-          </a>
-        </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    呼号
+                  </label>
+                  <input
+                    type="text"
+                    value={callsign}
+                    onChange={(e) => setCallsign(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="例如: BG5ABC"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    QTH
+                  </label>
+                  <input
+                    type="text"
+                    value={qth}
+                    onChange={(e) => setQth(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="位置信息"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    设备
+                  </label>
+                  <input
+                    type="text"
+                    value={equipment}
+                    onChange={(e) => setEquipment(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="设备型号"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    天馈
+                  </label>
+                  <input
+                    type="text"
+                    value={antenna}
+                    onChange={(e) => setAntenna(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="天线类型"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    功率
+                  </label>
+                  <input
+                    type="text"
+                    value={power}
+                    onChange={(e) => setPower(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="发射功率"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    信号
+                  </label>
+                  <input
+                    type="text"
+                    value={signal}
+                    onChange={(e) => setSignal(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="信号报告"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    报告
+                  </label>
+                  <input
+                    type="text"
+                    value={report}
+                    onChange={(e) => setReport(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="其他报告"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    备注
+                  </label>
+                  <textarea
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    placeholder="备注信息"
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={addRecord}
+                    className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    添加记录
+                  </button>
+                  <button
+                    onClick={createNewParticipant}
+                    className="flex-1 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    保存到参与人员库
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Records Display */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">
+                台网记录列表 ({records.length}条)
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        序号
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        呼号
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        QTH
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        设备
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        功率
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        信号
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {records.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-4 py-8 text-center text-gray-500"
+                        >
+                          暂无记录
+                        </td>
+                      </tr>
+                    ) : (
+                      records.map((record, index) => (
+                        <tr key={record.id}>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                            {index + 1}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {record.callsign}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                            {record.qth || "-"}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                            {record.equipment || "-"}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                            {record.power || "-"}
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                            {record.signal || "-"}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Admin Link */}
+        {currentUser?.role === "admin" && (
+          <div className="mt-6">
+            <button
+              onClick={() => router.push("/admin")}
+              className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
+            >
+              用户管理
+            </button>
+          </div>
+        )}
       </main>
     </div>
-  );
+  )
 }
