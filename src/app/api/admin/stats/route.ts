@@ -7,9 +7,12 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const startDate = searchParams.get("startDate") || undefined
     const endDate = searchParams.get("endDate") || undefined
+    const controllerId = searchParams.get("controllerId") || undefined
 
-    // 获取所有台网会话
-    const sessions = await logManager.getLogSessions({})
+    // 获取所有台网会话（如果有 controllerId，则过滤）
+    const sessions = await logManager.getLogSessions({
+      controllerId
+    })
     const sessionsData = Array.isArray(sessions) ? sessions : (sessions as any).sessions || []
 
     // 获取所有台网记录

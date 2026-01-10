@@ -36,8 +36,15 @@ export default function AdminStatsPage() {
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
+  const [currentUser, setCurrentUser] = useState<any>(null)
 
   useEffect(() => {
+    // 获取当前用户
+    const userStr = localStorage.getItem("user")
+    if (userStr) {
+      const user = JSON.parse(userStr)
+      setCurrentUser(user)
+    }
     loadStats()
   }, [startDate, endDate])
 
@@ -47,6 +54,11 @@ export default function AdminStatsPage() {
       const params = new URLSearchParams()
       if (startDate) params.append("startDate", startDate)
       if (endDate) params.append("endDate", endDate)
+
+      // 如果不是管理员，只显示自己作为主控的会话
+      if (currentUser && currentUser.role !== "admin") {
+        params.append("controllerId", currentUser.id)
+      }
 
       const url = `/api/admin/stats${params.toString() ? `?${params.toString()}` : ""}`
       const response = await fetch(url)
