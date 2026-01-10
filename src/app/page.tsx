@@ -412,6 +412,11 @@ export default function HomePage() {
 
       const message = data.updated ? "记录已添加并更新参与人员库" : "记录已添加并创建新参与人员"
       alert(message)
+
+      // 光标自动回到呼号输入框
+      setTimeout(() => {
+        callsignRef.current?.focus()
+      }, 100)
     } catch (error) {
       console.error("Add record error:", error)
       alert("添加记录失败")
