@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
+import * as XLSX from "xlsx"
 
 interface Session {
   id: string
@@ -88,36 +89,90 @@ export default function SessionDetailPage() {
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     )
 
-    const headers = ["序号", "呼号", "QTH", "设备", "天馈", "功率", "信号", "报告", "备注", "时间"]
-    const rows = sortedRecords.map((record, index) => [
-      index + 1,
-      record.callsign,
-      record.qth || "",
-      record.equipment || "",
-      record.antenna || "",
-      record.power || "",
-      record.signal || "",
-      record.report || "",
-      record.remarks || "",
-      record.createdAt ? new Date(record.createdAt).toLocaleString("zh-CN") : "",
-    ])
+    // 获取日期
+    const sessionDate = new Date(session.sessionTime).toLocaleDateString("zh-CN")
 
-    const csvContent = [
-      `台网会话详情 - ${session.controllerName}`,
-      `会话时间: ${new Date(session.sessionTime).toLocaleString("zh-CN")}`,
-      `QTH: ${session.controllerQth || "-"}`,
-      `设备: ${session.controllerEquipment || "-"}`,
-      `天线: ${session.controllerAntenna || "-"}`,
-      "",
-      ...headers.map(h => `"${h}"`),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(",")),
-    ].join("\n")
+    // 创建工作簿
+    const workbook = XLSX.utils.book_new()
 
-    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    link.href = URL.createObjectURL(blob)
-    link.download = `台网记录_${session.controllerName}_${new Date(session.sessionTime).toLocaleDateString("zh-CN")}.csv`
-    link.click()
+    // 创建数据数组（包含标题和信息）
+    const data = [
+      // 标题
+      ["济南黄河业余无线电中继台"],
+      [`${sessionDate}台网`],
+      [""],
+      ["当日数据情况"],
+      [""],
+      ["主控", session.controllerName],
+      ["会话时间", new Date(session.sessionTime).toLocaleString("zh-CN")],
+      ["QTH", session.controllerQth || "-"],
+      ["设备", session.controllerEquipment || "-"],
+      ["天线", session.controllerAntenna || "-"],
+      ["记录总数", `${records.length}条`],
+      [""],
+      [""],
+      // 表头
+      ["序号", "呼号", "QTH", "设备", "天馈", "功率", "信号", "报告", "备注", "时间"],
+      // 数据行
+      ...sortedRecords.map((record, index) => [
+        index + 1,
+        record.callsign,
+        record.qth || "",
+        record.equipment || "",
+        record.antenna || "",
+        record.power || "",
+        record.signal || "",
+        record.report || "",
+        record.remarks || "",
+        record.createdAt ? new Date(record.createdAt).toLocaleTimeString("zh-CN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        }) : "",
+      ]),
+    ]
+
+    // 创建工作表
+    const worksheet = XLSX.utils.aoa_to_sheet(data)
+
+    // 设置列宽
+    worksheet["!cols"] = [
+      { wch: 6 },   // 序号
+      { wch: 12 },  // 呼号
+      { wch: 20 },  // QTH
+      { wch: 15 },  // 设备
+      { wch: 15 },  // 天馈
+      { wch: 10 },  // 功率
+      { wch: 10 },  // 信号
+      { wch: 15 },  // 报告
+      { wch: 20 },  // 备注
+      { wch: 10 },  // 时间
+    ]
+
+    // 合并标题单元格
+    if (!worksheet["!merges"]) {
+      worksheet["!merges"] = []
+    }
+    worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }) // 标题行
+    worksheet["!merges"].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }) // 日期行
+
+    // 设置单元格样式（注意：xlsx 基础库样式支持有限）
+    const titleStyle = {
+      font: { bold: true, sz: 16 },
+      alignment: { horizontal: "center" },
+    }
+
+    const headerStyle = {
+      font: { bold: true },
+      fill: { fgColor: { rgb: "4472C4" } },
+    }
+
+    // 将工作表添加到工作簿
+    XLSX.utils.book_append_sheet(workbook, worksheet, "台网记录")
+
+    // 导出文件
+    const fileName = `台网记录_${session.controllerName}_${sessionDate}.xlsx`
+    XLSX.writeFile(workbook, fileName)
   }
 
   if (loading) {
