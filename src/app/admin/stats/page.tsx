@@ -59,27 +59,63 @@ export default function AdminStatsPage() {
     }
   }
 
-  const handleExport = () => {
-    if (!statsData) return
+  const handleExport = async () => {
+    if (!statsData || statsData.sessions.length === 0) {
+      alert("没有可导出的数据")
+      return
+    }
 
-    const headers = ["序号", "日期", "主控姓名", "呼号", "QTH", "设备", "天线", "记录数"]
-    const rows = statsData.sessions.map((session, index) => [
-      index + 1,
-      new Date(session.sessionTime).toLocaleDateString("zh-CN"),
-      session.controllerName,
-      "-",
-      session.controllerQth || "-",
-      session.controllerEquipment || "-",
-      session.controllerAntenna || "-",
-      session.recordCount,
-    ])
+    // 获取所有会话的详细记录
+    const allRecords: any[] = []
+    for (const session of statsData.sessions) {
+      try {
+        const response = await fetch(`/api/admin/stats/session/${session.id}`)
+        const data = await response.json()
+        const records = data.records || []
+        allRecords.push(...records)
+      } catch (error) {
+        console.error(`Failed to get records for session ${session.id}:`, error)
+      }
+    }
+
+    // 按时间正序排列（旧到新）
+    const sortedRecords = allRecords.sort((a, b) =>
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    )
+
+    // 创建CSV内容
+    const headers = ["序号", "日期", "时间", "呼号", "QTH", "设备", "天线", "功率", "信号", "报告", "备注"]
+    const rows = sortedRecords.map((record, index) => {
+      const date = record.createdAt ? new Date(record.createdAt).toLocaleDateString("zh-CN") : ""
+      const time = record.createdAt ? new Date(record.createdAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }) : ""
+
+      return [
+        index + 1,
+        date,
+        time,
+        record.callsign,
+        record.qth || "",
+        record.equipment || "",
+        record.antenna || "",
+        record.power || "",
+        record.signal || "",
+        record.report || "",
+        record.remarks || "",
+      ].map(cell => `"${cell}"`).join(",")
+    })
 
     const csvContent = [
-      headers.join(","),
-      ...rows.map((row) => row.join(",")),
+      "台网统计导出",
+      `导出时间: ${new Date().toLocaleString("zh-CN")}`,
+      `总会话数: ${statsData.stats.totalSessions}`,
+      `总记录数: ${sortedRecords.length}`,
+      `唯一呼号数: ${statsData.stats.totalUniqueCallsigns}`,
+      "",
+      ...headers.map(h => `"${h}"`),
+      ...rows,
     ].join("\n")
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
     link.download = `台网统计_${new Date().toLocaleDateString("zh-CN")}.csv`
@@ -243,7 +279,11 @@ export default function AdminStatsPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {statsData.sessions.slice(0, 5).map((session, index) => (
-                          <tr key={session.id} className="hover:bg-gray-50">
+                          <tr
+                            key={session.id}
+                            onClick={() => router.push(`/admin/stats/session/${session.id}`)}
+                            className="hover:bg-gray-50 cursor-pointer"
+                          >
                             <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
                             <td className="px-4 py-3 text-sm text-black">
                               {new Date(session.sessionTime).toLocaleDateString("zh-CN")}
@@ -301,7 +341,11 @@ export default function AdminStatsPage() {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                       {filteredSessions.map((session, index) => (
-                        <tr key={session.id} className="hover:bg-gray-50">
+                        <tr
+                          key={session.id}
+                          onClick={() => router.push(`/admin/stats/session/${session.id}`)}
+                          className="hover:bg-gray-50 cursor-pointer"
+                        >
                           <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
                           <td className="px-4 py-3 text-sm text-black">
                             {new Date(session.sessionTime).toLocaleDateString("zh-CN")}

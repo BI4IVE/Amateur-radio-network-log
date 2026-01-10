@@ -265,58 +265,112 @@ export default function QueryPage() {
                 {/* Certificate */}
                 <div
                   ref={certificateRef}
-                  className="bg-gradient-to-br from-yellow-50 to-orange-50 border-8 border-double border-yellow-600 rounded-lg p-12 text-center"
+                  className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 relative overflow-hidden"
+                  style={{
+                    border: "12px double #b45309",
+                    borderRadius: "16px",
+                    boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                  }}
                 >
-                  <div className="space-y-6">
+                  {/* Decorative Corner Borders */}
+                  <div className="absolute top-0 left-0 w-32 h-32 border-t-4 border-l-4 border-yellow-700 rounded-tl-2xl"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 border-t-4 border-r-4 border-yellow-700 rounded-tr-2xl"></div>
+                  <div className="absolute bottom-0 left-0 w-32 h-32 border-b-4 border-l-4 border-yellow-700 rounded-bl-2xl"></div>
+                  <div className="absolute bottom-0 right-0 w-32 h-32 border-b-4 border-r-4 border-yellow-700 rounded-br-2xl"></div>
+
+                  {/* Background Pattern */}
+                  <div className="absolute inset-0 opacity-5">
+                    <div className="absolute top-1/4 left-1/4 w-64 h-64 border-4 border-yellow-800 rounded-full"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-48 h-48 border-4 border-yellow-800 rounded-full"></div>
+                  </div>
+
+                  <div className="relative p-12 text-center">
                     {/* Header */}
-                    <div className="space-y-2">
-                      <h2 className="text-4xl font-bold text-yellow-800 tracking-widest">
+                    <div className="space-y-3 mb-8">
+                      {/* Icon */}
+                      <div className="flex justify-center mb-4">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="w-16 h-16 text-yellow-700"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+                          />
+                        </svg>
+                      </div>
+                      <h2 className="text-5xl font-bold text-yellow-900 tracking-widest" style={{ fontFamily: "Georgia, serif" }}>
                         参与证书
                       </h2>
-                      <div className="h-0.5 bg-yellow-600 w-48 mx-auto"></div>
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="h-1 bg-yellow-700 w-32"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow-700"></div>
+                        <div className="h-1 bg-yellow-700 w-32"></div>
+                      </div>
+                      <p className="text-yellow-800 text-lg tracking-wide">CERTIFICATE OF PARTICIPATION</p>
                     </div>
 
                     {/* Content */}
-                    <div className="space-y-4">
-                      <p className="text-gray-700 text-lg">
+                    <div className="space-y-6 mb-8">
+                      <p className="text-gray-800 text-xl tracking-wide">
                         特此证明
                       </p>
 
-                      <div className="bg-white rounded-lg shadow-md p-6 mx-auto max-w-md">
-                        <h3 className="text-5xl font-bold text-yellow-800 tracking-wider">
+                      <div
+                        className="bg-white rounded-xl shadow-lg p-8 mx-auto max-w-lg border-2 border-yellow-200"
+                        style={{
+                          boxShadow: "0 8px 32px rgba(180, 83, 9, 0.2)",
+                        }}
+                      >
+                        <h3 className="text-6xl font-bold text-yellow-900 tracking-wider" style={{ fontFamily: "Georgia, serif" }}>
                           {result.callsign.toUpperCase()}
                         </h3>
                       </div>
 
-                      <div className="space-y-2">
-                        <p className="text-gray-700 text-lg">
+                      <div className="space-y-3">
+                        <p className="text-gray-800 text-lg leading-relaxed">
                           在过去一年中积极参与
                         </p>
-                        <p className="text-gray-700 text-lg">
+                        <p className="text-yellow-900 text-2xl font-semibold tracking-wide">
                           济南黄河业余无线电台网活动
                         </p>
-                        <div className="flex items-center justify-center gap-4 py-4">
-                          <p className="text-6xl font-bold text-yellow-800">
+                        <div className="flex items-center justify-center gap-6 py-6">
+                          <div className="w-1 h-20 bg-gradient-to-b from-transparent via-yellow-700 to-transparent"></div>
+                          <p className="text-8xl font-bold text-yellow-900 tracking-wider" style={{ fontFamily: "Georgia, serif" }}>
                             {result.totalParticipations}
                           </p>
-                          <p className="text-2xl text-gray-600">次</p>
+                          <div className="w-1 h-20 bg-gradient-to-b from-transparent via-yellow-700 to-transparent"></div>
+                          <p className="text-3xl text-gray-700 font-semibold">次</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Footer */}
                     <div className="space-y-4">
-                      <div className="h-0.5 bg-yellow-600 w-48 mx-auto"></div>
-                      <div className="flex justify-center items-end gap-8">
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="h-1 bg-yellow-700 w-32"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow-700"></div>
+                        <div className="h-1 bg-yellow-700 w-32"></div>
+                      </div>
+                      <div className="flex justify-center items-end gap-16 pt-4">
                         <div className="text-center">
-                          <p className="text-gray-700 font-semibold mb-2">签发机构</p>
-                          <p className="text-gray-600">济南黄河业余无线电中继台</p>
+                          <p className="text-gray-700 font-bold text-lg mb-3 tracking-wide">签发机构</p>
+                          <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                            <p className="text-yellow-900 font-semibold text-base">济南黄河业余无线电中继台</p>
+                          </div>
                         </div>
                         <div className="text-center">
-                          <p className="text-gray-700 font-semibold mb-2">签发日期</p>
-                          <p className="text-gray-600">
-                            {new Date().toLocaleDateString('zh-CN')}
-                          </p>
+                          <p className="text-gray-700 font-bold text-lg mb-3 tracking-wide">签发日期</p>
+                          <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                            <p className="text-yellow-900 font-semibold text-base">
+                              {new Date().toLocaleDateString('zh-CN')}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
