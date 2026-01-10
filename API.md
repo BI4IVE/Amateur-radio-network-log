@@ -1,23 +1,73 @@
 # API 文档
 
-本文档提供济南黄河业余无线电台网主控日志系统的 API 接口说明。
+本文档详细描述了济南黄河业余无线电台网主控日志系统的所有API接口。
 
-## 基础信息
+## 目录
 
-- **Base URL**: `http://localhost:5000/api` (开发环境)
-- **认证方式**: 基于 localStorage 的会话认证
-- **数据格式**: JSON
-- **字符编码**: UTF-8
+- [认证相关](#认证相关)
+- [用户管理](#用户管理)
+- [会话管理](#会话管理)
+- [记录管理](#记录管理)
+- [参与人员管理](#参与人员管理)
+- [统计与分析](#统计与分析)
+- [系统管理](#系统管理)
+- [调试接口](#调试接口)
 
-## 认证
+## 通用信息
 
-系统使用基于 localStorage 的客户端会话管理。登录成功后，用户信息存储在浏览器的 localStorage 中。
+### 基础URL
+
+```
+开发环境: http://localhost:5000
+生产环境: https://your-domain.com
+```
+
+### 请求格式
+
+所有API请求和响应均使用JSON格式。
+
+```
+Content-Type: application/json
+```
+
+### 响应格式
+
+#### 成功响应
+
+```json
+{
+  "data": { ... },
+  "message": "操作成功"
+}
+```
+
+#### 错误响应
+
+```json
+{
+  "error": "错误描述"
+}
+```
+
+### HTTP状态码
+
+- `200 OK` - 请求成功
+- `201 Created` - 资源创建成功
+- `400 Bad Request` - 请求参数错误
+- `401 Unauthorized` - 未授权
+- `404 Not Found` - 资源不存在
+- `500 Internal Server Error` - 服务器错误
+
+## 认证相关
 
 ### 登录
 
-**端点**: `POST /api/auth/login`
+```http
+POST /api/auth/login
+```
 
-**请求体**:
+**请求体：**
+
 ```json
 {
   "username": "ADMIN",
@@ -25,348 +75,447 @@
 }
 ```
 
-**成功响应** (200):
+**响应：**
+
 ```json
 {
   "user": {
     "id": "uuid",
-    "username": "ADMIN",
+    "username": "admin",
     "name": "管理员",
     "role": "admin",
-    "createdAt": "2024-01-01T00:00:00Z"
-  }
+    "equipment": null,
+    "antenna": null,
+    "qth": null
+  },
+  "token": "jwt_token"
 }
 ```
 
-**错误响应** (401):
-```json
-{
-  "error": "用户名或密码错误"
-}
-```
+**说明：**
+- 用户名和密码不区分大小写
+- 成功后返回用户信息和token（如果使用JWT）
 
-**说明**:
-- 用户名和密码不区分大小写（使用 SQL LOWER 函数）
-- 登录成功后，用户信息存储在 localStorage 的 `user` 键中
-- 默认管理员账号：`ADMIN` / `ADMIN123`
+---
 
 ## 用户管理
 
-### 获取所有用户
+### 获取用户列表
 
-**端点**: `GET /api/users`
+```http
+GET /api/users
+```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
   "users": [
     {
       "id": "uuid",
-      "username": "BG4ABC",
-      "name": "张三",
+      "username": "admin",
+      "name": "管理员",
+      "role": "admin",
       "equipment": "IC-7300",
-      "antenna": "GP-3",
-      "qth": "济南市",
-      "role": "user",
+      "antenna": "GP天线",
+      "qth": "济南",
       "createdAt": "2024-01-01T00:00:00Z"
     }
   ]
 }
 ```
 
-### 获取用户选项
-
-**端点**: `GET /api/users/options`
-
-**响应** (200):
-```json
-{
-  "users": [
-    {
-      "id": "uuid",
-      "name": "张三",
-      "username": "BG4ABC"
-    }
-  ]
-}
-```
-
-### 获取单个用户
-
-**端点**: `GET /api/users/:id`
-
-**响应** (200):
-```json
-{
-  "user": {
-    "id": "uuid",
-    "username": "BG4ABC",
-    "name": "张三",
-    "role": "user"
-  }
-}
-```
-
-**错误响应** (404):
-```json
-{
-  "error": "用户不存在"
-}
-```
-
 ### 创建用户
 
-**端点**: `POST /api/users`
+```http
+POST /api/users
+```
 
-**请求体**:
+**请求体：**
+
 ```json
 {
-  "username": "BG4ABC",
+  "username": "bi4k",
   "password": "password123",
   "name": "张三",
-  "equipment": "IC-7300",
-  "antenna": "GP-3",
-  "qth": "济南市",
+  "equipment": "FT-991A",
+  "antenna": "八木天线",
+  "qth": "济南历下",
   "role": "user"
 }
 ```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
   "user": {
     "id": "uuid",
-    "username": "BG4ABC",
+    "username": "bi4k",
     "name": "张三",
-    "role": "user"
+    "role": "user",
+    "equipment": "FT-991A",
+    "antenna": "八木天线",
+    "qth": "济南历下"
   }
 }
 ```
 
 ### 更新用户
 
-**端点**: `PUT /api/users/:id`
+```http
+PUT /api/users/:id
+```
 
-**请求体**:
+**请求体：**
+
 ```json
 {
   "name": "张三",
-  "equipment": "IC-9700",
-  "antenna": "DP-2000",
-  "qth": "北京市",
+  "equipment": "FT-991A",
+  "antenna": "八木天线",
+  "qth": "济南历下",
   "password": "newpassword123"
 }
 ```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
   "user": {
     "id": "uuid",
-    "username": "BG4ABC",
+    "username": "bi4k",
     "name": "张三",
-    "equipment": "IC-9700",
-    "antenna": "DP-2000",
-    "qth": "北京市",
-    "role": "user"
+    "equipment": "FT-991A",
+    "antenna": "八木天线",
+    "qth": "济南历下"
   }
 }
 ```
-
-**说明**: `password` 字段为可选，不提供则不修改密码。
 
 ### 删除用户
 
-**端点**: `DELETE /api/users/:id`
+```http
+DELETE /api/users/:id
+```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
-  "message": "用户已删除"
+  "message": "用户删除成功"
 }
 ```
 
-## 会话管理
+### 获取用户选项
 
-### 创建会话
-
-**端点**: `POST /api/sessions`
-
-**请求体**:
-```json
-{
-  "controllerId": "uuid",
-  "controllerName": "张三",
-  "controllerEquipment": "IC-7300",
-  "controllerAntenna": "GP-3",
-  "controllerQth": "济南市",
-  "sessionTime": "2024-01-01T08:00:00Z"
-}
+```http
+GET /api/users/options
 ```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
-  "session": {
-    "id": "session-uuid",
-    "controllerId": "uuid",
-    "controllerName": "张三",
-    "controllerEquipment": "IC-7300",
-    "controllerAntenna": "GP-3",
-    "controllerQth": "济南市",
-    "sessionTime": "2024-01-01T08:00:00Z",
-    "createdAt": "2024-01-01T00:00:00Z"
-  }
-}
-```
-
-### 获取会话记录
-
-**端点**: `GET /api/sessions/:sessionId/records`
-
-**响应** (200):
-```json
-{
-  "records": [
+  "users": [
     {
-      "id": "record-uuid",
-      "sessionId": "session-uuid",
-      "callsign": "BI4K",
-      "qth": "青岛市",
-      "equipment": "FT-897",
-      "antenna": "SL-17",
-      "power": "100W",
-      "signal": "59",
-      "report": null,
-      "remarks": null,
-      "createdAt": "2024-01-01T08:15:00Z"
+      "id": "uuid",
+      "username": "bi4k",
+      "name": "张三"
     }
   ]
 }
 ```
 
-### 添加记录并同步参与人员
+---
 
-**端点**: `POST /api/sessions/:sessionId/records/with-participant`
+## 会话管理
 
-**请求体**:
+### 获取会话列表
+
+```http
+GET /api/sessions
+```
+
+**查询参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| controllerId | string | 否 | 按主控ID过滤 |
+
+**响应：**
+
+```json
+{
+  "sessions": [
+    {
+      "id": "uuid",
+      "controllerId": "uuid",
+      "controllerName": "张三",
+      "controllerEquipment": "FT-991A",
+      "controllerAntenna": "八木天线",
+      "controllerQth": "济南历下",
+      "sessionTime": "2024-01-01T19:00:00Z",
+      "createdAt": "2024-01-01T19:00:00Z"
+    }
+  ]
+}
+```
+
+### 创建会话
+
+```http
+POST /api/sessions
+```
+
+**请求体：**
+
+```json
+{
+  "controllerId": "uuid",
+  "controllerName": "张三",
+  "controllerEquipment": "FT-991A",
+  "controllerAntenna": "八木天线",
+  "controllerQth": "济南历下",
+  "sessionTime": "2024-01-01T19:00:00Z"
+}
+```
+
+**响应：**
+
+```json
+{
+  "session": {
+    "id": "uuid",
+    "controllerId": "uuid",
+    "controllerName": "张三",
+    "controllerEquipment": "FT-991A",
+    "controllerAntenna": "八木天线",
+    "controllerQth": "济南历下",
+    "sessionTime": "2024-01-01T19:00:00Z"
+  }
+}
+```
+
+### 导出会话记录为Excel
+
+```http
+GET /api/sessions/:sessionId/export
+```
+
+**响应：**
+
+- Content-Type: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- 返回Excel文件流
+
+---
+
+## 记录管理
+
+### 获取会话的所有记录
+
+```http
+GET /api/sessions/:sessionId/records
+```
+
+**响应：**
+
+```json
+{
+  "records": [
+    {
+      "id": "uuid",
+      "sessionId": "uuid",
+      "callsign": "BI4K",
+      "qth": "济南",
+      "equipment": "FT-991A",
+      "antenna": "GP天线",
+      "power": "100W",
+      "signal": "59",
+      "report": "QSL",
+      "remarks": "信号很好",
+      "createdAt": "2024-01-01T19:05:00Z"
+    }
+  ]
+}
+```
+
+### 添加记录（同步到参与人员库）
+
+```http
+POST /api/sessions/:sessionId/records/with-participant
+```
+
+**请求体：**
+
 ```json
 {
   "callsign": "BI4K",
-  "qth": "青岛市",
-  "equipment": "FT-897",
-  "antenna": "SL-17",
+  "qth": "济南",
+  "equipment": "FT-991A",
+  "antenna": "GP天线",
   "power": "100W",
   "signal": "59",
-  "report": null,
-  "remarks": null
+  "report": "QSL",
+  "remarks": "信号很好"
 }
 ```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
   "record": {
-    "id": "record-uuid",
+    "id": "uuid",
+    "sessionId": "uuid",
     "callsign": "BI4K",
-    "qth": "青岛市",
-    "equipment": "FT-897",
-    "antenna": "SL-17",
+    "qth": "济南",
+    "equipment": "FT-991A",
+    "antenna": "GP天线",
     "power": "100W",
     "signal": "59",
-    "createdAt": "2024-01-01T08:15:00Z"
+    "report": "QSL",
+    "remarks": "信号很好",
+    "createdAt": "2024-01-01T19:05:00Z"
   },
-  "updated": true
+  "updated": false
 }
 ```
 
-**说明**:
-- 如果参与人员库中存在该呼号，则更新信息
-- 如果不存在，则创建新的参与人员记录
-- `updated` 字段表示是否更新了现有记录
+**说明：**
+- `updated`字段表示参与人员库是否已存在并更新
 
 ### 更新记录
 
-**端点**: `PUT /api/sessions/:sessionId/records/:recordId`
+```http
+PUT /api/sessions/:sessionId/records/:recordId
+```
 
-**请求体**:
+**请求体：**
+
 ```json
 {
   "callsign": "BI4K",
-  "qth": "青岛市",
-  "equipment": "FT-897D",
-  "antenna": "SL-17",
-  "power": "50W",
-  "signal": "59+20",
-  "report": "QTH 青岛市南区",
-  "remarks": "信号良好"
+  "qth": "济南",
+  "equipment": "FT-991A",
+  "antenna": "GP天线",
+  "power": "100W",
+  "signal": "59",
+  "report": "QSL",
+  "remarks": "信号很好"
 }
 ```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
   "record": {
-    "id": "record-uuid",
+    "id": "uuid",
+    "sessionId": "uuid",
     "callsign": "BI4K",
-    "qth": "青岛市",
-    "equipment": "FT-897D",
-    "antenna": "SL-17",
-    "power": "50W",
-    "signal": "59+20",
-    "report": "QTH 青岛市南区",
-    "remarks": "信号良好",
-    "createdAt": "2024-01-01T08:15:00Z"
+    "qth": "济南",
+    "equipment": "FT-991A",
+    "antenna": "GP天线",
+    "power": "100W",
+    "signal": "59",
+    "report": "QSL",
+    "remarks": "信号很好",
+    "createdAt": "2024-01-01T19:05:00Z"
   }
 }
 ```
 
 ### 删除记录
 
-**端点**: `DELETE /api/sessions/:sessionId/records/:recordId`
+```http
+DELETE /api/sessions/:sessionId/records/:recordId
+```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
-  "message": "记录已删除"
+  "message": "记录删除成功"
 }
 ```
 
-### 导出 Excel
+### 搜索历史记录字段值
 
-**端点**: `GET /api/sessions/:sessionId/export`
+```http
+GET /api/records/search?field=<field>&query=<query>
+```
 
-**响应**: Excel 文件 (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet)
+**查询参数：**
 
-**Content-Disposition**: `attachment; filename="台网日志_2024-01-01.xlsx"`
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| field | string | 是 | 字段名称（qth/equipment/antenna/power/signal/report/remarks） |
+| query | string | 是 | 搜索关键词 |
+
+**响应：**
+
+```json
+{
+  "values": [
+    "济南",
+    "青岛",
+    "烟台"
+  ]
+}
+```
+
+### 获取呼号统计
+
+```http
+GET /api/records/callsign-stats
+```
+
+**响应：**
+
+```json
+{
+  "stats": [
+    {
+      "callsign": "BI4K",
+      "count": 10
+    },
+    {
+      "callsign": "BI4L",
+      "count": 8
+    }
+  ]
+}
+```
+
+---
 
 ## 参与人员管理
 
-### 获取所有参与人员
+### 获取参与人员列表
 
-**端点**: `GET /api/participants`
+```http
+GET /api/participants
+```
 
-**查询参数**:
-- `page`: 页码（可选，默认 1）
-- `limit`: 每页数量（可选，默认 50）
+**响应：**
 
-**响应** (200):
 ```json
 {
   "participants": [
     {
       "id": "uuid",
       "callsign": "BI4K",
-      "name": "李四",
-      "qth": "青岛市",
-      "equipment": "FT-897",
-      "antenna": "SL-17",
+      "name": "张三",
+      "qth": "济南",
+      "equipment": "FT-991A",
+      "antenna": "GP天线",
       "power": "100W",
       "signal": "59",
-      "report": null,
-      "remarks": null,
-      "createdAt": "2024-01-01T00:00:00Z",
-      "updatedAt": "2024-01-01T08:15:00Z"
+      "report": "QSL",
+      "remarks": "信号很好",
+      "createdAt": "2024-01-01T00:00:00Z"
     }
   ]
 }
@@ -374,143 +523,158 @@
 
 ### 搜索参与人员
 
-**端点**: `GET /api/participants/search`
+```http
+GET /api/participants/search?callsign=<callsign>
+```
 
-**查询参数**:
-- `callsign`: 呼号（必填）
+**查询参数：**
 
-**响应** (200):
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| callsign | string | 是 | 呼号（支持模糊搜索） |
+
+**响应：**
+
 ```json
 {
   "participants": [
     {
       "id": "uuid",
       "callsign": "BI4K",
-      "name": "李四",
-      "qth": "青岛市",
-      "equipment": "FT-897",
-      "createdAt": "2024-01-01T00:00:00Z"
-    }
-  ]
-}
-```
-
-### 查询参与记录
-
-**端点**: `GET /api/participants/records`
-
-**查询参数**:
-- `callsign`: 呼号（必填）
-
-**响应** (200):
-```json
-{
-  "records": [
-    {
-      "id": "record-uuid",
-      "sessionId": "session-uuid",
-      "callsign": "BI4K",
-      "qth": "青岛市",
-      "equipment": "FT-897",
-      "antenna": "SL-17",
+      "name": "张三",
+      "qth": "济南",
+      "equipment": "FT-991A",
+      "antenna": "GP天线",
       "power": "100W",
-      "signal": "59",
-      "createdAt": "2024-01-01T08:15:00Z"
+      "signal": "59"
     }
   ]
 }
 ```
 
-### 创建或更新参与人员
+### 更新或插入参与人员
 
-**端点**: `POST /api/participants/upsert`
+```http
+POST /api/participants/upsert
+```
 
-**请求体**:
+**请求体：**
+
 ```json
 {
   "callsign": "BI4K",
-  "name": "李四",
-  "qth": "青岛市",
-  "equipment": "FT-897",
-  "antenna": "SL-17",
+  "name": "张三",
+  "qth": "济南",
+  "equipment": "FT-991A",
+  "antenna": "GP天线",
   "power": "100W",
   "signal": "59",
-  "report": null,
-  "remarks": null
+  "report": "QSL",
+  "remarks": "信号很好"
 }
 ```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
   "participant": {
     "id": "uuid",
     "callsign": "BI4K",
-    "name": "李四",
-    "qth": "青岛市",
-    "createdAt": "2024-01-01T00:00:00Z",
-    "updatedAt": "2024-01-01T08:15:00Z"
-  }
+    "name": "张三",
+    "qth": "济南",
+    "equipment": "FT-991A"
+  },
+  "updated": false
 }
 ```
 
-## 历史记录搜索
+**说明：**
+- 如果呼号已存在，则更新记录，`updated`为true
+- 如果呼号不存在，则创建新记录，`updated`为false
 
-### 搜索记录字段值
+### 获取参与人员选项
 
-**端点**: `GET /api/records/search`
+```http
+GET /api/participants/options
+```
 
-**查询参数**:
-- `field`: 字段名（必填）- 可选值：`qth`, `equipment`, `antenna`, `power`, `signal`, `report`, `remarks`
-- `query`: 搜索关键词（必填）
+**响应：**
 
-**响应** (200):
 ```json
 {
-  "values": [
-    "青岛市",
-    "青岛市南区",
-    "青岛市市北区"
+  "participants": [
+    {
+      "id": "uuid",
+      "callsign": "BI4K",
+      "name": "张三"
+    }
   ]
 }
 ```
 
-## 管理统计
+### 删除参与人员
 
-### 获取统计信息
+```http
+DELETE /api/participants/:id
+```
 
-**端点**: `GET /api/admin/stats`
+**响应：**
 
-**查询参数**:
-- `startDate`: 开始日期（可选，格式：YYYY-MM-DD）
-- `endDate`: 结束日期（可选，格式：YYYY-MM-DD）
-- `controllerId`: 主控人员 ID（可选，用于权限控制）
+```json
+{
+  "message": "参与人员删除成功"
+}
+```
 
-**响应** (200):
+---
+
+## 统计与分析
+
+### 获取台网统计
+
+```http
+GET /api/admin/stats
+```
+
+**查询参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| startDate | string | 否 | 开始日期（YYYY-MM-DD） |
+| endDate | string | 否 | 结束日期（YYYY-MM-DD） |
+| controllerId | string | 否 | 主控ID（非管理员仅能查询自己） |
+
+**响应：**
+
 ```json
 {
   "stats": {
-    "totalSessions": 10,
-    "totalRecords": 150,
-    "totalUniqueCallsigns": 45
+    "totalSessions": 5,
+    "totalRecords": 50,
+    "totalUniqueCallsigns": 20
   },
   "sessions": [
     {
-      "id": "session-uuid",
+      "id": "uuid",
       "controllerId": "uuid",
       "controllerName": "张三",
-      "controllerEquipment": "IC-7300",
-      "controllerAntenna": "GP-3",
-      "controllerQth": "济南市",
-      "sessionTime": "2024-01-01T08:00:00Z",
-      "recordCount": 15,
-      "createdAt": "2024-01-01T00:00:00Z"
+      "controllerEquipment": "FT-991A",
+      "controllerAntenna": "八木天线",
+      "controllerQth": "济南历下",
+      "sessionTime": "2024-01-01T19:00:00Z",
+      "createdAt": "2024-01-01T19:00:00Z",
+      "recordCount": 10
     }
   ],
   "callsignStats": [
     {
       "callsign": "BI4K",
-      "count": 5
+      "count": 10
+    },
+    {
+      "callsign": "BI4L",
+      "count": 8
     }
   ]
 }
@@ -518,193 +682,222 @@
 
 ### 获取会话详情
 
-**端点**: `GET /api/admin/stats/session/:id`
+```http
+GET /api/admin/stats/session/:id
+```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
   "session": {
-    "id": "session-uuid",
+    "id": "uuid",
     "controllerId": "uuid",
     "controllerName": "张三",
-    "controllerEquipment": "IC-7300",
-    "controllerAntenna": "GP-3",
-    "controllerQth": "济南市",
-    "sessionTime": "2024-01-01T08:00:00Z",
-    "createdAt": "2024-01-01T00:00:00Z"
+    "controllerEquipment": "FT-991A",
+    "controllerAntenna": "八木天线",
+    "controllerQth": "济南历下",
+    "sessionTime": "2024-01-01T19:00:00Z",
+    "createdAt": "2024-01-01T19:00:00Z"
   },
   "records": [
     {
-      "id": "record-uuid",
-      "sessionId": "session-uuid",
+      "id": "uuid",
+      "sessionId": "uuid",
       "callsign": "BI4K",
-      "qth": "青岛市",
-      "equipment": "FT-897",
-      "antenna": "SL-17",
+      "qth": "济南",
+      "equipment": "FT-991A",
+      "antenna": "GP天线",
       "power": "100W",
       "signal": "59",
-      "report": null,
-      "remarks": null,
-      "createdAt": "2024-01-01T08:15:00Z"
+      "report": "QSL",
+      "remarks": "信号很好",
+      "createdAt": "2024-01-01T19:05:00Z"
     }
   ]
 }
 ```
 
-**错误响应** (404):
+---
+
+## 系统管理
+
+### 初始化系统
+
+```http
+POST /api/init
+```
+
+**说明：**
+- 创建默认管理员账号（ADMIN/ADMIN123）
+- 初始化数据库表（如果不存在）
+
+**响应：**
+
 ```json
 {
-  "error": "会话不存在"
+  "message": "系统初始化成功"
 }
 ```
 
-## 证书生成
+### 重置管理员密码
 
-### 生成证书
+```http
+POST /api/reset-admin
+```
 
-**端点**: `POST /api/certificates/generate`
+**请求体：**
 
-**请求体**:
 ```json
 {
-  "callsign": "BI4K",
-  "name": "李四",
-  "participations": [
-    {
-      "sessionDate": "2024-01-01",
-      "sessionController": "张三"
-    },
-    {
-      "sessionDate": "2024-01-08",
-      "sessionController": "王五"
-    }
-  ],
-  "issueDate": "2024-01-15",
-  "certificateNo": "CERT-2024-001"
+  "newPassword": "newadmin123"
 }
 ```
 
-**响应** (200):
+**响应：**
+
 ```json
 {
-  "certificate": {
-    "id": "certificate-uuid",
-    "callsign": "BI4K",
-    "name": "李四",
-    "participations": 2,
-    "issueDate": "2024-01-15",
-    "certificateNo": "CERT-2024-001",
-    "fileUrl": "https://s3.amazonaws.com/bucket/certificate.pdf"
+  "message": "管理员密码重置成功"
+}
+```
+
+---
+
+## 调试接口
+
+> 注意：调试接口仅供开发使用，生产环境应禁用。
+
+### 检查登录状态
+
+```http
+GET /api/debug/login-check
+```
+
+**响应：**
+
+```json
+{
+  "loggedIn": true,
+  "user": {
+    "id": "uuid",
+    "username": "admin",
+    "name": "管理员",
+    "role": "admin"
   }
 }
 ```
 
-## 系统初始化
+### 获取所有用户（调试用）
 
-### 初始化管理员
+```http
+GET /api/debug/users
+```
 
-**端点**: `POST /api/init`
+**响应：**
 
-**响应** (200):
 ```json
 {
-  "message": "管理员已初始化"
+  "users": [...]
 }
 ```
 
-**说明**:
-- 检查是否存在管理员账户
-- 如果不存在，创建默认管理员（ADMIN/ADMIN123）
-- 可以多次调用，不会重复创建
+---
 
-## 错误码
+## 错误代码
 
-| 状态码 | 说明 |
-|--------|------|
-| 200 | 成功 |
-| 400 | 请求参数错误 |
-| 401 | 未授权（认证失败） |
-| 403 | 禁止访问（权限不足） |
-| 404 | 资源不存在 |
-| 500 | 服务器内部错误 |
+| 错误代码 | HTTP状态码 | 说明 |
+|----------|-----------|------|
+| INVALID_CREDENTIALS | 401 | 用户名或密码错误 |
+| USER_NOT_FOUND | 404 | 用户不存在 |
+| SESSION_NOT_FOUND | 404 | 会话不存在 |
+| RECORD_NOT_FOUND | 404 | 记录不存在 |
+| PARTICIPANT_NOT_FOUND | 404 | 参与人员不存在 |
+| DATABASE_ERROR | 500 | 数据库错误 |
+| INTERNAL_ERROR | 500 | 服务器内部错误 |
 
 ## 数据模型
 
 ### User（用户）
+
 ```typescript
-interface User {
-  id: string
-  username: string
-  name: string
-  equipment?: string
-  antenna?: string
-  qth?: string
-  role: 'admin' | 'user'
-  createdAt: string
-  updatedAt?: string
+{
+  id: string;              // UUID
+  username: string;        // 用户名（唯一）
+  password: string;        // 密码（加密）
+  name: string;            // 姓名
+  equipment: string | null; // 设备
+  antenna: string | null;  // 天线
+  qth: string | null;      // QTH（位置）
+  role: string;           // 角色（admin/user）
+  createdAt: string;       // 创建时间
+  updatedAt: string | null; // 更新时间
 }
 ```
 
 ### LogSession（台网会话）
+
 ```typescript
-interface LogSession {
-  id: string
-  controllerId: string
-  controllerName: string
-  controllerEquipment?: string
-  controllerAntenna?: string
-  controllerQth?: string
-  sessionTime: string
-  createdAt: string
+{
+  id: string;                    // UUID
+  controllerId: string;          // 主控用户ID
+  controllerName: string;        // 主控姓名
+  controllerEquipment: string | null; // 主控设备
+  controllerAntenna: string | null;   // 主控天线
+  controllerQth: string | null;      // 主控QTH
+  sessionTime: string;          // 会话时间
+  createdAt: string;            // 创建时间
 }
 ```
 
 ### LogRecord（台网记录）
+
 ```typescript
-interface LogRecord {
-  id: string
-  sessionId: string
-  callsign: string
-  qth?: string
-  equipment?: string
-  antenna?: string
-  power?: string
-  signal?: string
-  report?: string
-  remarks?: string
-  createdAt: string
+{
+  id: string;               // UUID
+  sessionId: string;       // 会话ID
+  callsign: string;        // 呼号
+  qth: string | null;      // QTH
+  equipment: string | null; // 设备
+  antenna: string | null;   // 天线
+  power: string | null;    // 功率
+  signal: string | null;   // 信号报告
+  report: string | null;   // 其他报告
+  remarks: string | null;  // 备注
+  createdAt: string;       // 创建时间
 }
 ```
 
 ### Participant（参与人员）
+
 ```typescript
-interface Participant {
-  id: string
-  callsign: string
-  name?: string
-  qth?: string
-  equipment?: string
-  antenna?: string
-  power?: string
-  signal?: string
-  report?: string
-  remarks?: string
-  createdAt: string
-  updatedAt?: string
+{
+  id: string;               // UUID
+  callsign: string;        // 呼号（唯一）
+  name: string | null;     // 姓名
+  qth: string | null;      // QTH
+  equipment: string | null; // 设备
+  antenna: string | null;   // 天线
+  power: string | null;    // 功率
+  signal: string | null;   // 信号报告
+  report: string | null;   // 其他报告
+  remarks: string | null;  // 备注
+  createdAt: string;       // 创建时间
+  updatedAt: string | null; // 更新时间
 }
 ```
 
 ## 使用示例
 
-### 使用 curl
+### 使用curl
 
 ```bash
 # 登录
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"ADMIN","password":"ADMIN123"}'
+  -d '{"username":"admin","password":"admin123"}'
 
-# 获取所有用户
+# 获取用户列表
 curl http://localhost:5000/api/users
 
 # 创建会话
@@ -713,78 +906,62 @@ curl -X POST http://localhost:5000/api/sessions \
   -d '{
     "controllerId": "uuid",
     "controllerName": "张三",
-    "sessionTime": "2024-01-01T08:00:00Z"
+    "controllerEquipment": "FT-991A",
+    "controllerAntenna": "八木天线",
+    "controllerQth": "济南历下",
+    "sessionTime": "2024-01-01T19:00:00Z"
   }'
 
 # 添加记录
-curl -X POST http://localhost:5000/api/sessions/session-uuid/records/with-participant \
+curl -X POST http://localhost:5000/api/sessions/uuid/records/with-participant \
   -H "Content-Type: application/json" \
   -d '{
     "callsign": "BI4K",
-    "qth": "青岛市",
+    "qth": "济南",
+    "equipment": "FT-991A",
+    "antenna": "GP天线",
     "power": "100W",
-    "signal": "59"
+    "signal": "59",
+    "report": "QSL",
+    "remarks": "信号很好"
   }'
 ```
 
-### 使用 JavaScript (fetch)
+### 使用JavaScript
 
 ```javascript
 // 登录
-const loginResponse = await fetch('/api/auth/login', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    username: 'ADMIN',
-    password: 'ADMIN123'
-  })
-})
-const { user } = await loginResponse.json()
-localStorage.setItem('user', JSON.stringify(user))
+const login = async () => {
+  const response = await fetch('http://localhost:5000/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+  });
+  const data = await response.json();
+  return data.user;
+};
 
 // 创建会话
-const sessionResponse = await fetch('/api/sessions', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    controllerId: user.id,
-    controllerName: user.name,
-    sessionTime: new Date().toISOString()
-  })
-})
-const { session } = await sessionResponse.json()
+const createSession = async (sessionData) => {
+  const response = await fetch('http://localhost:5000/api/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(sessionData)
+  });
+  return await response.json();
+};
 
 // 添加记录
-const recordResponse = await fetch(`/api/sessions/${session.id}/records/with-participant`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    callsign: 'BI4K',
-    qth: '青岛市',
-    power: '100W',
-    signal: '59'
-  })
-})
+const addRecord = async (sessionId, recordData) => {
+  const response = await fetch(`http://localhost:5000/api/sessions/${sessionId}/records/with-participant`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(recordData)
+  });
+  return await response.json();
+};
 ```
 
-## 注意事项
+---
 
-1. **认证**: 大部分 API 需要先登录，用户信息存储在 localStorage 中
-2. **权限**: 某些 API（如用户管理）仅限管理员访问
-3. **时区**: 所有时间戳使用 UTC 时区
-4. **字符集**: 呼号等字段不区分大小写（存储时自动转换为大写）
-5. **数据验证**: 所有输入数据都会进行验证和清理
-
-## 更新日志
-
-### v1.0.0 (2024-01-01)
-- 初始版本
-- 实现基础的用户、会话、记录管理功能
-- 支持 Excel 导出
-- 实现权限控制（管理员/普通主控）
+济南黄河业余无线电中继台 © 2024

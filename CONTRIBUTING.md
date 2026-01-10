@@ -1,210 +1,277 @@
 # 贡献指南
 
-感谢您对济南黄河业余无线电台网主控日志系统项目的关注！本指南将帮助您了解如何为项目做出贡献。
+感谢您对济南黄河业余无线电台网主控日志系统的关注！我们欢迎所有形式的贡献。
 
 ## 目录
+
 - [行为准则](#行为准则)
 - [如何贡献](#如何贡献)
-- [开发环境](#开发环境)
+- [开发流程](#开发流程)
 - [代码规范](#代码规范)
-- [提交流程](#提交流程)
+- [提交规范](#提交规范)
+- [测试](#测试)
 - [问题反馈](#问题反馈)
+- [功能请求](#功能请求)
 
 ## 行为准则
 
 - 尊重所有贡献者
-- 保持友好和建设性的讨论
-- 接受并建设性地批评
-- 关注对社区最有利的事情
+- 保持礼貌和专业的沟通
+- 欢迎新贡献者并帮助他们融入社区
+- 建设性地提供建议和反馈
 
 ## 如何贡献
 
-### 报告 Bug
+### 报告问题
 
-1. 搜索现有的 [Issues](../../issues)
-2. 创建新的 Issue，包含：
+如果您发现了bug或有功能建议：
+
+1. 先搜索现有的Issues，确认问题未被报告
+2. 创建新的Issue，提供详细信息：
    - 清晰的标题
-   - 详细的问题描述
+   - 问题描述
    - 复现步骤
-   - 期望行为
+   - 预期行为
    - 实际行为
-   - 截图或日志（如果有）
-   - 环境信息（OS、Node.js 版本、浏览器等）
+   - 截图（如有）
+   - 环境信息（操作系统、浏览器、Node.js版本等）
 
-### 提出功能请求
+### 修复问题
 
-1. 搜索现有的 [Issues](../../issues) 和 [Pull Requests](../../pulls)
-2. 创建新的 Issue，包含：
-   - 清晰的标题
-   - 详细的功能描述
-   - 使用场景
-   - 期望的解决方案
-   - 替代方案（如果有）
+1. Fork项目仓库
+2. 创建特性分支：`git checkout -b fix/issue-xxx`
+3. 进行必要的修改
+4. 添加测试（如有）
+5. 提交更改
+6. 推送到您的fork
+7. 创建Pull Request
 
-### 提交代码
+### 添加新功能
 
-1. Fork 项目仓库
-2. 创建功能分支：`git checkout -b feature/your-feature-name`
-3. 提交更改：`git commit -m 'feat: add some feature'`
-4. 推送到分支：`git push origin feature/your-feature-name`
-5. 创建 Pull Request
+1. 先创建一个Issue讨论您的想法
+2. 等待维护者确认
+3. 创建特性分支：`git checkout -b feature/feature-name`
+4. 开发新功能
+5. 添加测试
+6. 更新文档
+7. 提交Pull Request
 
-## 开发环境
+### 改进文档
 
-### 设置开发环境
+1. Fork项目仓库
+2. 创建分支：`git checkout -b docs/update-docs`
+3. 修改文档
+4. 提交更改
+5. 创建Pull Request
+
+## 开发流程
+
+### 1. Fork和克隆
 
 ```bash
-# 1. 克隆仓库
-git clone <your-fork-url>
-cd projects
+# Fork项目到您的GitHub账号
+# 然后克隆您的fork
+git clone https://github.com/your-username/radio-log-system.git
+cd radio-log-system
+```
 
-# 2. 安装依赖
+### 2. 设置上游仓库
+
+```bash
+git remote add upstream https://github.com/original-owner/radio-log-system.git
+```
+
+### 3. 安装依赖
+
+```bash
 pnpm install
-
-# 3. 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，填入您的配置
-
-# 4. 启动开发服务器
-pnpm dev
 ```
 
-### 项目结构
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API 路由
-│   ├── admin/             # 管理页面
-│   ├── query/             # 查询页面
-│   ├── login/             # 登录页面
-│   └── page.tsx           # 主页面
-├── components/            # 可复用组件（如有）
-├── storage/               # 数据层
-│   └── database/          # 数据库管理
-└── types/                # TypeScript 类型定义（如有）
-```
-
-### 调试
+### 4. 创建分支
 
 ```bash
-# 运行开发模式
+# 修复bug
+git checkout -b fix/issue-number
+
+# 新功能
+git checkout -b feature/feature-name
+
+# 文档更新
+git checkout -b docs/update-docs
+```
+
+### 5. 开发和测试
+
+```bash
+# 运行开发服务器
 pnpm dev
 
-# 类型检查
+# 运行类型检查
 npx tsc --noEmit
 
-# 构建检查
+# 构建项目
 pnpm build
-
-# Lint 检查
-pnpm lint
 ```
+
+### 6. 提交更改
+
+```bash
+git add .
+git commit -m "feat: add new feature"
+```
+
+### 7. 推送到fork
+
+```bash
+git push origin feature/feature-name
+```
+
+### 8. 创建Pull Request
+
+1. 访问GitHub上的fork仓库
+2. 点击"New Pull Request"
+3. 填写PR模板
+4. 等待代码审查
 
 ## 代码规范
 
-### TypeScript
+### TypeScript/JavaScript
 
-- 使用严格的 TypeScript 模式
-- 为所有函数参数和返回值添加类型注解
-- 避免使用 `any` 类型
-- 使用接口（Interface）定义对象结构
+- 使用TypeScript进行类型检查
+- 使用ESLint进行代码检查
+- 遵循函数式编程原则
+- 避免使用`any`类型
+- 使用const和let，避免使用var
+- 使用箭头函数处理回调
+- 使用模板字符串
 
-示例：
+#### 示例
+
 ```typescript
-// ✅ 推荐
-interface User {
-  id: string
-  name: string
-  role: 'admin' | 'user'
-}
+// ✅ 好的做法
+const fetchData = async (userId: string): Promise<User> => {
+  try {
+    const response = await fetch(`/api/users/${userId}`);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch user:', error);
+    throw error;
+  }
+};
 
-function getUser(id: string): Promise<User> {
-  return userManager.getUserById(id)
-}
-
-// ❌ 不推荐
-function getUser(id: any): any {
-  return userManager.getUserById(id)
+// ❌ 不好的做法
+function fetchData(userId) {
+  return fetch('/api/users/' + userId).then(r => r.json());
 }
 ```
 
-### React 组件
+### React/Next.js
 
-- 使用函数式组件
-- 使用 Hooks（useState、useEffect 等）
-- Props 使用 TypeScript 接口定义
-- 组件名称使用 PascalCase
+- 使用函数组件和Hooks
+- 遵循React Hooks规则
+- 组件名使用PascalCase
+- 文件名使用kebab-case或camelCase
+- 使用TypeScript定义Props接口
 
-示例：
+#### 示例
+
 ```typescript
-// ✅ 推荐
-interface Props {
-  title: string
-  onSubmit: () => void
+// ✅ 好的做法
+interface UserCardProps {
+  name: string;
+  email: string;
+  onUpdate: () => void;
 }
 
-export function Button({ title, onSubmit }: Props) {
-  return <button onClick={onSubmit}>{title}</button>
-}
+const UserCard: React.FC<UserCardProps> = ({ name, email, onUpdate }) => {
+  return (
+    <div className="user-card">
+      <h2>{name}</h2>
+      <p>{email}</p>
+      <button onClick={onUpdate}>Update</button>
+    </div>
+  );
+};
 
-// ❌ 不推荐
-function button(props) {
-  return <button>{props.title}</button>
+// ❌ 不好的做法
+function UserCard(props) {
+  return (
+    <div>
+      <h2>{props.name}</h2>
+    </div>
+  )
 }
 ```
 
-### 样式
+### 样式（Tailwind CSS）
 
-- 使用 Tailwind CSS 类名
-- 避免内联样式（除特殊情况）
-- 保持一致的间距和颜色方案
+- 优先使用Tailwind CSS工具类
+- 避免内联样式
+- 响应式设计使用断点前缀（sm:, md:, lg:）
+- 使用语义化的颜色
 
-示例：
-```tsx
-// ✅ 推荐
-<div className="flex items-center gap-4 p-4 bg-white rounded-lg shadow">
-  ...
+#### 示例
+
+```jsx
+// ✅ 好的做法
+<div className="flex flex-col gap-4 p-6 bg-white rounded-lg shadow">
+  <h2 className="text-xl font-semibold text-gray-900">标题</h2>
 </div>
 
-// ❌ 不推荐
-<div style={{ display: 'flex', padding: '16px', backgroundColor: 'white' }}>
-  ...
+// ❌ 不好的做法
+<div style={{ display: 'flex', padding: '24px', backgroundColor: 'white' }}>
+  <h2 style={{ fontSize: '20px', fontWeight: 'bold' }}>标题</h2>
 </div>
 ```
 
-### 命名规范
+### API路由
 
-- **文件名**：kebab-case (e.g., `user-manager.ts`)
-- **组件名**：PascalCase (e.g., `UserProfile.tsx`)
-- **函数名**：camelCase (e.g., `getUserById`)
-- **常量名**：UPPER_SNAKE_CASE (e.g., `MAX_RETRY_COUNT`)
-- **接口名**：PascalCase (e.g., `User`, `Session`)
+- 使用Next.js App Router的API路由
+- RESTful API设计
+- 正确的HTTP状态码
+- JSON格式的请求和响应
+- 错误处理和日志记录
 
-### 注释规范
+#### 示例
 
-- 为复杂逻辑添加注释
-- JSDoc 格式的函数注释（可选）
-
-示例：
 ```typescript
-/**
- * 根据用户 ID 获取用户信息
- * @param id - 用户 ID
- * @returns 用户信息，如果不存在则返回 null
- */
-async function getUserById(id: string): Promise<User | null> {
-  return await db.query.users.findFirst({
-    where: eq(users.id, id)
-  })
+// ✅ 好的做法
+import { NextRequest, NextResponse } from 'next/server';
+import { logManager } from '@/storage/database';
+
+export async function GET(request: NextRequest) {
+  try {
+    const users = await logManager.getUsers();
+    return NextResponse.json({ users });
+  } catch (error) {
+    console.error('Failed to fetch users:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch users' },
+      { status: 500 }
+    );
+  }
+}
+
+// ❌ 不好的做法
+export async function GET() {
+  const users = await db.query('SELECT * FROM users');
+  return Response.json(users);
 }
 ```
 
-## Git 提交规范
+### 数据库
 
-使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范：
+- 使用Drizzle ORM
+- 使用类型定义
+- 事务处理
+- SQL注入防护
 
-### 提交信息格式
+## 提交规范
+
+我们使用 [Conventional Commits](https://www.conventionalcommits.org/) 规范。
+
+### 格式
 
 ```
 <type>(<scope>): <subject>
@@ -217,233 +284,199 @@ async function getUserById(id: string): Promise<User | null> {
 ### Type 类型
 
 - `feat`: 新功能
-- `fix`: 修复 Bug
+- `fix`: 修复bug
 - `docs`: 文档更新
-- `style`: 代码格式（不影响代码运行）
-- `refactor`: 重构（既不是新增功能，也不是修复 Bug）
+- `style`: 代码格式调整（不影响功能）
+- `refactor`: 重构代码
 - `perf`: 性能优化
 - `test`: 测试相关
-- `chore`: 构建/工具配置
-- `ci`: CI/CD 相关
+- `chore`: 构建/工具相关
+
+### Scope 范围（可选）
+
+- `api`: API路由
+- `ui`: 用户界面组件
+- `db`: 数据库
+- `auth`: 认证相关
+- `deps`: 依赖更新
 
 ### 示例
 
 ```bash
-feat(api): add user authentication endpoint
-feat(frontend): add session history page
-fix(database): resolve connection pool issue
+# 新功能
+feat(auth): add remember me functionality
+
+# 修复bug
+fix(api): resolve database connection timeout
+
+# 文档更新
 docs(readme): update installation instructions
-style(ui): improve button hover effect
-refactor(auth): simplify login logic
-perf(images): optimize image loading
-test(api): add unit tests for user service
-chore(deps): update dependencies to latest version
+
+# 重构
+refactor(db): optimize query performance
+
+# 样式调整
+style(ui): improve button hover effects
 ```
-
-### Commit Message 最佳实践
-
-- ✅ 使用现在时态："add" 而不是 "added"
-- ✅ 首字母小写
-- ✅ 结尾不要句号
-- ✅ 简洁明了（不超过 50 字符）
-- ✅ 包含必要的说明（在 body 部分）
-
-示例：
-```bash
-# ✅ 推荐
-feat(auth): add OAuth2 support for Google login
-
-- Implement Google OAuth2 flow
-- Add user profile synchronization
-- Update login UI
-
-# ❌ 不推荐
-feat: add login
-Fixed some bugs.
-```
-
-## Pull Request 流程
-
-### 1. 创建分支
-
-```bash
-# 功能分支
-git checkout -b feature/your-feature-name
-
-# Bug 修复分支
-git checkout -b fix/bug-description
-
-# 文档更新分支
-git checkout -b docs/update-readme
-```
-
-### 2. 提交更改
-
-```bash
-# 添加文件
-git add .
-
-# 提交
-git commit -m 'feat: add your feature description'
-```
-
-### 3. 推送到远程
-
-```bash
-git push origin feature/your-feature-name
-```
-
-### 4. 创建 Pull Request
-
-1. 在 GitHub 上创建 Pull Request
-2. 填写 PR 模板（如果有）
-3. 描述更改内容
-4. 关联相关的 Issue
-5. 等待代码审查
-
-### PR 标题格式
-
-```
-<type>: <subject>
-```
-
-示例：
-```
-feat: Add session history page
-fix: Resolve database connection timeout
-docs: Update API documentation
-```
-
-### PR 描述模板
-
-```markdown
-## 更改描述
-简要描述此 PR 的更改内容。
-
-## 更改类型
-- [ ] 新功能 (feature)
-- [ ] Bug 修复 (bugfix)
-- [ ] 文档更新 (documentation)
-- [ ] 性能优化 (performance)
-- [ ] 代码重构 (refactor)
 
 ## 测试
-- [ ] 单元测试
-- [ ] 集成测试
-- [ ] 手动测试
 
-## 关联 Issue
-Closes #(issue number)
+### 运行类型检查
 
-## 截图/演示
-（如有 UI 更改，请提供截图或 GIF）
+```bash
+npx tsc --noEmit
+```
+
+### 构建检查
+
+```bash
+pnpm build
+```
+
+### 测试用户流程
+
+1. 启动开发服务器
+2. 访问 http://localhost:5000
+3. 测试主要功能：
+   - 登录/登出
+   - 创建台网会话
+   - 添加记录
+   - 智能联想
+   - 数据导出
+   - 查询功能
+   - 统计功能
+
+### 测试API
+
+使用curl测试API端点：
+
+```bash
+# 测试登录
+curl -X POST http://localhost:5000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# 测试获取用户列表
+curl http://localhost:5000/api/users
+```
+
+## Pull Request指南
+
+### PR标题
+
+使用清晰的描述性标题，遵循提交规范：
+
+```
+feat: add dark mode support
+fix: resolve session timeout issue
+docs: update API documentation
+```
+
+### PR描述模板
+
+```markdown
+## 变更类型
+- [ ] Bug修复
+- [ ] 新功能
+- [ ] 代码重构
+- [ ] 文档更新
+- [ ] 其他：_______
+
+## 变更说明
+简要描述本次PR的变更内容。
+
+## 相关Issue
+Closes #xxx
+
+## 变更截图
+如有UI变更，请提供截图。
+
+## 测试
+- [ ] 代码已通过类型检查
+- [ ] 功能已手动测试
+- [ ] 文档已更新（如需要）
 
 ## 检查清单
 - [ ] 代码遵循项目规范
-- [ ] 已进行类型检查 (npx tsc --noEmit)
-- [ ] 已通过 lint 检查
-- [ ] 添加了必要的测试
-- [ ] 更新了相关文档
+- [ ] 已添加必要的注释
+- [ ] 提交信息清晰明确
 ```
 
-## 代码审查
+### 审查反馈
 
-### 审查要点
-
-- 代码是否符合项目规范
-- 是否有潜在的性能问题
-- 是否有安全隐患
-- 测试是否充分
-- 文档是否需要更新
-
-### 审查流程
-
-1. 自动化检查（CI）
-2. 同行审查
-3. 修改反馈
-4. 批准合并
+1. 维护者会审查您的PR
+2. 可能会要求修改
+3. 及时响应评论和建议
+4. 修改后继续等待审查
 
 ## 问题反馈
 
-### 报告 Bug
+### 报告bug时请提供
 
-使用 Issue 模板报告 Bug：
+- 清晰的标题
+- 详细的描述
+- 复现步骤
+- 预期行为
+- 实际行为
+- 截图或录屏
+- 环境信息：
+  - 操作系统
+  - 浏览器版本
+  - Node.js版本
+  - PostgreSQL版本
 
-```markdown
-**Bug 描述**
-清晰简短地描述 Bug。
+### 功能请求时请提供
 
-**复现步骤**
-1. 访问 '...'
-2. 点击 '....'
-3. 滚动到 '....'
-4. 看到错误
+- 功能的用途和价值
+- 期望的功能描述
+- 使用场景
+- 可能的实现方案（如有）
 
-**期望行为**
-描述您期望发生什么。
+## 发布流程
 
-**截图**
-如果适用，添加截图来帮助解释问题。
+### 版本号规范
 
-**环境**
-- OS: [e.g. Ubuntu 20.04]
-- Node.js 版本: [e.g. v24.x.x]
-- 浏览器: [e.g. Chrome 120]
-- 数据库: [e.g. PostgreSQL 15]
-```
+遵循 [语义化版本](https://semver.org/)：
+- `MAJOR.MINOR.PATCH`
+- MAJOR：不兼容的API变更
+- MINOR：向下兼容的新功能
+- PATCH：向下兼容的bug修复
 
-### 功能请求
+### 发布步骤
 
-```markdown
-**问题描述**
-清晰简短地描述您想要的功能。
+1. 更新版本号（package.json）
+2. 更新CHANGELOG.md
+3. 创建发布标签
+4. 生成发布说明
+5. 部署到生产环境
 
-**解决方案**
-描述您想要的解决方案。
+## 社区
 
-**替代方案**
-描述您考虑过的任何替代解决方案。
+### 沟通渠道
 
-**附加信息**
-添加任何其他关于功能请求的上下文或截图。
-```
+- GitHub Issues：问题报告和功能请求
+- Pull Requests：代码贡献
+- Discussions：一般讨论
 
-## 项目规范总结
+### 认可贡献者
 
-### 技术栈
-- **框架**: Next.js 16 (App Router)
-- **UI**: React 19
-- **样式**: Tailwind CSS 4
-- **语言**: TypeScript 5
-- **数据库**: PostgreSQL
-- **ORM**: Drizzle ORM
+我们感谢所有贡献者，并在项目的README中列出贡献者。
 
-### 开发工具
-- **包管理器**: pnpm
-- **代码格式**: ESLint + Prettier (如配置)
-- **类型检查**: TypeScript
-- **版本控制**: Git
+## 许可证
 
-### 设计原则
-- 简洁优于复杂
-- 可读性优于简洁
-- 可维护性优先
-- 性能优化
-- 安全性优先
+通过贡献代码，您同意您的代码将在与项目相同的许可下发布。
 
 ## 获取帮助
 
 如果您有任何问题：
 
-1. 查看 [文档](README.md)
-2. 搜索现有的 [Issues](../../issues)
-3. 创建新的 Issue
-4. 在讨论区提问
-
-## 许可证
-
-通过贡献代码，您同意您的贡献将根据项目的许可证进行授权。
+1. 查看现有Issues和Discussions
+2. 阅读项目文档
+3. 提问时提供尽可能多的信息
+4. 保持耐心和礼貌
 
 ---
 
-感谢您的贡献！
+再次感谢您的贡献！
+
+济南黄河业余无线电中继台 © 2024

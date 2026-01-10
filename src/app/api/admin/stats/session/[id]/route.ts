@@ -22,7 +22,10 @@ export async function GET(
     const records = await logManager.getLogRecordsBySessionId(sessionId)
 
     return NextResponse.json({
-      session,
+      session: {
+        ...session,
+        controllerId: session.controllerId, // 确保返回controllerId用于权限检查
+      },
       records,
     })
   } catch (error) {
