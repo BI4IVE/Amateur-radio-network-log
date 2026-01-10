@@ -161,7 +161,7 @@ export default function SessionDetailPage() {
     // 主标题：大字体、加粗、居中
     if (worksheet["A1"]) {
       worksheet["A1"].s = {
-        font: { bold: true, sz: 18, color: { rgb: "1F4E78" } },
+        font: { bold: true, sz: 36, color: { rgb: "1F4E78" } },
         alignment: { horizontal: "center", vertical: "center" },
       }
     }
