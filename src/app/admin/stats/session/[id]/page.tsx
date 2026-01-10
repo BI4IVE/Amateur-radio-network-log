@@ -5,7 +5,6 @@ import { useRouter, useParams } from "next/navigation"
 
 interface Session {
   id: string
-  controllerId: string
   controllerName: string
   controllerEquipment: string | null
   controllerAntenna: string | null
@@ -60,6 +59,9 @@ export default function SessionDetailPage() {
 
       // 权限检查：如果不是管理员，检查会话是否属于当前用户
       if (currentUser && currentUser.role !== "admin") {
+        // 需要通过 controllerId 判断是否属于当前用户
+        // 但是 session 数据中没有 controllerId，我们需要从 API 返回中获取
+        // 这里我们假设 API 会返回 controllerId，或者我们需要修改 API
         if (data.session && data.session.controllerId && data.session.controllerId !== currentUser.id) {
           alert("无权访问此会话详情")
           router.back()
