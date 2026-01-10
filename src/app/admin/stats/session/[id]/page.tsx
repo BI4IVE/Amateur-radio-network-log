@@ -155,17 +155,88 @@ export default function SessionDetailPage() {
     }
     worksheet["!merges"].push({ s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }) // 标题行
     worksheet["!merges"].push({ s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }) // 日期行
+    worksheet["!merges"].push({ s: { r: 3, c: 0 }, e: { r: 3, c: 9 } }) // 小标题行
 
-    // 设置单元格样式（注意：xlsx 基础库样式支持有限）
-    const titleStyle = {
-      font: { bold: true, sz: 16 },
-      alignment: { horizontal: "center" },
+    // 设置单元格样式
+    // 主标题：大字体、加粗、居中
+    if (worksheet["A1"]) {
+      worksheet["A1"].s = {
+        font: { bold: true, sz: 18, color: { rgb: "1F4E78" } },
+        alignment: { horizontal: "center", vertical: "center" },
+      }
     }
 
-    const headerStyle = {
-      font: { bold: true },
-      fill: { fgColor: { rgb: "4472C4" } },
+    // 副标题：中等字体、加粗、居中
+    if (worksheet["A2"]) {
+      worksheet["A2"].s = {
+        font: { bold: true, sz: 14, color: { rgb: "1F4E78" } },
+        alignment: { horizontal: "center", vertical: "center" },
+      }
     }
+
+    // 小标题：加粗、居中
+    if (worksheet["A4"]) {
+      worksheet["A4"].s = {
+        font: { bold: true, sz: 12, color: { rgb: "44546A" } },
+        alignment: { horizontal: "center", vertical: "center" },
+      }
+    }
+
+    // 信息标签：加粗
+    const infoLabels = ["主控", "会话时间", "QTH", "设备", "天线", "记录总数"]
+    infoLabels.forEach((label, index) => {
+      const cellRef = XLSX.utils.encode_cell({ r: index + 5, c: 0 })
+      if (worksheet[cellRef]) {
+        worksheet[cellRef].s = {
+          font: { bold: true },
+          alignment: { horizontal: "center", vertical: "center" },
+        }
+      }
+    })
+
+    // 信息值：居中
+    infoLabels.forEach((label, index) => {
+      const cellRef = XLSX.utils.encode_cell({ r: index + 5, c: 1 })
+      if (worksheet[cellRef]) {
+        worksheet[cellRef].s = {
+          alignment: { horizontal: "center", vertical: "center" },
+        }
+      }
+    })
+
+    // 表头：加粗、背景色、居中
+    const headerRowIndex = 13
+    for (let col = 0; col < 10; col++) {
+      const cellRef = XLSX.utils.encode_cell({ r: headerRowIndex, c: col })
+      if (worksheet[cellRef]) {
+        worksheet[cellRef].s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "4472C4" } },
+          alignment: { horizontal: "center", vertical: "center" },
+        }
+      }
+    }
+
+    // 数据单元格：居中
+    for (let row = headerRowIndex + 1; row < data.length; row++) {
+      for (let col = 0; col < 10; col++) {
+        const cellRef = XLSX.utils.encode_cell({ r: row, c: col })
+        if (worksheet[cellRef]) {
+          worksheet[cellRef].s = {
+            alignment: { horizontal: "center", vertical: "center" },
+          }
+        }
+      }
+    }
+
+    // 设置行高
+    if (!worksheet["!rows"]) {
+      worksheet["!rows"] = []
+    }
+    worksheet["!rows"][0] = { hpx: 40 }  // 标题行高
+    worksheet["!rows"][1] = { hpx: 35 }  // 副标题行高
+    worksheet["!rows"][3] = { hpx: 30 }  // 小标题行高
+    worksheet["!rows"][13] = { hpx: 25 } // 表头行高
 
     // 将工作表添加到工作簿
     XLSX.utils.book_append_sheet(workbook, worksheet, "台网记录")
