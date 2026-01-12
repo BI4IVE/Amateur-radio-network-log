@@ -651,7 +651,7 @@ export default function HomePage() {
               <input
                 type="text"
                 value={controllerName}
-                onChange={(e) => setControllerName(e.target.value)}
+                onChange={(e) => setControllerName(e.target.value.toUpperCase())}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控人员姓名"
               />
@@ -664,7 +664,7 @@ export default function HomePage() {
               <input
                 type="text"
                 value={controllerEquipment}
-                onChange={(e) => setControllerEquipment(e.target.value)}
+                onChange={(e) => setControllerEquipment(e.target.value.toUpperCase())}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控设备"
               />
@@ -677,7 +677,7 @@ export default function HomePage() {
               <input
                 type="text"
                 value={controllerAntenna}
-                onChange={(e) => setControllerAntenna(e.target.value)}
+                onChange={(e) => setControllerAntenna(e.target.value.toUpperCase())}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控天线"
               />
@@ -690,7 +690,7 @@ export default function HomePage() {
               <input
                 type="text"
                 value={controllerQth}
-                onChange={(e) => setControllerQth(e.target.value)}
+                onChange={(e) => setControllerQth(e.target.value.toUpperCase())}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控位置"
               />
@@ -829,7 +829,7 @@ export default function HomePage() {
                     type="text"
                     value={callsign}
                     onChange={(e) => {
-                      const value = e.target.value
+                      const value = e.target.value.toUpperCase()
                       setCallsign(value)
                       searchParticipants(value)
                     }}
@@ -896,7 +896,7 @@ export default function HomePage() {
                     type="text"
                     value={qth}
                     onChange={(e) => {
-                      const value = e.target.value
+                      const value = e.target.value.toUpperCase()
                       setQth(value)
                       searchFieldValues("qth", value, setQthResults, setSelectedQthIndex)
                     }}
@@ -965,7 +965,7 @@ export default function HomePage() {
                     type="text"
                     value={equipment}
                     onChange={(e) => {
-                      const value = e.target.value
+                      const value = e.target.value.toUpperCase()
                       setEquipment(value)
                       searchFieldValues("equipment", value, setEquipmentResults, setSelectedEquipmentIndex)
                     }}
@@ -1035,7 +1035,7 @@ export default function HomePage() {
                     type="text"
                     value={antenna}
                     onChange={(e) => {
-                      const value = e.target.value
+                      const value = e.target.value.toUpperCase()
                       setAntenna(value)
                       searchFieldValues("antenna", value, setAntennaResults, setSelectedAntennaIndex)
                     }}
@@ -1105,7 +1105,7 @@ export default function HomePage() {
                     type="text"
                     value={power}
                     onChange={(e) => {
-                      const value = e.target.value
+                      const value = e.target.value.toUpperCase()
                       setPower(value)
                       searchFieldValues("power", value, setPowerResults, setSelectedPowerIndex)
                     }}
@@ -1175,7 +1175,7 @@ export default function HomePage() {
                     type="text"
                     value={signal}
                     onChange={(e) => {
-                      const value = e.target.value
+                      const value = e.target.value.toUpperCase()
                       setSignal(value)
                       searchFieldValues("signal", value, setSignalResults, setSelectedSignalIndex)
                     }}
@@ -1244,7 +1244,7 @@ export default function HomePage() {
                     type="text"
                     value={report}
                     onChange={(e) => {
-                      const value = e.target.value
+                      const value = e.target.value.toUpperCase()
                       setReport(value)
                       searchFieldValues("report", value, setReportResults, setSelectedReportIndex)
                     }}
@@ -1312,7 +1312,7 @@ export default function HomePage() {
                   <textarea
                     value={remarks}
                     onChange={(e) => {
-                      const value = e.target.value
+                      const value = e.target.value.toUpperCase()
                       setRemarks(value)
                       searchFieldValues("remarks", value, setRemarksResults, setSelectedRemarksIndex)
                     }}
@@ -1560,7 +1560,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.callsign}
                     onChange={(e) => {
-                      const value = e.target.value
+                      const value = e.target.value.toUpperCase()
                       setEditingRecord({ ...editingRecord, callsign: value })
                       searchParticipantsForEdit(value)
                     }}
@@ -1604,7 +1604,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.qth || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, qth: e.target.value })
+                      setEditingRecord({ ...editingRecord, qth: e.target.value.toUpperCase() })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -1618,7 +1618,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.equipment || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, equipment: e.target.value })
+                      setEditingRecord({ ...editingRecord, equipment: e.target.value.toUpperCase() })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -1632,7 +1632,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.antenna || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, antenna: e.target.value })
+                      setEditingRecord({ ...editingRecord, antenna: e.target.value.toUpperCase() })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -1646,7 +1646,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.power || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, power: e.target.value })
+                      setEditingRecord({ ...editingRecord, power: e.target.value.toUpperCase() })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -1660,7 +1660,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.signal || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, signal: e.target.value })
+                      setEditingRecord({ ...editingRecord, signal: e.target.value.toUpperCase() })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -1674,7 +1674,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.report || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, report: e.target.value })
+                      setEditingRecord({ ...editingRecord, report: e.target.value.toUpperCase() })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -1687,7 +1687,7 @@ export default function HomePage() {
                   <textarea
                     value={editingRecord.remarks || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, remarks: e.target.value })
+                      setEditingRecord({ ...editingRecord, remarks: e.target.value.toUpperCase() })
                     }
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
