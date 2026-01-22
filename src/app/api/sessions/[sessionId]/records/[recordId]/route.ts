@@ -91,8 +91,8 @@ export async function DELETE(
       )
     }
 
-    // 检查权限：管理员可以删除任何会话的记录，主控只能删除自己会话的记录
-    if (userRole !== "admin" && session.controllerId !== userId) {
+    // 检查权限：只有管理员可以删除记录
+    if (userRole !== "admin") {
       return NextResponse.json(
         { error: "您没有权限删除此记录" },
         { status: 403 }

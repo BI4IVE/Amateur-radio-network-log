@@ -372,8 +372,8 @@ export default function SessionDetailPage() {
       return
     }
 
-    // 检查权限：管理员可以删除任何记录，主控只能删除自己会话的记录
-    if (currentUser?.role !== "admin" && session.controllerId !== currentUser?.id) {
+    // 检查权限：只有管理员可以删除记录
+    if (currentUser?.role !== "admin") {
       alert("您没有权限删除此记录")
       return
     }

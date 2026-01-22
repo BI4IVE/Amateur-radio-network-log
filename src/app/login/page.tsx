@@ -199,7 +199,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-500">
-              v1.0.0 By BR4IN
+              v1.0.1 By BR4IN
             </p>
           </div>
         </div>
