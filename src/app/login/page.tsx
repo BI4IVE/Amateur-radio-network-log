@@ -199,7 +199,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-500">
-              管理员账号: ADMIN / ADMIN123
+              济南黄河业余无线电台<br/>台网主控日志
             </p>
           </div>
         </div>
