@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import * as XLSX from "xlsx-js-style"
+import { formatDate, formatDateTime, formatTime } from "@/utils/dateFormat"
 
 interface Session {
   id: string
@@ -90,7 +91,7 @@ export default function SessionDetailPage() {
     )
 
     // 获取日期
-    const sessionDate = new Date(session.sessionTime).toLocaleDateString("zh-CN")
+    const sessionDate = formatDate(session.sessionTime)
 
     // 创建工作簿
     const workbook = XLSX.utils.book_new()
@@ -104,7 +105,7 @@ export default function SessionDetailPage() {
       ["当日数据情况"],
       [""],
       ["主控", session.controllerName],
-      ["会话时间", new Date(session.sessionTime).toLocaleString("zh-CN")],
+      ["会话时间", formatDateTime(session.sessionTime)],
       ["QTH", session.controllerQth || "-"],
       ["设备", session.controllerEquipment || "-"],
       ["天线", session.controllerAntenna || "-"],
@@ -124,11 +125,7 @@ export default function SessionDetailPage() {
         record.signal || "",
         record.report || "",
         record.remarks || "",
-        record.createdAt ? new Date(record.createdAt).toLocaleTimeString("zh-CN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false
-        }) : "",
+        formatTime(record.createdAt),
       ]),
     ]
 
@@ -340,7 +337,7 @@ export default function SessionDetailPage() {
                     会话时间
                   </label>
                   <div className="text-black">
-                    {new Date(session.sessionTime).toLocaleString("zh-CN")}
+                    {formatDateTime(session.sessionTime)}
                   </div>
                 </div>
                 <div>
@@ -444,13 +441,7 @@ export default function SessionDetailPage() {
                             {record.callsign}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
-                            {record.createdAt
-                              ? new Date(record.createdAt).toLocaleTimeString("zh-CN", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: false,
-                                })
-                              : "-"}
+                            {formatTime(record.createdAt)}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
                             {record.qth || "-"}

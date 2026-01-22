@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { formatTime, formatDateTime } from "@/utils/dateFormat"
 
 interface User {
   id: string
@@ -1655,7 +1656,7 @@ export default function HomePage() {
                             {record.callsign}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                            {record.createdAt ? new Date(record.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }) : '-'}
+                            {formatTime(record.createdAt)}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {record.qth || "-"}
@@ -2021,7 +2022,7 @@ export default function HomePage() {
                           <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
                             <div>
                               <span className="font-medium">台网时间:</span>{" "}
-                              {new Date(session.sessionTime).toLocaleString("zh-CN")}
+                              {formatDateTime(session.sessionTime)}
                             </div>
                             <div>
                               <span className="font-medium">QTH:</span>{" "}

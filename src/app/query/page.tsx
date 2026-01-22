@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { formatDateTime } from "@/utils/dateFormat"
 
 interface ParticipationRecord {
   time: string
@@ -50,19 +51,6 @@ export default function QueryPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    })
   }
 
   const handleBack = () => {
@@ -196,7 +184,7 @@ export default function QueryPage() {
                           </div>
                           <div className="flex flex-col">
                             <div className="text-sm text-black">
-                              {formatDate(record.time)}
+                              {formatDateTime(record.time)}
                             </div>
                             <div className="text-xs text-gray-600 mt-0.5">
                               当值主控: <span className="font-medium">{record.controllerCallsign}</span>
@@ -368,7 +356,7 @@ export default function QueryPage() {
                           <p className="text-gray-700 font-bold text-lg mb-3 tracking-wide">签发日期</p>
                           <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
                             <p className="text-yellow-900 font-semibold text-base">
-                              {new Date().toLocaleDateString('zh-CN')}
+                              {formatDateTime(new Date().toISOString())}
                             </p>
                           </div>
                         </div>

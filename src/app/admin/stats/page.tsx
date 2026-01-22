@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { formatTime, formatDate } from "@/utils/dateFormat"
 
 interface Session {
   id: string
@@ -98,8 +99,8 @@ export default function AdminStatsPage() {
     // 创建CSV内容
     const headers = ["序号", "日期", "时间", "呼号", "QTH", "设备", "天线", "功率", "信号", "报告", "备注"]
     const rows = sortedRecords.map((record, index) => {
-      const date = record.createdAt ? new Date(record.createdAt).toLocaleDateString("zh-CN") : ""
-      const time = record.createdAt ? new Date(record.createdAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", hour12: false }) : ""
+      const date = formatDate(record.createdAt)
+      const time = formatTime(record.createdAt)
 
       return [
         index + 1,
@@ -298,7 +299,7 @@ export default function AdminStatsPage() {
                           >
                             <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
                             <td className="px-4 py-3 text-sm text-black">
-                              {new Date(session.sessionTime).toLocaleDateString("zh-CN")}
+                              {formatDate(session.sessionTime)}
                             </td>
                             <td className="px-4 py-3 text-sm text-black">{session.controllerName}</td>
                             <td className="px-4 py-3 text-sm text-black">{session.controllerQth || "-"}</td>
@@ -360,7 +361,7 @@ export default function AdminStatsPage() {
                         >
                           <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
                           <td className="px-4 py-3 text-sm text-black">
-                            {new Date(session.sessionTime).toLocaleDateString("zh-CN")}
+                            {formatDate(session.sessionTime)}
                           </td>
                           <td className="px-4 py-3 text-sm text-black">{session.controllerName}</td>
                           <td className="px-4 py-3 text-sm text-black">{session.controllerQth || "-"}</td>
