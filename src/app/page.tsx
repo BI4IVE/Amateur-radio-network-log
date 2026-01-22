@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { formatTime, formatDateTime, formatDate, toBeijingISOString } from "@/utils/dateFormat"
+import { formatTime, formatDateTime, formatDate, toBeijingISOString, beijingToUTCISOString, utcToBeijingLocalString } from "@/utils/dateFormat"
 
 interface User {
   id: string
@@ -316,6 +316,9 @@ export default function HomePage() {
       setCurrentSession(data.session)
       setRecords(data.records || [])
 
+      // 更新输入框的值显示会话的实际时间
+      setSessionTime(utcToBeijingLocalString(data.session.sessionTime))
+
       // 立即检查会话是否过期
       const sessionTime = new Date(data.session.sessionTime)
       const now = new Date()
@@ -451,13 +454,16 @@ export default function HomePage() {
           controllerEquipment: controllerEquipment || null,
           controllerAntenna: controllerAntenna || null,
           controllerQth: controllerQth || null,
-          sessionTime: toBeijingISOString(new Date(sessionTime)),
+          sessionTime: beijingToUTCISOString(sessionTime),
         }),
       })
 
       const data = await response.json()
       setCurrentSession(data.session)
       setRecords([])
+
+      // 更新输入框的值显示会话的实际时间
+      setSessionTime(utcToBeijingLocalString(data.session.sessionTime))
 
       // 新会话刚创建，肯定未过期
       setSessionExpired(false)
