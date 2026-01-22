@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { formatTime, formatDateTime } from "@/utils/dateFormat"
+import { formatTime, formatDateTime, toBeijingISOString } from "@/utils/dateFormat"
 
 interface User {
   id: string
@@ -155,7 +155,7 @@ export default function HomePage() {
     if (currentUser) {
       loadUsers()
       loadParticipants()
-      setSessionTime(new Date().toISOString().slice(0, 16))
+      setSessionTime(toBeijingISOString())
     }
   }, [currentUser])
 
@@ -451,7 +451,7 @@ export default function HomePage() {
           controllerEquipment: controllerEquipment || null,
           controllerAntenna: controllerAntenna || null,
           controllerQth: controllerQth || null,
-          sessionTime: new Date(sessionTime).toISOString(),
+          sessionTime: toBeijingISOString(new Date(sessionTime)),
         }),
       })
 

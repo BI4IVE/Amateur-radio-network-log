@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { formatTime, formatDate } from "@/utils/dateFormat"
+import { formatTime, formatDate, formatDateTime } from "@/utils/dateFormat"
 
 interface Session {
   id: string
@@ -119,7 +119,7 @@ export default function AdminStatsPage() {
 
     const csvContent = [
       "台网统计导出",
-      `导出时间: ${new Date().toLocaleString("zh-CN")}`,
+      `导出时间: ${formatDateTime(new Date().toISOString())}`,
       `总会话数: ${statsData.stats.totalSessions}`,
       `总记录数: ${sortedRecords.length}`,
       `唯一呼号数: ${statsData.stats.totalUniqueCallsigns}`,
@@ -131,7 +131,7 @@ export default function AdminStatsPage() {
     const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
-    link.download = `台网统计_${new Date().toLocaleDateString("zh-CN")}.csv`
+    link.download = `台网统计_${formatDate(new Date().toISOString())}.csv`
     link.click()
   }
 
