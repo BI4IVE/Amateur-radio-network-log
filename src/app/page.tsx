@@ -41,6 +41,7 @@ interface LogRecord {
 
 interface Session {
   id: string
+  controllerId: string
   controllerName: string
   controllerEquipment: string | null
   controllerAntenna: string | null
@@ -1490,7 +1491,7 @@ export default function HomePage() {
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm">
                             <div className="flex gap-2">
-                              {currentUser?.role === "admin" && (
+                              {(currentUser?.role === "admin" || currentSession?.controllerId === currentUser?.id) && (
                                 <>
                                   <button
                                     onClick={() => handleEditRecord(record)}
