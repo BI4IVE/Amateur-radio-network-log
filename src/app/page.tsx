@@ -76,6 +76,9 @@ export default function HomePage() {
   const [records, setRecords] = useState<LogRecord[]>([])
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
 
+  // Session expiration
+  const [sessionExpired, setSessionExpired] = useState(false)
+
   // Edit mode
   const [editingRecord, setEditingRecord] = useState<LogRecord | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -201,6 +204,29 @@ export default function HomePage() {
       eventSourceRef.current = null
     }
   }, [currentSession?.id])
+
+  // 检查会话是否过期
+  useEffect(() => {
+    if (!currentSession) return
+
+    const checkExpiration = () => {
+      const sessionTime = new Date(currentSession.sessionTime)
+      const now = new Date()
+      const hoursSinceStart = (now.getTime() - sessionTime.getTime()) / (1000 * 60 * 60)
+
+      if (hoursSinceStart >= 6) {
+        setSessionExpired(true)
+      }
+    }
+
+    // 立即检查一次
+    checkExpiration()
+
+    // 每分钟检查一次
+    const timer = setInterval(checkExpiration, 60 * 1000)
+
+    return () => clearInterval(timer)
+  }, [currentSession?.id, currentSession?.sessionTime])
 
   // Handle CTRL+Enter to add record
   useEffect(() => {
@@ -438,6 +464,12 @@ export default function HomePage() {
       return
     }
 
+    // 检查会话是否过期
+    if (sessionExpired) {
+      alert("会话已超过6小时，无法添加记录")
+      return
+    }
+
     // 验证必填字段
     if (!callsign || callsign.trim() === "") {
       alert("请输入呼号")
@@ -552,6 +584,12 @@ export default function HomePage() {
   const handleDeleteRecord = async (recordId: string) => {
     if (!currentSession) return
 
+    // 检查会话是否过期
+    if (sessionExpired) {
+      alert("会话已超过6小时，无法删除记录")
+      return
+    }
+
     if (!confirm("确定要删除这条记录吗？")) {
       return
     }
@@ -575,6 +613,12 @@ export default function HomePage() {
 
   const handleUpdateRecord = async () => {
     if (!currentSession || !editingRecord) return
+
+    // 检查会话是否过期
+    if (sessionExpired) {
+      alert("会话已超过6小时，无法更新记录")
+      return
+    }
 
     try {
       const response = await fetch(`/api/sessions/${currentSession.id}/records/${editingRecord.id}`, {
@@ -1531,6 +1575,16 @@ export default function HomePage() {
                 <h2 className="text-lg font-semibold text-black">
                   台网记录列表 ({records.length}条)
                 </h2>
+                {sessionExpired && (
+                  <div className="ml-auto px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium border border-red-200">
+                    <span className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                      </svg>
+                      会话已超过6小时，无法添加、更新或删除记录
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">

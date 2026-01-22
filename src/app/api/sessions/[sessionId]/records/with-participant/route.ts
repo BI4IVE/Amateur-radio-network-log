@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import { participantManager } from "@/storage/database"
 import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
+import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 
 export async function POST(
   request: NextRequest,
@@ -10,6 +11,23 @@ export async function POST(
   try {
     const { sessionId } = await params
     const body = await request.json()
+
+    // 检查会话是否存在
+    const session = await logManager.getLogSessionById(sessionId)
+    if (!session) {
+      return NextResponse.json(
+        { error: "会话不存在" },
+        { status: 404 }
+      )
+    }
+
+    // 检查会话是否已过期（6小时）
+    if (isSessionExpired(session.sessionTime)) {
+      return NextResponse.json(
+        { error: "该会话已过期（超过6小时），无法添加记录" },
+        { status: 403 }
+      )
+    }
 
     // Add record to session
     const record = await logManager.createLogRecord({

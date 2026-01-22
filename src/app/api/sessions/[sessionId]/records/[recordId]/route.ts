@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
+import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 
 export async function PUT(
   request: NextRequest,
@@ -9,6 +10,23 @@ export async function PUT(
   try {
     const { sessionId, recordId } = await params
     const body = await request.json()
+
+    // 检查会话是否存在
+    const session = await logManager.getLogSessionById(sessionId)
+    if (!session) {
+      return NextResponse.json(
+        { error: "会话不存在" },
+        { status: 404 }
+      )
+    }
+
+    // 检查会话是否已过期（6小时）
+    if (isSessionExpired(session.sessionTime)) {
+      return NextResponse.json(
+        { error: "该会话已过期（超过6小时），无法更新记录" },
+        { status: 403 }
+      )
+    }
 
     const record = await logManager.updateLogRecord(recordId, body)
 
@@ -41,6 +59,24 @@ export async function DELETE(
 ) {
   try {
     const { sessionId, recordId } = await params
+
+    // 检查会话是否存在
+    const session = await logManager.getLogSessionById(sessionId)
+    if (!session) {
+      return NextResponse.json(
+        { error: "会话不存在" },
+        { status: 404 }
+      )
+    }
+
+    // 检查会话是否已过期（6小时）
+    if (isSessionExpired(session.sessionTime)) {
+      return NextResponse.json(
+        { error: "该会话已过期（超过6小时），无法删除记录" },
+        { status: 403 }
+      )
+    }
+
     const success = await logManager.deleteLogRecord(recordId)
 
     if (!success) {
