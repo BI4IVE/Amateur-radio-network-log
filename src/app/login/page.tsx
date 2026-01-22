@@ -100,7 +100,7 @@ export default function LoginPage() {
               </svg>
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              济南黄河业余无线电台<br/>网主控日志
+              济南黄河业余无线电台<br/>台网主控日志
             </h1>
             <p className="text-gray-500 font-medium">登录系统</p>
           </div>
@@ -199,7 +199,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-500">
-              济南黄河业余无线电台<br/>台网主控日志
+              v0.5.0 By BR4IN
             </p>
           </div>
         </div>
