@@ -10,7 +10,8 @@ export function isSessionExpired(sessionTime: Date | string): boolean {
   const now = new Date()
   const hoursDiff = (now.getTime() - sessionDate.getTime()) / (1000 * 60 * 60)
 
-  return hoursDiff > 6
+  // 6小时及以后算过期
+  return hoursDiff >= 6
 }
 
 /**

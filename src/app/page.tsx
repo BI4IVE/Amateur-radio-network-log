@@ -316,6 +316,12 @@ export default function HomePage() {
       setCurrentSession(data.session)
       setRecords(data.records || [])
 
+      // 立即检查会话是否过期
+      const sessionTime = new Date(data.session.sessionTime)
+      const now = new Date()
+      const hoursSinceStart = (now.getTime() - sessionTime.getTime()) / (1000 * 60 * 60)
+      setSessionExpired(hoursSinceStart >= 6)
+
       // 关闭模态框
       setShowActiveSessionsModal(false)
       setActiveSessions([])
@@ -452,6 +458,10 @@ export default function HomePage() {
       const data = await response.json()
       setCurrentSession(data.session)
       setRecords([])
+
+      // 新会话刚创建，肯定未过期
+      setSessionExpired(false)
+
       alert("新台网会话已创建")
     } catch (error) {
       console.error("Start session error:", error)
