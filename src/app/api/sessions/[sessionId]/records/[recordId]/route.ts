@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
+import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string; recordId: string }> }
 ) {
   try {
-    const { recordId } = await params
+    const { sessionId, recordId } = await params
     const body = await request.json()
 
     const record = await logManager.updateLogRecord(recordId, body)
@@ -17,6 +18,12 @@ export async function PUT(
         { status: 404 }
       )
     }
+
+    // 广播记录更新
+    broadcastToSession(sessionId, {
+      type: "record_updated",
+      record,
+    })
 
     return NextResponse.json({ record })
   } catch (error) {
@@ -33,7 +40,7 @@ export async function DELETE(
   { params }: { params: Promise<{ sessionId: string; recordId: string }> }
 ) {
   try {
-    const { recordId } = await params
+    const { sessionId, recordId } = await params
     const success = await logManager.deleteLogRecord(recordId)
 
     if (!success) {
@@ -42,6 +49,12 @@ export async function DELETE(
         { status: 404 }
       )
     }
+
+    // 广播记录删除
+    broadcastToSession(sessionId, {
+      type: "record_deleted",
+      recordId,
+    })
 
     return NextResponse.json({ message: "记录已删除" })
   } catch (error) {

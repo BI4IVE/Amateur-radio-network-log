@@ -80,6 +80,10 @@ export default function HomePage() {
   const [editingRecord, setEditingRecord] = useState<LogRecord | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
+  // Active sessions modal
+  const [showActiveSessionsModal, setShowActiveSessionsModal] = useState(false)
+  const [activeSessions, setActiveSessions] = useState<Session[]>([])
+
   // Autocomplete states
   const [searchResults, setSearchResults] = useState<Participant[]>([])
   const [showSearchResults, setShowSearchResults] = useState(false)
@@ -126,6 +130,9 @@ export default function HomePage() {
   const powerRef = useRef<HTMLInputElement>(null)
   const signalRef = useRef<HTMLInputElement>(null)
 
+  // SSE connection ref
+  const eventSourceRef = useRef<EventSource | null>(null)
+
   useEffect(() => {
     // Check authentication
     const userStr = localStorage.getItem("user")
@@ -147,6 +154,53 @@ export default function HomePage() {
       setSessionTime(new Date().toISOString().slice(0, 16))
     }
   }, [currentUser])
+
+  // SSE 实时连接
+  useEffect(() => {
+    if (!currentSession) return
+
+    // 创建 SSE 连接
+    const eventSource = new EventSource(`/api/sse/session/${currentSession.id}/subscribe`)
+    eventSourceRef.current = eventSource
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+
+        switch (data.type) {
+          case "connected":
+            console.log("SSE connected to session:", currentSession.id)
+            break
+
+          case "record_added":
+            setRecords((prev) => [...prev, data.record])
+            break
+
+          case "record_updated":
+            setRecords((prev) =>
+              prev.map((r) => (r.id === data.record.id ? data.record : r))
+            )
+            break
+
+          case "record_deleted":
+            setRecords((prev) => prev.filter((r) => r.id !== data.recordId))
+            break
+        }
+      } catch (error) {
+        console.error("Failed to parse SSE message:", error)
+      }
+    }
+
+    eventSource.onerror = (error) => {
+      console.error("SSE error:", error)
+      eventSource.close()
+    }
+
+    return () => {
+      eventSource.close()
+      eventSourceRef.current = null
+    }
+  }, [currentSession?.id])
 
   // Handle CTRL+Enter to add record
   useEffect(() => {
@@ -206,6 +260,43 @@ export default function HomePage() {
       setParticipants(data.participants || [])
     } catch (error) {
       console.error("Load participants error:", error)
+    }
+  }
+
+  const loadActiveSessions = async () => {
+    try {
+      const response = await fetch("/api/sessions")
+      const data = await response.json()
+      setActiveSessions(data.sessions || [])
+      setShowActiveSessionsModal(true)
+    } catch (error) {
+      console.error("Load active sessions error:", error)
+      alert("获取活跃会话失败")
+    }
+  }
+
+  const joinSession = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/admin/stats/session/${sessionId}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert("无法加入该会话")
+        return
+      }
+
+      // 设置当前会话和记录
+      setCurrentSession(data.session)
+      setRecords(data.records || [])
+
+      // 关闭模态框
+      setShowActiveSessionsModal(false)
+      setActiveSessions([])
+
+      alert(`已加入 ${data.session.controllerName} 的台网会话`)
+    } catch (error) {
+      console.error("Join session error:", error)
+      alert("加入会话失败")
     }
   }
 
@@ -700,7 +791,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-4 flex gap-4">
+          <div className="mt-4 flex gap-4 flex-wrap">
             <label className="flex items-center">
               <input
                 type="checkbox"
@@ -730,6 +821,26 @@ export default function HomePage() {
                 />
               </svg>
               创建新台网会话
+            </button>
+            <button
+              onClick={loadActiveSessions}
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
+                />
+              </svg>
+              查看活跃会话
             </button>
             <button
               onClick={() => router.push("/admin/stats")}
@@ -1776,6 +1887,124 @@ export default function HomePage() {
                     取消
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Active Sessions Modal */}
+        {showActiveSessionsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center animate-[fadeIn_0.2s_ease-in-out]" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-3xl w-full mx-4 max-h-[80vh] overflow-y-auto border border-gray-100">
+              <h2 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                <div className="bg-amber-100 rounded-lg p-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="w-5 h-5 text-amber-600"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
+                    />
+                  </svg>
+                </div>
+                活跃台网会话
+              </h2>
+
+              {activeSessions.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-16 h-16 mx-auto text-gray-300 mb-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                    />
+                  </svg>
+                  <p className="text-lg">当前没有活跃的台网会话</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activeSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="bg-green-100 rounded-full p-1">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                stroke="currentColor"
+                                className="w-4 h-4 text-green-600"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5.25 14.25h13.5m-13.5 0a3.375 3.375 0 01-3.375-3.375V6.375a3.375 3.375 0 013.375-3.375h13.5a3.375 3.375 0 013.375 3.375v4.5c0 .621.504 1.125 1.125 1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5a3.375 3.375 0 01-3.375 3.375H8.25m-1.5 0a2.25 2.25 0 002.25-2.25V8.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125-.504 1.125-1.125V5.25a2.25 2.25 0 00-2.25-2.25h-9.75A2.25 2.25 0 00.75 5.25v10.5a2.25 2.25 0 002.25 2.25z"
+                                />
+                              </svg>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900">
+                              主控: {session.controllerName}
+                            </h3>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                            <div>
+                              <span className="font-medium">台网时间:</span>{" "}
+                              {new Date(session.sessionTime).toLocaleString("zh-CN")}
+                            </div>
+                            <div>
+                              <span className="font-medium">QTH:</span>{" "}
+                              {session.controllerQth || "未设置"}
+                            </div>
+                            <div>
+                              <span className="font-medium">设备:</span>{" "}
+                              {session.controllerEquipment || "未设置"}
+                            </div>
+                            <div>
+                              <span className="font-medium">天线:</span>{" "}
+                              {session.controllerAntenna || "未设置"}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => joinSession(session.id)}
+                          className="ml-4 px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 shadow-md hover:shadow-lg font-semibold"
+                        >
+                          加入会话
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowActiveSessionsModal(false)
+                    setActiveSessions([])
+                  }}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+                >
+                  关闭
+                </button>
               </div>
             </div>
           </div>

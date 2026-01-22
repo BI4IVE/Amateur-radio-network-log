@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import { participantManager } from "@/storage/database"
+import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
 
 export async function POST(
   request: NextRequest,
@@ -53,6 +54,12 @@ export async function POST(
         participantData
       )
     }
+
+    // 广播新记录到所有订阅者
+    broadcastToSession(sessionId, {
+      type: "record_added",
+      record,
+    })
 
     return NextResponse.json({
       record,
