@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import * as XLSX from "xlsx-js-style"
+import { formatDate, formatDateTime, formatTime } from "@/utils/dateFormat"
 
 export async function GET(
   request: NextRequest,
@@ -22,8 +23,8 @@ export async function GET(
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     )
 
-    // 获取日期
-    const sessionDate = new Date(session.sessionTime).toLocaleDateString("zh-CN")
+    // 获取日期（北京时间）
+    const sessionDate = formatDate(session.sessionTime.toISOString())
 
     // 创建工作簿
     const workbook = XLSX.utils.book_new()
@@ -37,7 +38,7 @@ export async function GET(
       ["当日数据情况"],
       [""],
       ["主控", session.controllerName],
-      ["会话时间", new Date(session.sessionTime).toLocaleString("zh-CN")],
+      ["会话时间", formatDateTime(session.sessionTime.toISOString())],
       ["QTH", session.controllerQth || "-"],
       ["设备", session.controllerEquipment || "-"],
       ["天线", session.controllerAntenna || "-"],
@@ -57,11 +58,7 @@ export async function GET(
         record.signal || "",
         record.report || "",
         record.remarks || "",
-        record.createdAt ? new Date(record.createdAt).toLocaleTimeString("zh-CN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false
-        }) : "",
+        record.createdAt ? formatTime(record.createdAt.toISOString()) : "",
       ]),
     ]
 
