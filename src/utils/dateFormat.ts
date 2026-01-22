@@ -4,8 +4,12 @@
  * @returns 北京时间的 ISO 格式字符串 (yyyy-MM-ddTHH:mm)
  */
 export function toBeijingISOString(date: Date = new Date()): string {
-  // 获取当前时间的 UTC 时间戳
-  const utcTimestamp = date.getTime() + (date.getTimezoneOffset() * 60 * 1000)
+  // 获取当前本地时间戳
+  const localTimestamp = date.getTime()
+  // 获取本地时区偏移（分钟），例如在北京时区是 -480
+  const localOffset = date.getTimezoneOffset() * 60 * 1000
+  // 计算 UTC 时间戳
+  const utcTimestamp = localTimestamp + localOffset
   // 转换为北京时间（UTC+8）
   const beijingTimestamp = utcTimestamp + (8 * 60 * 60 * 1000)
   const beijingDate = new Date(beijingTimestamp)
@@ -27,12 +31,10 @@ export function toBeijingISOString(date: Date = new Date()): string {
 export function formatTime(dateString: string | null): string {
   if (!dateString) return '-'
 
-  // 使用 UTC 时间解析，确保时区正确
+  // 解析日期（数据库返回的是 UTC 时间）
   const date = new Date(dateString)
-  // 获取 UTC 时间戳并转换为北京时间（UTC+8）
-  const utcTimestamp = date.getTime() + (date.getTimezoneOffset() * 60 * 1000)
-  const beijingTimestamp = utcTimestamp + (8 * 60 * 60 * 1000)
-  const beijingDate = new Date(beijingTimestamp)
+  // 转换为北京时间（UTC+8）：直接在 UTC 时间戳上加 8 小时
+  const beijingDate = new Date(date.getTime() + (8 * 60 * 60 * 1000))
   
   const hours = beijingDate.getUTCHours().toString().padStart(2, '0')
   const minutes = beijingDate.getUTCMinutes().toString().padStart(2, '0')
@@ -46,12 +48,10 @@ export function formatTime(dateString: string | null): string {
  * @returns 格式化的日期时间字符串
  */
 export function formatDateTime(dateString: string): string {
-  // 使用 UTC 时间解析，确保时区正确
+  // 解析日期（数据库返回的是 UTC 时间）
   const date = new Date(dateString)
-  // 获取 UTC 时间戳并转换为北京时间（UTC+8）
-  const utcTimestamp = date.getTime() + (date.getTimezoneOffset() * 60 * 1000)
-  const beijingTimestamp = utcTimestamp + (8 * 60 * 60 * 1000)
-  const beijingDate = new Date(beijingTimestamp)
+  // 转换为北京时间（UTC+8）：直接在 UTC 时间戳上加 8 小时
+  const beijingDate = new Date(date.getTime() + (8 * 60 * 60 * 1000))
   
   const year = beijingDate.getUTCFullYear()
   const month = (beijingDate.getUTCMonth() + 1).toString().padStart(2, '0')
@@ -69,12 +69,10 @@ export function formatDateTime(dateString: string): string {
  * @returns 格式化的日期字符串
  */
 export function formatDate(dateString: string): string {
-  // 使用 UTC 时间解析，确保时区正确
+  // 解析日期（数据库返回的是 UTC 时间）
   const date = new Date(dateString)
-  // 获取 UTC 时间戳并转换为北京时间（UTC+8）
-  const utcTimestamp = date.getTime() + (date.getTimezoneOffset() * 60 * 1000)
-  const beijingTimestamp = utcTimestamp + (8 * 60 * 60 * 1000)
-  const beijingDate = new Date(beijingTimestamp)
+  // 转换为北京时间（UTC+8）：直接在 UTC 时间戳上加 8 小时
+  const beijingDate = new Date(date.getTime() + (8 * 60 * 60 * 1000))
   
   const year = beijingDate.getUTCFullYear()
   const month = (beijingDate.getUTCMonth() + 1).toString().padStart(2, '0')
