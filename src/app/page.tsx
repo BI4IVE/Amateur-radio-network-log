@@ -536,38 +536,40 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             {/* Radio/Antenna Icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-8 h-8 text-indigo-600"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
-              />
-            </svg>
-            <h1 className="text-xl font-bold text-gray-900">
+            <div className="bg-white/20 rounded-lg p-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-6 h-6 text-white"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
+                />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold text-white">
               济南黄河业余无线电台网主控日志
             </h1>
           </div>
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push("/query")}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 backdrop-blur-sm transition-all duration-200"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={1.5}
+                strokeWidth={2}
                 stroke="currentColor"
                 className="w-4 h-4"
               >
@@ -579,12 +581,12 @@ export default function HomePage() {
               </svg>
               呼号查询
             </button>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-white/90">
               当前用户: {currentUser?.name} ({currentUser?.role === "admin" ? "管理员" : "主控"})
             </span>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 shadow-md"
             >
               退出
             </button>
@@ -594,13 +596,13 @@ export default function HomePage() {
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Controller Section */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
           <div className="flex items-center gap-2 mb-4">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
-              strokeWidth={1.5}
+              strokeWidth={2}
               stroke="currentColor"
               className="w-6 h-6 text-indigo-600"
             >
@@ -704,20 +706,20 @@ export default function HomePage() {
                 type="checkbox"
                 checked={useExistingData}
                 onChange={(e) => setUseExistingData(e.target.checked)}
-                className="mr-2"
+                className="mr-2 w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
               />
               <span className="text-sm text-gray-700">使用数据库中的信息</span>
             </label>
 
             <button
               onClick={startNewSession}
-              className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={1.5}
+                strokeWidth={2}
                 stroke="currentColor"
                 className="w-4 h-4"
               >
@@ -731,13 +733,13 @@ export default function HomePage() {
             </button>
             <button
               onClick={() => router.push("/admin/stats")}
-              className="flex items-center gap-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={1.5}
+                strokeWidth={2}
                 stroke="currentColor"
                 className="w-4 h-4"
               >
@@ -754,13 +756,13 @@ export default function HomePage() {
               <>
                 <button
                   onClick={exportToExcel}
-                  className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
-                    strokeWidth={1.5}
+                    strokeWidth={2}
                     stroke="currentColor"
                     className="w-4 h-4"
                   >
@@ -772,7 +774,7 @@ export default function HomePage() {
                   </svg>
                   导出Excel
                 </button>
-                <span className="text-sm text-gray-600 self-center">
+                <span className="text-sm text-gray-600 self-center bg-gray-100 px-3 py-1 rounded-full">
                   会话ID: {currentSession.id}
                 </span>
               </>
@@ -784,13 +786,13 @@ export default function HomePage() {
         {currentSession && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Input Form */}
-            <div className="bg-white rounded-lg shadow p-6 lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-lg p-6 lg:col-span-1 border border-gray-100">
               <div className="flex items-center gap-2 mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
-                  strokeWidth={1.5}
+                  strokeWidth={2}
                   stroke="currentColor"
                   className="w-6 h-6 text-indigo-600"
                 >
@@ -1377,13 +1379,13 @@ export default function HomePage() {
 
                 <button
                   onClick={addRecord}
-                  className="flex items-center justify-center gap-2 w-full px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg font-semibold"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
-                    strokeWidth={1.5}
+                    strokeWidth={2}
                     stroke="currentColor"
                     className="w-4 h-4"
                   >
@@ -1399,13 +1401,13 @@ export default function HomePage() {
             </div>
 
             {/* Records Display */}
-            <div className="bg-white rounded-lg shadow p-6 lg:col-span-3">
+            <div className="bg-white rounded-xl shadow-lg p-6 lg:col-span-3 border border-gray-100">
               <div className="flex items-center gap-2 mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
-                  strokeWidth={1.5}
+                  strokeWidth={2}
                   stroke="currentColor"
                   className="w-6 h-6 text-indigo-600"
                 >
@@ -1421,9 +1423,9 @@ export default function HomePage() {
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                         序号
                       </th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
@@ -1447,55 +1449,71 @@ export default function HomePage() {
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         信号
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                         操作
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-100">
                     {records.length === 0 ? (
                       <tr>
                         <td
                           colSpan={9}
-                          className="px-4 py-8 text-center text-gray-500"
+                          className="px-4 py-12 text-center text-gray-500"
                         >
-                          暂无记录
+                          <div className="flex flex-col items-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={1.5}
+                              stroke="currentColor"
+                              className="w-12 h-12 text-gray-300 mb-2"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+                              />
+                            </svg>
+                            暂无记录
+                          </div>
                         </td>
                       </tr>
                     ) : (
                       [...records].reverse().map((record, index) => (
-                        <tr key={record.id}>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                        <tr key={record.id} className="hover:bg-gray-50 transition-colors duration-150">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                             {records.length - index}
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
                             {record.callsign}
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {record.createdAt ? new Date(record.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }) : '-'}
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {record.qth || "-"}
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {record.equipment || "-"}
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {record.antenna || "-"}
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {record.power || "-"}
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                             {record.signal || "-"}
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
                             <div className="flex gap-2">
                               {(currentUser?.role === "admin" || currentSession?.controllerId === currentUser?.id) && (
                                 <>
                                   <button
                                     onClick={() => handleEditRecord(record)}
-                                    className="flex items-center gap-1 text-indigo-600 hover:text-indigo-900"
+                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
                                   >
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
@@ -1515,13 +1533,13 @@ export default function HomePage() {
                                   </button>
                                   <button
                                     onClick={() => handleDeleteRecord(record.id)}
-                                    className="flex items-center gap-1 text-red-600 hover:text-red-900"
+                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors duration-200"
                                   >
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
                                       fill="none"
                                       viewBox="0 0 24 24"
-                                      strokeWidth={1.5}
+                                      strokeWidth={2}
                                       stroke="currentColor"
                                       className="w-4 h-4"
                                     >
@@ -1549,9 +1567,27 @@ export default function HomePage() {
 
         {/* Edit Modal */}
         {showEditModal && editingRecord && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-            <div className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <h2 className="text-lg font-semibold mb-4">编辑记录 - {editingRecord.callsign}</h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center animate-[fadeIn_0.2s_ease-in-out]" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-100">
+              <h2 className="text-xl font-bold mb-6 text-gray-900 flex items-center gap-2">
+                <div className="bg-indigo-100 rounded-lg p-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                    className="w-5 h-5 text-indigo-600"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                    />
+                  </svg>
+                </div>
+                编辑记录 - {editingRecord.callsign}
+              </h2>
               <div className="space-y-4">
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1704,7 +1740,7 @@ export default function HomePage() {
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
-                      strokeWidth={1.5}
+                      strokeWidth={2}
                       stroke="currentColor"
                       className="w-4 h-4"
                     >
@@ -1721,13 +1757,13 @@ export default function HomePage() {
                       setShowEditModal(false)
                       setEditingRecord(null)
                     }}
-                    className="flex items-center justify-center gap-2 flex-1 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                    className="flex items-center justify-center gap-2 flex-1 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
-                      strokeWidth={1.5}
+                      strokeWidth={2}
                       stroke="currentColor"
                       className="w-4 h-4"
                     >
