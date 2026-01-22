@@ -100,7 +100,7 @@ export default function LoginPage() {
               </svg>
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              济南黄河业余无线电台网主控日志
+              济南黄河业余无线电台<br/>网主控日志
             </h1>
             <p className="text-gray-500 font-medium">登录系统</p>
           </div>
@@ -132,7 +132,7 @@ export default function LoginPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-400 transition-all duration-200 shadow-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black placeholder:text-gray-400 transition-all duration-200 shadow-sm"
                   placeholder="请输入用户名（不区分大小写）"
                   required
                 />
@@ -165,7 +165,7 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-400 transition-all duration-200 shadow-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black placeholder:text-gray-400 transition-all duration-200 shadow-sm"
                   placeholder="请输入密码（不区分大小写）"
                   required
                 />
