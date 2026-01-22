@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
+import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,7 +11,10 @@ export async function GET(request: NextRequest) {
       controllerId,
     })
 
-    return NextResponse.json({ sessions })
+    // 过滤掉已过期的会话（超过6小时）
+    const activeSessions = sessions.filter(session => !isSessionExpired(session.sessionTime))
+
+    return NextResponse.json({ sessions: activeSessions })
   } catch (error) {
     console.error("Get sessions error:", error)
     return NextResponse.json(
