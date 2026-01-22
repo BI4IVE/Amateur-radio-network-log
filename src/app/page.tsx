@@ -1721,7 +1721,8 @@ export default function HomePage() {
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm">
                             <div className="flex gap-2">
-                              {(currentUser?.role === "admin" || currentSession?.controllerId === currentUser?.id) && (
+                              {/* 管理员：显示编辑和删除 */}
+                              {currentUser?.role === "admin" && (
                                 <>
                                   <button
                                     onClick={() => handleEditRecord(record)}
@@ -1764,6 +1765,29 @@ export default function HomePage() {
                                     删除
                                   </button>
                                 </>
+                              )}
+                              {/* 主控：只显示编辑，不显示删除 */}
+                              {currentUser?.role !== "admin" && currentSession?.controllerId === currentUser?.id && (
+                                <button
+                                  onClick={() => handleEditRecord(record)}
+                                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    strokeWidth={1.5}
+                                    stroke="currentColor"
+                                    className="w-4 h-4"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                                    />
+                                  </svg>
+                                  编辑
+                                </button>
                               )}
                             </div>
                           </td>
