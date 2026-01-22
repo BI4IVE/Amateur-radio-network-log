@@ -7,6 +7,7 @@ import { formatDate, formatDateTime, formatTime } from "@/utils/dateFormat"
 
 interface Session {
   id: string
+  controllerId: string
   controllerName: string
   controllerEquipment: string | null
   controllerAntenna: string | null
@@ -38,6 +39,10 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<any>(null)
 
+  // Edit mode
+  const [editingRecord, setEditingRecord] = useState<LogRecord | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+
   useEffect(() => {
     // 获取当前用户
     const userStr = localStorage.getItem("user")
@@ -45,8 +50,13 @@ export default function SessionDetailPage() {
       const user = JSON.parse(userStr)
       setCurrentUser(user)
     }
-    loadSessionDetails()
-  }, [sessionId])
+  }, [])
+
+  useEffect(() => {
+    if (currentUser) {
+      loadSessionDetails()
+    }
+  }, [sessionId, currentUser])
 
   const loadSessionDetails = async () => {
     setLoading(true)
@@ -56,18 +66,18 @@ export default function SessionDetailPage() {
         throw new Error("获取会话详情失败")
       }
       const data = await response.json()
-      setSession(data.session)
-      setRecords(data.records || [])
 
       // 权限检查：如果不是管理员，检查会话是否属于当前用户
       if (currentUser && currentUser.role !== "admin") {
-        // 通过 controllerId 判断是否属于当前用户
         if (data.session && data.session.controllerId && data.session.controllerId !== currentUser.id) {
           alert("无权访问此会话详情")
           router.back()
           return
         }
       }
+
+      setSession(data.session)
+      setRecords(data.records || [])
     } catch (error) {
       console.error("Load session details error:", error)
       alert("加载会话详情失败")
@@ -288,6 +298,93 @@ export default function SessionDetailPage() {
     XLSX.writeFile(workbook, fileName)
   }
 
+  const handleEditRecord = (record: LogRecord) => {
+    // 检查权限：管理员可以编辑任何记录，主控只能编辑自己会话的记录
+    if (currentUser?.role !== "admin" && session?.controllerId !== currentUser?.id) {
+      alert("您没有权限编辑此记录")
+      return
+    }
+
+    setEditingRecord(record)
+    setShowEditModal(true)
+  }
+
+  const handleUpdateRecord = async () => {
+    if (!session || !editingRecord) return
+
+    // 检查权限：管理员可以修改任何记录，主控只能修改自己会话的记录
+    if (currentUser?.role !== "admin" && session.controllerId !== currentUser?.id) {
+      alert("您没有权限修改此记录")
+      setShowEditModal(false)
+      setEditingRecord(null)
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${session.id}/records/${editingRecord.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callsign: editingRecord.callsign,
+          qth: editingRecord.qth || null,
+          equipment: editingRecord.equipment || null,
+          antenna: editingRecord.antenna || null,
+          power: editingRecord.power || null,
+          signal: editingRecord.signal || null,
+          report: editingRecord.report || null,
+          remarks: editingRecord.remarks || null,
+          userId: currentUser?.id,
+          userRole: currentUser?.role,
+        }),
+      })
+
+      const data = await response.json()
+
+      // Update records list
+      setRecords(records.map((r) => (r.id === editingRecord.id ? data.record : r)))
+
+      setShowEditModal(false)
+      setEditingRecord(null)
+      alert("记录已更新")
+    } catch (error) {
+      console.error("Update record error:", error)
+      alert("更新记录失败")
+    }
+  }
+
+  const handleDeleteRecord = async (recordId: string) => {
+    if (!session) {
+      alert("会话不存在")
+      return
+    }
+
+    // 检查权限：管理员可以删除任何记录，主控只能删除自己会话的记录
+    if (currentUser?.role !== "admin" && session.controllerId !== currentUser?.id) {
+      alert("您没有权限删除此记录")
+      return
+    }
+
+    if (!confirm("确定要删除这条记录吗？")) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${session.id}/records/${recordId}?userId=${currentUser?.id}&userRole=${currentUser?.role}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        throw new Error("删除失败")
+      }
+
+      setRecords(records.filter((r) => r.id !== recordId))
+      alert("记录已删除")
+    } catch (error) {
+      console.error("Delete record error:", error)
+      alert("删除记录失败")
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
@@ -420,12 +517,15 @@ export default function SessionDetailPage() {
                       <th className="px-4 py-2 text-left text-xs font-medium text-black uppercase">
                         备注
                       </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-black uppercase">
+                        操作
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {records.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="px-4 py-8 text-center text-black">
+                        <td colSpan={11} className="px-4 py-8 text-center text-black">
                           暂无记录
                         </td>
                       </tr>
@@ -462,6 +562,54 @@ export default function SessionDetailPage() {
                           <td className="px-4 py-2 text-sm text-black max-w-xs truncate">
                             {record.remarks || "-"}
                           </td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm">
+                            <div className="flex gap-2">
+                              {(currentUser?.role === "admin" || session?.controllerId === currentUser?.id) && (
+                                <>
+                                  <button
+                                    onClick={() => handleEditRecord(record)}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      strokeWidth={1.5}
+                                      stroke="currentColor"
+                                      className="w-4 h-4"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                                      />
+                                    </svg>
+                                    编辑
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteRecord(record.id)}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors duration-200"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      strokeWidth={2}
+                                      stroke="currentColor"
+                                      className="w-4 h-4"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                                      />
+                                    </svg>
+                                    删除
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -470,6 +618,164 @@ export default function SessionDetailPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* Edit Modal */}
+        {showEditModal && editingRecord && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold mb-4 text-black">编辑记录</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      呼号
+                    </label>
+                    <input
+                      type="text"
+                      value={editingRecord.callsign}
+                      onChange={(e) =>
+                        setEditingRecord({
+                          ...editingRecord,
+                          callsign: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      QTH
+                    </label>
+                    <input
+                      type="text"
+                      value={editingRecord.qth || ""}
+                      onChange={(e) =>
+                        setEditingRecord({
+                          ...editingRecord,
+                          qth: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      设备
+                    </label>
+                    <input
+                      type="text"
+                      value={editingRecord.equipment || ""}
+                      onChange={(e) =>
+                        setEditingRecord({
+                          ...editingRecord,
+                          equipment: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      天馈
+                    </label>
+                    <input
+                      type="text"
+                      value={editingRecord.antenna || ""}
+                      onChange={(e) =>
+                        setEditingRecord({
+                          ...editingRecord,
+                          antenna: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      功率
+                    </label>
+                    <input
+                      type="text"
+                      value={editingRecord.power || ""}
+                      onChange={(e) =>
+                        setEditingRecord({
+                          ...editingRecord,
+                          power: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      信号
+                    </label>
+                    <input
+                      type="text"
+                      value={editingRecord.signal || ""}
+                      onChange={(e) =>
+                        setEditingRecord({
+                          ...editingRecord,
+                          signal: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      报告
+                    </label>
+                    <input
+                      type="text"
+                      value={editingRecord.report || ""}
+                      onChange={(e) =>
+                        setEditingRecord({
+                          ...editingRecord,
+                          report: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      备注
+                    </label>
+                    <input
+                      type="text"
+                      value={editingRecord.remarks || ""}
+                      onChange={(e) =>
+                        setEditingRecord({
+                          ...editingRecord,
+                          remarks: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                    />
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false)
+                      setEditingRecord(null)
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleUpdateRecord}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
