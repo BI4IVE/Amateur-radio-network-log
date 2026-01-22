@@ -27,9 +27,13 @@ export function toBeijingISOString(date: Date = new Date()): string {
 export function formatTime(dateString: string | null): string {
   if (!dateString) return '-'
 
+  // 使用 UTC 时间解析，确保时区正确
   const date = new Date(dateString)
-  // 转换为北京时间（UTC+8）
-  const beijingDate = new Date(date.getTime() + (8 * 60 * 60 * 1000))
+  // 获取 UTC 时间戳并转换为北京时间（UTC+8）
+  const utcTimestamp = date.getTime() + (date.getTimezoneOffset() * 60 * 1000)
+  const beijingTimestamp = utcTimestamp + (8 * 60 * 60 * 1000)
+  const beijingDate = new Date(beijingTimestamp)
+  
   const hours = beijingDate.getUTCHours().toString().padStart(2, '0')
   const minutes = beijingDate.getUTCMinutes().toString().padStart(2, '0')
 
@@ -42,9 +46,13 @@ export function formatTime(dateString: string | null): string {
  * @returns 格式化的日期时间字符串
  */
 export function formatDateTime(dateString: string): string {
+  // 使用 UTC 时间解析，确保时区正确
   const date = new Date(dateString)
-  // 转换为北京时间（UTC+8）
-  const beijingDate = new Date(date.getTime() + (8 * 60 * 60 * 1000))
+  // 获取 UTC 时间戳并转换为北京时间（UTC+8）
+  const utcTimestamp = date.getTime() + (date.getTimezoneOffset() * 60 * 1000)
+  const beijingTimestamp = utcTimestamp + (8 * 60 * 60 * 1000)
+  const beijingDate = new Date(beijingTimestamp)
+  
   const year = beijingDate.getUTCFullYear()
   const month = (beijingDate.getUTCMonth() + 1).toString().padStart(2, '0')
   const day = beijingDate.getUTCDate().toString().padStart(2, '0')
@@ -61,9 +69,13 @@ export function formatDateTime(dateString: string): string {
  * @returns 格式化的日期字符串
  */
 export function formatDate(dateString: string): string {
+  // 使用 UTC 时间解析，确保时区正确
   const date = new Date(dateString)
-  // 转换为北京时间（UTC+8）
-  const beijingDate = new Date(date.getTime() + (8 * 60 * 60 * 1000))
+  // 获取 UTC 时间戳并转换为北京时间（UTC+8）
+  const utcTimestamp = date.getTime() + (date.getTimezoneOffset() * 60 * 1000)
+  const beijingTimestamp = utcTimestamp + (8 * 60 * 60 * 1000)
+  const beijingDate = new Date(beijingTimestamp)
+  
   const year = beijingDate.getUTCFullYear()
   const month = (beijingDate.getUTCMonth() + 1).toString().padStart(2, '0')
   const day = beijingDate.getUTCDate().toString().padStart(2, '0')

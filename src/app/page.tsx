@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { formatTime, formatDateTime, toBeijingISOString } from "@/utils/dateFormat"
+import { formatTime, formatDateTime, formatDate, toBeijingISOString } from "@/utils/dateFormat"
 
 interface User {
   id: string
@@ -571,7 +571,7 @@ export default function HomePage() {
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
-      link.download = `台网日志_${new Date(currentSession.sessionTime).toISOString().split("T")[0]}.xlsx`
+      link.download = `台网日志_${formatDate(currentSession.sessionTime)}.xlsx`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -769,7 +769,7 @@ export default function HomePage() {
                 <select
                   value={selectedControllerId}
                   onChange={(e) => setSelectedControllerId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 >
                   <option value="">选择主控人员</option>
                   {users.map((user) => (
