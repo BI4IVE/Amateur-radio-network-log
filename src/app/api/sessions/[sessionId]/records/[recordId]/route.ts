@@ -10,6 +10,7 @@ export async function PUT(
   try {
     const { sessionId, recordId } = await params
     const body = await request.json()
+    const { userId, userRole } = body
 
     // 检查会话是否存在
     const session = await logManager.getLogSessionById(sessionId)
@@ -24,6 +25,14 @@ export async function PUT(
     if (isSessionExpired(session.sessionTime)) {
       return NextResponse.json(
         { error: "该会话已过期（超过6小时），无法更新记录" },
+        { status: 403 }
+      )
+    }
+
+    // 检查权限：管理员可以修改任何会话的记录，主控只能修改自己会话的记录
+    if (userRole !== "admin" && session.controllerId !== userId) {
+      return NextResponse.json(
+        { error: "您没有权限修改此记录" },
         { status: 403 }
       )
     }
@@ -60,6 +69,11 @@ export async function DELETE(
   try {
     const { sessionId, recordId } = await params
 
+    // 从查询参数获取用户信息
+    const searchParams = request.nextUrl.searchParams
+    const userId = searchParams.get("userId")
+    const userRole = searchParams.get("userRole")
+
     // 检查会话是否存在
     const session = await logManager.getLogSessionById(sessionId)
     if (!session) {
@@ -73,6 +87,14 @@ export async function DELETE(
     if (isSessionExpired(session.sessionTime)) {
       return NextResponse.json(
         { error: "该会话已过期（超过6小时），无法删除记录" },
+        { status: 403 }
+      )
+    }
+
+    // 检查权限：管理员可以删除任何会话的记录，主控只能删除自己会话的记录
+    if (userRole !== "admin" && session.controllerId !== userId) {
+      return NextResponse.json(
+        { error: "您没有权限删除此记录" },
         { status: 403 }
       )
     }

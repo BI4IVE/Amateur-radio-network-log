@@ -487,6 +487,12 @@ export default function HomePage() {
       return
     }
 
+    // 检查权限：管理员可以添加记录到任何会话，主控只能添加记录到自己的会话
+    if (currentUser?.role !== "admin" && currentSession.controllerId !== currentUser?.id) {
+      alert("您没有权限向此会话添加记录")
+      return
+    }
+
     // 验证必填字段
     if (!callsign || callsign.trim() === "") {
       alert("请输入呼号")
@@ -531,6 +537,8 @@ export default function HomePage() {
           signal: signal || null,
           report: report || null,
           remarks: remarks || null,
+          userId: currentUser?.id,
+          userRole: currentUser?.role,
         }),
       })
 
@@ -594,6 +602,12 @@ export default function HomePage() {
   }
 
   const handleEditRecord = (record: LogRecord) => {
+    // 检查权限：管理员可以编辑任何记录，主控只能编辑自己会话的记录
+    if (currentUser?.role !== "admin" && currentSession?.controllerId !== currentUser?.id) {
+      alert("您没有权限编辑此记录")
+      return
+    }
+
     setEditingRecord(record)
     setShowEditModal(true)
   }
@@ -607,12 +621,18 @@ export default function HomePage() {
       return
     }
 
+    // 检查权限：管理员可以删除任何记录，主控只能删除自己会话的记录
+    if (currentUser?.role !== "admin" && currentSession.controllerId !== currentUser?.id) {
+      alert("您没有权限删除此记录")
+      return
+    }
+
     if (!confirm("确定要删除这条记录吗？")) {
       return
     }
 
     try {
-      const response = await fetch(`/api/sessions/${currentSession.id}/records/${recordId}`, {
+      const response = await fetch(`/api/sessions/${currentSession.id}/records/${recordId}?userId=${currentUser?.id}&userRole=${currentUser?.role}`, {
         method: "DELETE",
       })
 
@@ -637,6 +657,14 @@ export default function HomePage() {
       return
     }
 
+    // 检查权限：管理员可以修改任何记录，主控只能修改自己会话的记录
+    if (currentUser?.role !== "admin" && currentSession.controllerId !== currentUser?.id) {
+      alert("您没有权限修改此记录")
+      setShowEditModal(false)
+      setEditingRecord(null)
+      return
+    }
+
     try {
       const response = await fetch(`/api/sessions/${currentSession.id}/records/${editingRecord.id}`, {
         method: "PUT",
@@ -650,6 +678,8 @@ export default function HomePage() {
           signal: editingRecord.signal || null,
           report: editingRecord.report || null,
           remarks: editingRecord.remarks || null,
+          userId: currentUser?.id,
+          userRole: currentUser?.role,
         }),
       })
 
