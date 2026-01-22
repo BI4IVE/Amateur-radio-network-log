@@ -43,6 +43,20 @@ export default function SessionDetailPage() {
   const [editingRecord, setEditingRecord] = useState<LogRecord | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
+  // Insert mode
+  const [insertAfterRecord, setInsertAfterRecord] = useState<LogRecord | null>(null)
+  const [showInsertModal, setShowInsertModal] = useState(false)
+  const [newRecord, setNewRecord] = useState({
+    callsign: "",
+    qth: "",
+    equipment: "",
+    antenna: "",
+    power: "",
+    signal: "",
+    report: "",
+    remarks: "",
+  })
+
   useEffect(() => {
     // 获取当前用户
     const userStr = localStorage.getItem("user")
@@ -385,6 +399,106 @@ export default function SessionDetailPage() {
     }
   }
 
+  const handleInsertRecord = (record: LogRecord) => {
+    // 检查权限：管理员可以在任何会话插入记录，主控只能在自己会话插入
+    if (currentUser?.role !== "admin" && session?.controllerId !== currentUser?.id) {
+      alert("您没有权限插入记录")
+      return
+    }
+
+    setInsertAfterRecord(record)
+    setNewRecord({
+      callsign: "",
+      qth: "",
+      equipment: "",
+      antenna: "",
+      power: "",
+      signal: "",
+      report: "",
+      remarks: "",
+    })
+    setShowInsertModal(true)
+  }
+
+  const handleSaveNewRecord = async () => {
+    if (!session) {
+      alert("会话不存在")
+      return
+    }
+
+    // 检查权限：管理员可以在任何会话插入记录，主控只能在自己会话插入
+    if (currentUser?.role !== "admin" && session.controllerId !== currentUser?.id) {
+      alert("您没有权限插入记录")
+      setShowInsertModal(false)
+      return
+    }
+
+    // 验证必填字段
+    if (!newRecord.callsign || newRecord.callsign.trim() === "") {
+      alert("请输入呼号")
+      return
+    }
+
+    if (!newRecord.qth || newRecord.qth.trim() === "") {
+      alert("请输入QTH")
+      return
+    }
+
+    if (!newRecord.antenna || newRecord.antenna.trim() === "") {
+      alert("请输入天馈")
+      return
+    }
+
+    if (!newRecord.power || newRecord.power.trim() === "") {
+      alert("请输入功率")
+      return
+    }
+
+    if (!newRecord.signal || newRecord.signal.trim() === "") {
+      alert("请输入信号")
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${session.id}/records/with-participant`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          callsign: newRecord.callsign.toUpperCase(),
+          qth: newRecord.qth || null,
+          equipment: newRecord.equipment || null,
+          antenna: newRecord.antenna || null,
+          power: newRecord.power || null,
+          signal: newRecord.signal || null,
+          report: newRecord.report || null,
+          remarks: newRecord.remarks || null,
+          userId: currentUser?.id,
+          userRole: currentUser?.role,
+        }),
+      })
+
+      const data = await response.json()
+      setRecords([...records, data.record])
+
+      setShowInsertModal(false)
+      setInsertAfterRecord(null)
+      setNewRecord({
+        callsign: "",
+        qth: "",
+        equipment: "",
+        antenna: "",
+        power: "",
+        signal: "",
+        report: "",
+        remarks: "",
+      })
+      alert("记录已插入")
+    } catch (error) {
+      console.error("Insert record error:", error)
+      alert("插入记录失败")
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
@@ -566,6 +680,26 @@ export default function SessionDetailPage() {
                             <div className="flex gap-2">
                               {(currentUser?.role === "admin" || session?.controllerId === currentUser?.id) && (
                                 <>
+                                  <button
+                                    onClick={() => handleInsertRecord(record)}
+                                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors duration-200"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      strokeWidth={2}
+                                      stroke="currentColor"
+                                      className="w-4 h-4"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 4.5v15m7.5-7.5h-15"
+                                      />
+                                    </svg>
+                                    插入
+                                  </button>
                                   <button
                                     onClick={() => handleEditRecord(record)}
                                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
@@ -771,6 +905,189 @@ export default function SessionDetailPage() {
                     className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                   >
                     保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Insert Modal */}
+        {showInsertModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold mb-4 text-black">
+                  插入记录
+                  {insertAfterRecord && (
+                    <span className="text-sm text-gray-500 ml-2">
+                      （将在 "{insertAfterRecord.callsign}" 之后插入）
+                    </span>
+                  )}
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      呼号 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newRecord.callsign}
+                      onChange={(e) =>
+                        setNewRecord({
+                          ...newRecord,
+                          callsign: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="请输入呼号"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      QTH <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newRecord.qth}
+                      onChange={(e) =>
+                        setNewRecord({
+                          ...newRecord,
+                          qth: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="请输入QTH"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      设备
+                    </label>
+                    <input
+                      type="text"
+                      value={newRecord.equipment}
+                      onChange={(e) =>
+                        setNewRecord({
+                          ...newRecord,
+                          equipment: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="设备型号"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      天馈 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newRecord.antenna}
+                      onChange={(e) =>
+                        setNewRecord({
+                          ...newRecord,
+                          antenna: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="天线类型"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      功率 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newRecord.power}
+                      onChange={(e) =>
+                        setNewRecord({
+                          ...newRecord,
+                          power: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="功率值"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      信号 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newRecord.signal}
+                      onChange={(e) =>
+                        setNewRecord({
+                          ...newRecord,
+                          signal: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="信号强度"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      报告
+                    </label>
+                    <input
+                      type="text"
+                      value={newRecord.report}
+                      onChange={(e) =>
+                        setNewRecord({
+                          ...newRecord,
+                          report: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="报告内容"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      备注
+                    </label>
+                    <input
+                      type="text"
+                      value={newRecord.remarks}
+                      onChange={(e) =>
+                        setNewRecord({
+                          ...newRecord,
+                          remarks: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="备注信息"
+                    />
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      setShowInsertModal(false)
+                      setInsertAfterRecord(null)
+                      setNewRecord({
+                        callsign: "",
+                        qth: "",
+                        equipment: "",
+                        antenna: "",
+                        power: "",
+                        signal: "",
+                        report: "",
+                        remarks: "",
+                      })
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleSaveNewRecord}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    插入
                   </button>
                 </div>
               </div>
