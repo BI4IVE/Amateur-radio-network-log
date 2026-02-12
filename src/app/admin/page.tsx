@@ -35,10 +35,18 @@ export default function AdminPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [detailUser, setDetailUser] = useState<User | null>(null)
   const [formData, setFormData] = useState({
     username: "",
     password: "",
+    name: "",
+    equipment: "",
+    antenna: "",
+    qth: "",
+    role: "user",
+  })
+  const [editFormData, setEditFormData] = useState({
     name: "",
     equipment: "",
     antenna: "",
@@ -165,78 +173,48 @@ export default function AdminPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (editingUser) {
-      try {
-        const updateData: any = {
-          name: formData.name,
-          equipment: formData.equipment,
-          antenna: formData.antenna,
-          qth: formData.qth,
-          role: formData.role,
-        }
+    if (!formData.password) {
+      alert("请输入密码")
+      return
+    }
 
-        const response = await fetch(`/api/users/${editingUser.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updateData),
-        })
-
-        if (!response.ok) {
-          throw new Error("更新失败")
-        }
-
-        alert("用户已更新")
-        loadUsers()
-        resetForm()
-      } catch (error) {
-        console.error("Update user error:", error)
-        alert("更新失败")
-      }
-    } else {
-      if (!formData.password) {
-        alert("请输入密码")
+    const strength = getPasswordStrength(formData.password)
+    if (strength < 2) {
+      if (!confirm("密码强度较弱，是否继续？")) {
         return
       }
+    }
 
-      const strength = getPasswordStrength(formData.password)
-      if (strength < 2) {
-        if (!confirm("密码强度较弱，是否继续？")) {
-          return
-        }
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        throw new Error("创建失败")
       }
 
-      try {
-        const response = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        })
-
-        if (!response.ok) {
-          throw new Error("创建失败")
-        }
-
-        alert("用户已创建")
-        loadUsers()
-        resetForm()
-      } catch (error) {
-        console.error("Create user error:", error)
-        alert("创建失败")
-      }
+      alert("用户已创建")
+      loadUsers()
+      resetForm()
+    } catch (error) {
+      console.error("Create user error:", error)
+      alert("创建失败")
     }
   }
 
   const handleEdit = (user: User) => {
     setEditingUser(user)
-    setFormData({
-      username: user.username,
-      password: "",
+    setEditFormData({
       name: user.name,
       equipment: user.equipment || "",
       antenna: user.antenna || "",
       qth: user.qth || "",
       role: user.role,
     })
+    setShowEditModal(true)
   }
 
   const handleDelete = async (id: string) => {
@@ -406,7 +384,6 @@ export default function AdminPage() {
   }
 
   const resetForm = () => {
-    setEditingUser(null)
     setFormData({
       username: "",
       password: "",
@@ -416,6 +393,42 @@ export default function AdminPage() {
       qth: "",
       role: "user",
     })
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!editingUser) {
+      return
+    }
+
+    try {
+      const updateData = {
+        name: editFormData.name,
+        equipment: editFormData.equipment,
+        antenna: editFormData.antenna,
+        qth: editFormData.qth,
+        role: editFormData.role,
+      }
+
+      const response = await fetch(`/api/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      })
+
+      if (!response.ok) {
+        throw new Error("更新失败")
+      }
+
+      alert("用户已更新")
+      loadUsers()
+      setShowEditModal(false)
+      setEditingUser(null)
+    } catch (error) {
+      console.error("Update user error:", error)
+      alert("更新失败")
+    }
   }
 
   const openDetailModal = (user: User) => {
@@ -471,7 +484,7 @@ export default function AdminPage() {
                 <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
-                {editingUser ? "编辑用户" : "添加新用户"}
+                添加新用户
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
@@ -484,49 +497,46 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, username: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                     required
-                    disabled={!!editingUser}
                     placeholder="输入用户名"
                   />
                 </div>
 
-                {!editingUser && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      密码 *
-                    </label>
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      required
-                      placeholder="输入密码"
-                    />
-                    {formData.password && (
-                      <div className="mt-2">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full transition-all duration-300 ${getStrengthColor(
-                                getPasswordStrength(formData.password)
-                              )}`}
-                              style={{
-                                width: `${(getPasswordStrength(formData.password) / 4) * 100}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-500">
-                            {getStrengthText(getPasswordStrength(formData.password))}
-                          </span>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    密码 *
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                    required
+                    placeholder="输入密码"
+                  />
+                  {formData.password && (
+                    <div className="mt-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 ${getStrengthColor(
+                              getPasswordStrength(formData.password)
+                            )}`}
+                            style={{
+                              width: `${(getPasswordStrength(formData.password) / 4) * 100}%`,
+                            }}
+                          />
                         </div>
+                        <span className="text-xs text-gray-500">
+                          {getStrengthText(getPasswordStrength(formData.password))}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -538,7 +548,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                     required
                     placeholder="输入真实姓名"
                   />
@@ -554,7 +564,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, equipment: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                     placeholder="无线电设备型号"
                   />
                 </div>
@@ -569,7 +579,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, antenna: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                     placeholder="天线类型"
                   />
                 </div>
@@ -584,7 +594,7 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, qth: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                     placeholder="位置信息"
                   />
                 </div>
@@ -598,30 +608,20 @@ export default function AdminPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, role: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    disabled={!!editingUser}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                   >
                     <option value="user">主控人员</option>
                     <option value="admin">管理员</option>
                   </select>
                 </div>
 
-                <div className="flex gap-3 pt-2">
+                <div className="pt-2">
                   <button
                     type="submit"
-                    className="flex-1 px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                    className="w-full px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
                   >
-                    {editingUser ? "更新" : "创建"}
+                    创建用户
                   </button>
-                  {editingUser && (
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="flex-1 px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                    >
-                      取消
-                    </button>
-                  )}
                 </div>
               </form>
             </div>
@@ -638,7 +638,7 @@ export default function AdminPage() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                       placeholder="搜索用户名、姓名、设备、QTH..."
                     />
                     <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -650,7 +650,7 @@ export default function AdminPage() {
                   <select
                     value={roleFilter}
                     onChange={(e) => setRoleFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                   >
                     <option value="all">所有角色</option>
                     <option value="admin">管理员</option>
@@ -663,7 +663,7 @@ export default function AdminPage() {
                       setSortBy(sort)
                       setSortOrder(order as "asc" | "desc")
                     }}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                   >
                     <option value="createdAt-desc">创建时间 ↓</option>
                     <option value="createdAt-asc">创建时间 ↑</option>
@@ -871,7 +871,7 @@ export default function AdminPage() {
                       newPassword: e.target.value,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                   required
                 />
                 {passwordFormData.newPassword && (
@@ -907,7 +907,7 @@ export default function AdminPage() {
                       confirmPassword: e.target.value,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                   required
                 />
               </div>
@@ -1031,6 +1031,114 @@ export default function AdminPage() {
                 修改密码
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold mb-4">编辑用户</h3>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  用户名
+                </label>
+                <input
+                  type="text"
+                  value={editingUser.username}
+                  disabled
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  姓名 *
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  设备
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.equipment}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, equipment: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  天线
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.antenna}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, antenna: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  QTH
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.qth}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, qth: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  角色 *
+                </label>
+                <select
+                  value={editFormData.role}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, role: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                >
+                  <option value="user">主控人员</option>
+                  <option value="admin">管理员</option>
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                >
+                  更新
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingUser(null)
+                  }}
+                  className="flex-1 px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  取消
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
