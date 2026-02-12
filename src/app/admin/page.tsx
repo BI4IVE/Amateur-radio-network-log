@@ -36,6 +36,7 @@ export default function AdminPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [detailUser, setDetailUser] = useState<User | null>(null)
   const [formData, setFormData] = useState({
     username: "",
@@ -197,6 +198,7 @@ export default function AdminPage() {
       }
 
       alert("用户已创建")
+      setShowCreateModal(false)
       loadUsers()
       resetForm()
     } catch (error) {
@@ -465,170 +467,31 @@ export default function AdminPage() {
               总用户数: {users.length} | 已筛选: {filteredAndSortedUsers.length}
             </p>
           </div>
-          <button
-            onClick={handleExportUsers}
-            className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            导出CSV
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              添加新用户
+            </button>
+            <button
+              onClick={handleExportUsers}
+              className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              导出CSV
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* User Form */}
-          <div className="xl:col-span-1">
-            <div className="bg-white rounded-lg shadow p-6 sticky top-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                </svg>
-                添加新用户
-              </h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    用户名 *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) =>
-                      setFormData({ ...formData, username: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                    required
-                    placeholder="输入用户名"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    密码 *
-                  </label>
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                    required
-                    placeholder="输入密码"
-                  />
-                  {formData.password && (
-                    <div className="mt-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full transition-all duration-300 ${getStrengthColor(
-                              getPasswordStrength(formData.password)
-                            )}`}
-                            style={{
-                              width: `${(getPasswordStrength(formData.password) / 4) * 100}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-500">
-                          {getStrengthText(getPasswordStrength(formData.password))}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    姓名 *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                    required
-                    placeholder="输入真实姓名"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    设备
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.equipment}
-                    onChange={(e) =>
-                      setFormData({ ...formData, equipment: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                    placeholder="无线电设备型号"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    天线
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.antenna}
-                    onChange={(e) =>
-                      setFormData({ ...formData, antenna: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                    placeholder="天线类型"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    QTH
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.qth}
-                    onChange={(e) =>
-                      setFormData({ ...formData, qth: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                    placeholder="位置信息"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    角色 *
-                  </label>
-                  <select
-                    value={formData.role}
-                    onChange={(e) =>
-                      setFormData({ ...formData, role: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                  >
-                    <option value="user">主控人员</option>
-                    <option value="admin">管理员</option>
-                  </select>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-                  >
-                    创建用户
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
+        <div className="space-y-4">
           {/* User List */}
-          <div className="xl:col-span-2 space-y-4">
+          <div className="space-y-4">
             {/* Search and Filter Bar */}
             <div className="bg-white rounded-lg shadow p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1031,6 +894,163 @@ export default function AdminPage() {
                 修改密码
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-lg font-semibold mb-4">添加新用户</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  用户名 *
+                </label>
+                <input
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  required
+                  placeholder="输入用户名"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  密码 *
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  required
+                  placeholder="输入密码"
+                />
+                {formData.password && (
+                  <div className="mt-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-300 ${getStrengthColor(
+                            getPasswordStrength(formData.password)
+                          )}`}
+                          style={{
+                            width: `${(getPasswordStrength(formData.password) / 4) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {getStrengthText(getPasswordStrength(formData.password))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  姓名 *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  required
+                  placeholder="输入真实姓名"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  设备
+                </label>
+                <input
+                  type="text"
+                  value={formData.equipment}
+                  onChange={(e) =>
+                    setFormData({ ...formData, equipment: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  placeholder="无线电设备型号"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  天线
+                </label>
+                <input
+                  type="text"
+                  value={formData.antenna}
+                  onChange={(e) =>
+                    setFormData({ ...formData, antenna: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  placeholder="天线类型"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  QTH
+                </label>
+                <input
+                  type="text"
+                  value={formData.qth}
+                  onChange={(e) =>
+                    setFormData({ ...formData, qth: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                  placeholder="位置信息"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  角色 *
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                >
+                  <option value="user">主控人员</option>
+                  <option value="admin">管理员</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                >
+                  创建用户
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateModal(false)
+                    resetForm()
+                  }}
+                  className="flex-1 px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  取消
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
