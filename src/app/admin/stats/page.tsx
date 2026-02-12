@@ -46,6 +46,7 @@ export default function AdminStatsPage() {
     if (userStr) {
       const user = JSON.parse(userStr)
       setCurrentUser(user)
+      // 权限检查由 AdminLayout 处理，这里只用于数据过滤
     }
     loadStats()
   }, [startDate, endDate])
@@ -57,7 +58,7 @@ export default function AdminStatsPage() {
       if (startDate) params.append("startDate", startDate)
       if (endDate) params.append("endDate", endDate)
 
-      // 如果不是管理员，只显示自己作为主控的会话
+      // 数据过滤：非管理员只看到自己作为主控的会话
       if (currentUser && currentUser.role !== "admin") {
         params.append("controllerId", currentUser.id)
       }
