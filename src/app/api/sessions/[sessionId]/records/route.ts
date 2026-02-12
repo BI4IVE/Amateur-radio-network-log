@@ -27,6 +27,7 @@ export async function POST(
   try {
     const { sessionId } = await params
     const body = await request.json()
+    const { userId, userRole } = body
 
     // 检查会话是否存在
     const session = await logManager.getLogSessionById(sessionId)
@@ -41,6 +42,14 @@ export async function POST(
     if (isSessionExpired(session.sessionTime)) {
       return NextResponse.json(
         { error: "该会话已过期（超过6小时），无法添加记录" },
+        { status: 403 }
+      )
+    }
+
+    // 检查权限：管理员和主控都可以添加记录到任何会话
+    if (userRole !== "admin" && userRole !== "user") {
+      return NextResponse.json(
+        { error: "您没有权限添加记录" },
         { status: 403 }
       )
     }

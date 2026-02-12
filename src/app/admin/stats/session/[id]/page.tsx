@@ -313,8 +313,8 @@ export default function SessionDetailPage() {
   }
 
   const handleEditRecord = (record: LogRecord) => {
-    // 检查权限：管理员可以编辑任何记录，主控只能编辑自己会话的记录
-    if (currentUser?.role !== "admin" && session?.controllerId !== currentUser?.id) {
+    // 检查权限：管理员和主控都可以编辑任何记录
+    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
       alert("您没有权限编辑此记录")
       return
     }
@@ -326,8 +326,8 @@ export default function SessionDetailPage() {
   const handleUpdateRecord = async () => {
     if (!session || !editingRecord) return
 
-    // 检查权限：管理员可以修改任何记录，主控只能修改自己会话的记录
-    if (currentUser?.role !== "admin" && session.controllerId !== currentUser?.id) {
+    // 检查权限：管理员和主控都可以修改任何记录
+    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
       alert("您没有权限修改此记录")
       setShowEditModal(false)
       setEditingRecord(null)
@@ -400,8 +400,8 @@ export default function SessionDetailPage() {
   }
 
   const handleInsertRecord = (record: LogRecord) => {
-    // 检查权限：管理员可以在任何会话插入记录，主控只能在自己会话插入
-    if (currentUser?.role !== "admin" && session?.controllerId !== currentUser?.id) {
+    // 检查权限：管理员和主控都可以在任何会话插入记录
+    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
       alert("您没有权限插入记录")
       return
     }
@@ -426,8 +426,8 @@ export default function SessionDetailPage() {
       return
     }
 
-    // 检查权限：管理员可以在任何会话插入记录，主控只能在自己会话插入
-    if (currentUser?.role !== "admin" && session.controllerId !== currentUser?.id) {
+    // 检查权限：管理员和主控都可以在任何会话插入记录
+    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
       alert("您没有权限插入记录")
       setShowInsertModal(false)
       return
@@ -743,8 +743,8 @@ export default function SessionDetailPage() {
                                   </button>
                                 </>
                               )}
-                              {/* 主控：自己的会话显示插入和编辑，不显示删除 */}
-                              {currentUser?.role !== "admin" && session?.controllerId === currentUser?.id && (
+                              {/* 主控：显示插入和编辑，不显示删除 */}
+                              {currentUser?.role === "user" && (
                                 <>
                                   <button
                                     onClick={() => handleInsertRecord(record)}
@@ -788,7 +788,7 @@ export default function SessionDetailPage() {
                                   </button>
                                 </>
                               )}
-                              {/* 其他主控：不显示任何按钮，只能查看 */}
+                              {/* 其他：不显示任何按钮，只能查看 */}
                             </div>
                           </td>
                         </tr>

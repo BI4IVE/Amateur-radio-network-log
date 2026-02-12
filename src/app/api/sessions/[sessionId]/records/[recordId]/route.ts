@@ -29,8 +29,8 @@ export async function PUT(
       )
     }
 
-    // 检查权限：管理员可以修改任何会话的记录，主控只能修改自己会话的记录
-    if (userRole !== "admin" && session.controllerId !== userId) {
+    // 检查权限：管理员和主控都可以修改任何记录
+    if (userRole !== "admin" && userRole !== "user") {
       return NextResponse.json(
         { error: "您没有权限修改此记录" },
         { status: 403 }

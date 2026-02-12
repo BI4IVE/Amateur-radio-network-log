@@ -487,9 +487,9 @@ export default function HomePage() {
       return
     }
 
-    // 检查权限：管理员可以添加记录到任何会话，主控只能添加记录到自己的会话
-    if (currentUser?.role !== "admin" && currentSession.controllerId !== currentUser?.id) {
-      alert("您没有权限向此会话添加记录")
+    // 检查权限：管理员和主控都可以添加记录到任何会话
+    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
+      alert("您没有权限添加记录")
       return
     }
 
@@ -602,8 +602,8 @@ export default function HomePage() {
   }
 
   const handleEditRecord = (record: LogRecord) => {
-    // 检查权限：管理员可以编辑任何记录，主控只能编辑自己会话的记录
-    if (currentUser?.role !== "admin" && currentSession?.controllerId !== currentUser?.id) {
+    // 检查权限：管理员和主控都可以编辑任何记录
+    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
       alert("您没有权限编辑此记录")
       return
     }
@@ -657,8 +657,8 @@ export default function HomePage() {
       return
     }
 
-    // 检查权限：管理员可以修改任何记录，主控只能修改自己会话的记录
-    if (currentUser?.role !== "admin" && currentSession.controllerId !== currentUser?.id) {
+    // 检查权限：管理员和主控都可以修改任何记录
+    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
       alert("您没有权限修改此记录")
       setShowEditModal(false)
       setEditingRecord(null)
@@ -1767,7 +1767,7 @@ export default function HomePage() {
                                 </>
                               )}
                               {/* 主控：只显示编辑，不显示删除 */}
-                              {currentUser?.role !== "admin" && currentSession?.controllerId === currentUser?.id && (
+                              {currentUser?.role === "user" && (
                                 <button
                                   onClick={() => handleEditRecord(record)}
                                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200"

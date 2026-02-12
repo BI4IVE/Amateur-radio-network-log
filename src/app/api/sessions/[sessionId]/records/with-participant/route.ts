@@ -30,10 +30,10 @@ export async function POST(
       )
     }
 
-    // 检查权限：管理员可以添加记录到任何会话，主控只能添加记录到自己的会话
-    if (userRole !== "admin" && session.controllerId !== userId) {
+    // 检查权限：管理员和主控都可以添加记录到任何会话
+    if (userRole !== "admin" && userRole !== "user") {
       return NextResponse.json(
-        { error: "您没有权限向此会话添加记录" },
+        { error: "您没有权限添加记录" },
         { status: 403 }
       )
     }
