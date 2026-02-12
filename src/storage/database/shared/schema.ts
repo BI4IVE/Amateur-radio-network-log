@@ -76,6 +76,18 @@ export const participants = pgTable("participants", {
   updatedAt: timestamp("updated_at", { withTimezone: true }),
 })
 
+// 页面配置表
+export const pageConfigs = pgTable("page_configs", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  value: text("value").notNull(),
+  category: varchar("category", { length: 50 }).notNull(), // general, login, home, etc.
+  description: varchar("description", { length: 255 }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
 // 使用 createSchemaFactory 配置 date coercion
 const { createInsertSchema: createCoercedInsertSchema } = createSchemaFactory({
   coerce: { date: true },
@@ -144,6 +156,20 @@ export const updateParticipantSchema = createCoercedInsertSchema(participants)
   })
   .partial()
 
+// PageConfig schemas
+export const insertPageConfigSchema = createCoercedInsertSchema(pageConfigs).pick({
+  key: true,
+  value: true,
+  category: true,
+  description: true,
+})
+export const updatePageConfigSchema = createCoercedInsertSchema(pageConfigs)
+  .pick({
+    value: true,
+    description: true,
+  })
+  .partial()
+
 // TypeScript types
 export type User = typeof users.$inferSelect
 export type InsertUser = z.infer<typeof insertUserSchema>
@@ -160,6 +186,10 @@ export type UpdateLogRecord = z.infer<typeof updateLogRecordSchema>
 export type Participant = typeof participants.$inferSelect
 export type InsertParticipant = z.infer<typeof insertParticipantSchema>
 export type UpdateParticipant = z.infer<typeof updateParticipantSchema>
+
+export type PageConfig = typeof pageConfigs.$inferSelect
+export type InsertPageConfig = z.infer<typeof insertPageConfigSchema>
+export type UpdatePageConfig = z.infer<typeof updatePageConfigSchema>
 
 
 

@@ -54,6 +54,10 @@ export default function HomePage() {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [users, setUsers] = useState<User[]>([])
+  
+  // 页面配置
+  const [pageConfigs, setPageConfigs] = useState<Record<string, string>>({})
+  
   const [selectedControllerId, setSelectedControllerId] = useState("")
   const [sessionTime, setSessionTime] = useState("")
   const [controllerName, setControllerName] = useState("")
@@ -156,8 +160,19 @@ export default function HomePage() {
       loadUsers()
       loadParticipants()
       setSessionTime(toBeijingISOString())
+      loadPageConfigs()
     }
   }, [currentUser])
+
+  const loadPageConfigs = async () => {
+    try {
+      const response = await fetch("/api/page-configs")
+      const data = await response.json()
+      setPageConfigs(data.configs || {})
+    } catch (error) {
+      console.error("Load page configs error:", error)
+    }
+  }
 
   // SSE 实时连接
   useEffect(() => {
@@ -739,7 +754,7 @@ export default function HomePage() {
               </svg>
             </div>
             <h1 className="text-xl font-bold text-white">
-              济南黄河业余无线电台网主控日志
+              {pageConfigs.home_header_title || "济南黄河业余无线电台网主控日志"}
             </h1>
           </div>
           <div className="flex items-center gap-4">

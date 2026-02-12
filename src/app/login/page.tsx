@@ -9,6 +9,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  
+  // 页面配置
+  const [pageConfigs, setPageConfigs] = useState<Record<string, string>>({})
+  const [configsLoading, setConfigsLoading] = useState(true)
 
   useEffect(() => {
     // Check if user is already logged in
@@ -27,7 +31,22 @@ export default function LoginPage() {
       // Invalid JSON in localStorage, clear it
       localStorage.removeItem("user")
     }
+
+    // 加载页面配置
+    loadPageConfigs()
   }, [router])
+
+  const loadPageConfigs = async () => {
+    try {
+      const response = await fetch("/api/page-configs")
+      const data = await response.json()
+      setPageConfigs(data.configs || {})
+    } catch (error) {
+      console.error("Load page configs error:", error)
+    } finally {
+      setConfigsLoading(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -100,9 +119,9 @@ export default function LoginPage() {
               </svg>
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              济南黄河业余无线电台<br/>台网主控日志
+              {pageConfigs.login_title || "济南黄河业余无线电台<br/>台网主控日志"}
             </h1>
-            <p className="text-gray-500 font-medium">登录系统</p>
+            <p className="text-gray-500 font-medium">{pageConfigs.login_subtitle || "登录系统"}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -199,7 +218,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-500">
-              v1.0.2 By BR4IN
+              {pageConfigs.version || "v1.1.0"} By BR4IN
             </p>
           </div>
         </div>
