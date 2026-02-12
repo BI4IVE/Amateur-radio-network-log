@@ -75,7 +75,7 @@ export default function AdminToolsPage() {
         {/* Page Header */}
         <div>
           <h2 className="text-2xl font-bold text-gray-900">管理工具</h2>
-          <p className="text-sm text-gray-500 mt-1">系统管理工具和快捷操作</p>
+          <p className="text-sm text-gray-500 mt-1">系统管理工具和用户管理</p>
         </div>
 
         {message && (
@@ -88,79 +88,6 @@ export default function AdminToolsPage() {
           </div>
         )}
 
-        {/* Quick Links */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            onClick={() => router.push("/admin/page-configs")}
-            className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all shadow-md hover:shadow-lg"
-          >
-            <div className="p-3 bg-white/20 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
-              </svg>
-            </div>
-            <div className="text-left flex-1">
-              <div className="font-semibold text-lg">页面配置管理</div>
-              <div className="text-sm opacity-90">管理网站标题、版本号、联系方式等</div>
-            </div>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-          <button
-            onClick={() => router.push("/admin/stats")}
-            className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all shadow-md hover:shadow-lg"
-          >
-            <div className="p-3 bg-white/20 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            </div>
-            <div className="text-left flex-1">
-              <div className="font-semibold text-lg">台网统计</div>
-              <div className="text-sm opacity-90">查看历史台网数据和统计信息</div>
-            </div>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-          <button
-            onClick={() => router.push("/admin")}
-            className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg"
-          >
-            <div className="p-3 bg-white/20 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <div className="text-left flex-1">
-              <div className="font-semibold text-lg">用户管理</div>
-              <div className="text-sm opacity-90">管理系统用户和权限</div>
-            </div>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-          <button
-            onClick={() => router.push("/")}
-            className="flex items-center gap-4 px-6 py-5 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all shadow-md hover:shadow-lg"
-          >
-            <div className="p-3 bg-white/20 rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            </div>
-            <div className="text-left flex-1">
-              <div className="font-semibold text-lg">返回主页</div>
-              <div className="text-sm opacity-90">返回台网日志主页</div>
-            </div>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* User List */}
           <div className="bg-white rounded-lg shadow p-6">
@@ -169,25 +96,28 @@ export default function AdminToolsPage() {
               <span className="text-sm text-gray-500">共 {users.length} 人</span>
             </div>
             {loading ? (
-              <div className="text-gray-500 text-center py-8">加载中...</div>
+              <div className="text-gray-500 text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-3 border-gray-300 border-t-indigo-600"></div>
+                <p className="mt-2">加载中...</p>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">用户名</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">姓名</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">角色</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">创建时间</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">用户名</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">姓名</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">角色</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">创建时间</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {users.map((user) => (
-                      <tr key={user.id}>
+                      <tr key={user.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 font-medium text-gray-900">{user.username}</td>
                         <td className="px-4 py-3 text-gray-600">{user.name}</td>
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                             user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
                           }`}>
                             {user.role === 'admin' ? '管理员' : '用户'}
@@ -267,6 +197,17 @@ export default function AdminToolsPage() {
               </button>
             </form>
           </div>
+        </div>
+
+        {/* Tips */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h4 className="font-semibold text-blue-900 mb-2">💡 使用提示</h4>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• 如果用户名已存在，将更新该用户的信息</li>
+            <li>• 建议使用强密码，包含字母、数字和特殊字符</li>
+            <li>• 管理员拥有系统所有权限</li>
+            <li>• 使用左侧菜单快速导航到其他管理页面</li>
+          </ul>
         </div>
       </div>
     </AdminLayout>
