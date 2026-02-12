@@ -72,7 +72,7 @@ export class PageConfigManager {
       },
       {
         key: "version",
-        value: "1.1.0",
+        value: "1.2.0",
         category: "general",
         description: "系统版本号",
       },
