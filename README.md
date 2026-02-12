@@ -2,9 +2,11 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+![Version](https://img.shields.io/badge/version-1.4.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Made with](https://img.shields.io/badge/made%20with-Coze%20Coding-purple)
+![Node](https://img.shields.io/badge/node-24.x-brightgreen)
+![React](https://img.shields.io/badge/react-19.x-61DAFB)
+![Next](https://img.shields.io/badge/next-16.x-black)
 
 **本系统全部由扣子 AI（Coze Coding）编程完成**
 
@@ -17,6 +19,16 @@
 ## 📖 项目简介
 
 济南黄河业余无线电台网主控日志系统是一个专为业余无线电爱好者设计的现代化日志管理系统。系统支持多主控实时协作、会话管理、参与人员库、Excel 导出、呼号查询等功能，采用前后端分离架构，界面美观、操作便捷。
+
+本系统已成功应用于济南黄河业余无线电台网的实际运营中，为台网日志记录提供了高效、可靠的解决方案。
+
+### 核心优势
+
+- 🎯 **专业设计**：专为业余无线电场景设计，贴合实际使用需求
+- 🚀 **高性能**：采用 Next.js 16 + React 19，提供极速响应体验
+- 🔒 **安全可靠**：完善的权限控制和数据加密机制
+- 🌐 **实时协作**：基于 SSE 的多主控实时同步功能
+- 📱 **响应式设计**：完美适配 PC、平板、手机等设备
 
 ---
 
@@ -68,6 +80,7 @@
 - **历史会话**：查看所有历史台网会话记录
 - **会话详情**：查看每个会话的完整记录列表
 - **数据导出**：支持导出 CSV 格式的会话数据
+- **统计报表**：提供多维度数据分析
 
 ### ⚙️ 页面配置管理
 - **动态配置**：管理员可在后台修改所有页面的标题、版本号、联系方式等
@@ -80,13 +93,21 @@
 
 ### 🛠️ 管理工具
 - **用户管理**：创建、更新用户，设置角色和权限
-- **快捷操作**：一键初始化管理员账户
-- **配置管理**：管理页面配置、系统设置
+- **弹窗式编辑**：所有编辑操作采用弹窗模式，提升用户体验
+- **批量操作**：支持批量删除、批量修改角色
+- **数据导出**：支持导出用户列表为 CSV 文件
+- **搜索筛选**：支持按用户名、姓名、角色、设备等多条件搜索
 
 ### 🌐 多语言与时区
 - **北京时间**：系统所有时间统一显示为北京时间（UTC+8）
 - **中文界面**：全中文界面，符合国内用户习惯
-- **大写输入**：所有输入框自动转换为大写字母
+- **大写输入**：呼号输入自动转换为大写字母
+
+### 🎨 界面优化
+- **现代化设计**：采用 shadcn/ui 组件库，界面美观简洁
+- **响应式布局**：完美适配各种屏幕尺寸
+- **快捷导航**：顶部导航栏快速访问常用功能
+- **侧边栏菜单**：管理后台支持收缩/展开
 
 ---
 
@@ -103,12 +124,14 @@
 ### 后端技术
 - **运行时**：Node.js 24
 - **ORM**：Drizzle ORM
-- **数据库**：PostgreSQL
+- **数据库**：PostgreSQL 14+
+- **实时通信**：Server-Sent Events (SSE)
 
 ### 开发工具
 - **包管理器**：pnpm
 - **部署工具**：Coze CLI
 - **API**：RESTful API + SSE
+- **类型检查**：TypeScript strict mode
 
 ---
 
@@ -117,12 +140,12 @@
 ### 环境要求
 
 - **Node.js**：24.x 或更高版本
-- **pnpm**：最新版本
+- **pnpm**：9.x 或更高版本
 - **PostgreSQL**：14.x 或更高版本
 - **内存**：至少 2GB
 - **磁盘空间**：至少 1GB
 
-### 安装步骤
+### 本地开发
 
 #### 1. 克隆项目
 ```bash
@@ -149,7 +172,7 @@ DATABASE_URL=postgresql://username:password@localhost:5432/radio_network_log
 
 # 应用配置
 PORT=5000
-NODE_ENV=production
+NODE_ENV=development
 ```
 
 #### 5. 初始化数据库
@@ -157,161 +180,162 @@ NODE_ENV=production
 ```bash
 # 创建表结构
 pnpm drizzle-kit push:pg
-
-# 初始化页面配置
-curl -X POST http://localhost:5000/api/admin/migrate/page-configs
 ```
 
-#### 6. 启动开发服务器
+#### 6. 创建管理员账户
+使用管理工具页面创建管理员账户，或使用 API：
+```bash
+curl -X POST http://localhost:5000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "ADMIN",
+    "password": "ADMIN123",
+    "name": "管理员",
+    "role": "admin"
+  }'
+```
+
+#### 7. 启动开发服务器
 ```bash
 pnpm dev
 ```
 
 访问 `http://localhost:5000` 查看应用。
 
-#### 7. 创建管理员账户
-```bash
-# 使用 API 创建
-curl -X POST http://localhost:5000/api/debug/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "ADMIN",
-    "password": "ADMIN123",
-    "name": "管理员",
-    "role": "admin"
-  }'
-```
-
-#### 8. 登录系统
-- 用户名：`ADMIN`
-- 密码：`ADMIN123`
-
 ---
 
 ## 📦 部署指南
 
-### 方式一：使用 Coze CLI 部署（推荐）
+### 方式一：当前平台部署（Coze Coding 环境）
 
-Coze CLI 是官方推荐的一键部署工具，支持自动配置环境和启动服务。
+本系统已在 Coze Coding 沙箱环境中成功部署，这是官方推荐的开发和测试环境。
 
-#### 1. 安装 Coze CLI
+#### 环境特点
+- 预配置 Node.js 24 运行环境
+- 集成 PostgreSQL 数据库
+- 自动热更新（HMR）
+- 内置端口管理（默认 5000）
+- 支持一键构建和部署
+
+#### 部署步骤
+
+1. **初始化项目**
 ```bash
-npm install -g @coze/coding-cli
+coze init ${COZE_WORKSPACE_PATH} --template nextjs
 ```
 
-#### 2. 初始化项目
+2. **安装依赖**
 ```bash
-coze init . --template nextjs
+cd ${COZE_WORKSPACE_PATH}
+pnpm install
 ```
 
-#### 3. 配置环境
-编辑 `.coze` 文件：
-```toml
-[project]
-requires = ["nodejs-24"]
+3. **配置环境变量**
+在 `.coze` 文件中配置数据库连接和环境变量。
 
-[dev]
-build = ["pnpm", "install"]
-run = ["pnpm", "run", "dev"]
-
-[deploy]
-build = ["pnpm", "run", "build"]
-run = ["pnpm", "run", "start"]
-```
-
-#### 4. 启动开发环境
+4. **启动开发服务**
 ```bash
 coze dev
 ```
 
-#### 5. 构建生产版本
+5. **构建生产版本**
 ```bash
 coze build
 ```
 
-#### 6. 启动生产环境
+6. **启动生产服务**
 ```bash
 coze start
 ```
 
-服务将在 `http://localhost:5000` 启动。
+#### 注意事项
+- 服务默认运行在 5000 端口
+- 日志文件位于 `/app/work/logs/bypass/`
+- 禁止使用 9000 端口（系统服务占用）
+- 使用 `coze --help` 查看更多命令
 
 ---
 
-### 方式二：Docker 部署
+### 方式二：宝塔面板部署
 
-#### 1. 创建 Dockerfile
-```dockerfile
-FROM node:24-alpine
+宝塔面板是一款服务器管理软件，支持一键部署和管理 Web 应用。
 
-WORKDIR /app
+#### 前提条件
+- 已安装宝塔面板的服务器
+- 服务器系统：CentOS 7+、Ubuntu 18+、Debian 9+
+- 至少 2GB 内存
 
-# 安装 pnpm
-RUN npm install -g pnpm
+#### 部署步骤
 
-# 复制 package.json 和 lockfile
-COPY package.json pnpm-lock.yaml ./
-
-# 安装依赖
-RUN pnpm install --frozen-lockfile
-
-# 复制源代码
-COPY . .
-
-# 构建应用
-RUN pnpm run build
-
-# 暴露端口
-EXPOSE 5000
-
-# 启动应用
-CMD ["pnpm", "run", "start"]
-```
-
-#### 2. 创建 docker-compose.yml
-```yaml
-version: '3.8'
-
-services:
-  app:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/radio_network_log
-    depends_on:
-      - db
-    restart: unless-stopped
-
-  db:
-    image: postgres:14-alpine
-    environment:
-      - POSTGRES_DB=radio_network_log
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
-```
-
-#### 3. 构建并启动
+##### 1. 安装宝塔面板
 ```bash
-docker-compose up -d
+# CentOS 安装命令
+yum install -y wget && wget -O install.sh http://download.bt.cn/install/install_6.0.sh && sh install.sh
+
+# Ubuntu/Debian 安装命令
+wget -O install.sh http://download.bt.cn/install/install-ubuntu-6.0.sh && sudo bash install.sh
 ```
 
-#### 4. 初始化数据库
+##### 2. 登录宝塔面板
+- 访问 `http://服务器IP:8888`
+- 使用安装时提供的用户名和密码登录
+
+##### 3. 安装软件套件
+在宝塔面板中安装以下软件：
+- **Nginx**：Web 服务器
+- **Node.js**：选择 Node.js 24 版本
+- **PostgreSQL**：选择 PostgreSQL 14 版本
+- **PM2**：进程管理器
+
+##### 4. 创建 PostgreSQL 数据库
+1. 进入"数据库"菜单
+2. 点击"添加数据库"
+3. 填写数据库信息：
+   - 数据库名：`radio_network_log`
+   - 用户名：自定义
+   - 密码：自定义（请记住密码）
+   - 访问权限：本地服务器
+4. 点击"提交"
+
+##### 5. 上传项目文件
+1. 进入"文件"菜单
+2. 在 `/www/wwwroot/` 目录下创建项目文件夹 `radio-log`
+3. 将项目文件上传到此目录
+4. 解压项目文件（如果是压缩包）
+
+##### 6. 安装项目依赖
+1. 进入宝塔"终端"
+2. 切换到项目目录：
+   ```bash
+   cd /www/wwwroot/radio-log
+   ```
+3. 安装 pnpm（如果未安装）：
+   ```bash
+   npm install -g pnpm
+   ```
+4. 安装项目依赖：
+   ```bash
+   pnpm install
+   ```
+
+##### 7. 配置环境变量
+1. 在项目根目录创建 `.env` 文件
+2. 编辑 `.env` 文件：
+   ```env
+   DATABASE_URL=postgresql://用户名:密码@localhost:5432/radio_network_log
+   PORT=5000
+   NODE_ENV=production
+   ```
+   *注意：将用户名和密码替换为实际的数据库用户名和密码*
+
+##### 8. 初始化数据库
 ```bash
-# 进入应用容器
-docker-compose exec app sh
+pnpm drizzle-kit push:pg
+```
 
-# 执行迁移
-curl -X POST http://localhost:5000/api/admin/migrate/page-configs
-
-# 创建管理员
-curl -X POST http://localhost:5000/api/debug/users \
+##### 9. 创建管理员账户
+```bash
+curl -X POST http://localhost:5000/api/users \
   -H "Content-Type: application/json" \
   -d '{
     "username": "ADMIN",
@@ -321,78 +345,197 @@ curl -X POST http://localhost:5000/api/debug/users \
   }'
 ```
 
+##### 10. 配置 PM2 守护进程
+1. 进入宝塔"软件商店"
+2. 找到 PM2，点击"设置"
+3. 点击"添加项目"
+4. 填写项目信息：
+   - 项目名称：`radio-log`
+   - 启动文件：`/www/wwwroot/radio-log/package.json`
+   - 启动命令：`pnpm start`
+   - 项目目录：`/www/wwwroot/radio-log`
+5. 点击"提交"
+
+##### 11. 配置 Nginx 反向代理
+1. 进入"网站"菜单
+2. 点击"添加站点"
+3. 填写站点信息：
+   - 域名：填写你的域名（如果没有，填写服务器IP）
+   - 根目录：`/www/wwwroot/radio-log/.next`
+   - PHP版本：纯静态
+4. 点击"提交"
+5. 点击站点的"设置"
+6. 进入"配置文件"，替换为以下内容：
+   ```nginx
+   server {
+       listen 80;
+       server_name your-domain.com;  # 替换为你的域名
+
+       location / {
+           proxy_pass http://127.0.0.1:5000;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
+   }
+   ```
+
+##### 12. 配置 SSL（可选但推荐）
+1. 在站点设置中进入"SSL"
+2. 选择"Let's Encrypt"
+3. 点击"申请"
+4. 开启"强制HTTPS"
+
+##### 13. 测试访问
+- 访问你的域名：`http://your-domain.com` 或 `https://your-domain.com`
+- 使用管理员账户登录：`ADMIN` / `ADMIN123`
+
 ---
 
-### 方式三：传统服务器部署
+### 方式三：传统 Linux 服务器部署
 
-#### 1. 准备服务器
+#### 前提条件
+- Linux 服务器（CentOS 7+、Ubuntu 18+、Debian 9+）
+- 至少 2GB 内存
+- root 权限或 sudo 权限
+
+#### 部署步骤
+
+##### 1. 安装 Node.js 24
 ```bash
-# 更新系统
-sudo apt update && sudo apt upgrade -y
-
-# 安装 Node.js 24
+# Ubuntu/Debian
 curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
-sudo apt install -y nodejs
+sudo apt-get install -y nodejs
 
-# 安装 pnpm
-npm install -g pnpm
-
-# 安装 PostgreSQL
-sudo apt install -y postgresql postgresql-contrib
+# CentOS
+curl -fsSL https://rpm.nodesource.com/setup_24.x | sudo bash -
+sudo yum install -y nodejs
 ```
 
-#### 2. 配置 PostgreSQL
+##### 2. 安装 pnpm
 ```bash
-# 启动 PostgreSQL
-sudo systemctl start postgresql
+npm install -g pnpm
+```
 
-# 创建数据库和用户
+##### 3. 安装 PostgreSQL 14
+```bash
+# Ubuntu/Debian
+sudo apt-get install postgresql-14 postgresql-contrib-14
+
+# CentOS
+sudo yum install postgresql14-server postgresql14-contrib
+sudo postgresql-setup initdb
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+```
+
+##### 4. 创建数据库和用户
+```bash
 sudo -u postgres psql
 ```
 
+在 PostgreSQL 命令行中执行：
 ```sql
+-- 创建数据库
 CREATE DATABASE radio_network_log;
+
+-- 创建用户
 CREATE USER radio_user WITH PASSWORD 'your_password';
+
+-- 授权
 GRANT ALL PRIVILEGES ON DATABASE radio_network_log TO radio_user;
+
+-- 退出
 \q
 ```
 
-#### 3. 部署应用
+##### 5. 安装 PM2
 ```bash
-# 克隆代码
-git clone https://github.com/BI4IVE/Amateur-radio-network-log.git
-cd Amateur-radio-network-log
+npm install -g pm2
+```
 
-# 安装依赖
+##### 6. 上传项目文件
+```bash
+# 创建项目目录
+sudo mkdir -p /var/www/radio-log
+sudo chown $USER:$USER /var/www/radio-log
+
+# 上传项目文件（使用 scp、sftp 或 git）
+cd /var/www/radio-log
+# git clone 或上传项目文件
+```
+
+##### 7. 安装依赖
+```bash
+cd /var/www/radio-log
 pnpm install
+```
 
-# 配置环境变量
-cat > .env << EOF
+##### 8. 配置环境变量
+```bash
+nano .env
+```
+
+添加以下内容：
+```env
 DATABASE_URL=postgresql://radio_user:your_password@localhost:5432/radio_network_log
 PORT=5000
 NODE_ENV=production
-EOF
-
-# 构建应用
-pnpm run build
-
-# 使用 PM2 启动（推荐）
-npm install -g pm2
-pm2 start npm --name "radio-log" -- start
-
-# 设置开机自启
-pm2 startup
-pm2 save
 ```
 
-#### 4. 配置 Nginx 反向代理
+##### 9. 初始化数据库
+```bash
+pnpm drizzle-kit push:pg
+```
+
+##### 10. 创建管理员账户
+```bash
+curl -X POST http://localhost:5000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "ADMIN",
+    "password": "ADMIN123",
+    "name": "管理员",
+    "role": "admin"
+  }'
+```
+
+##### 11. 构建生产版本
+```bash
+pnpm build
+```
+
+##### 12. 使用 PM2 启动服务
+```bash
+pm2 start npm --name "radio-log" -- start
+pm2 save
+pm2 startup
+```
+
+##### 13. 配置 Nginx 反向代理
+```bash
+sudo apt-get install nginx  # Ubuntu/Debian
+sudo yum install nginx      # CentOS
+```
+
+创建配置文件：
+```bash
+sudo nano /etc/nginx/sites-available/radio-log
+```
+
+添加以下内容：
 ```nginx
 server {
     listen 80;
     server_name your-domain.com;
 
     location / {
-        proxy_pass http://localhost:5000;
+        proxy_pass http://127.0.0.1:5000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -405,258 +548,291 @@ server {
 }
 ```
 
-重启 Nginx：
+启用配置：
 ```bash
-sudo systemctl restart nginx
+# Ubuntu/Debian
+sudo ln -s /etc/nginx/sites-available/radio-log /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+# CentOS
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+##### 14. 配置防火墙
+```bash
+# Ubuntu/Debian (UFW)
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+# CentOS (firewalld)
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
 ```
 
 ---
 
-### 方式四：云平台部署
+### 方式四：Docker 部署（可选）
 
-#### Vercel 部署
+#### 创建 Dockerfile
+```dockerfile
+FROM node:24-slim
 
-1. **连接 GitHub**
-   - 登录 [Vercel](https://vercel.com)
-   - 点击 "New Project"
-   - 导入 GitHub 仓库
+WORKDIR /app
 
-2. **配置环境变量**
-   ```
-   DATABASE_URL=postgresql://...
-   ```
+# 安装 pnpm
+RUN npm install -g pnpm
 
-3. **部署**
-   - 点击 "Deploy"
-   - 等待构建完成
+# 复制依赖文件
+COPY package.json pnpm-lock.yaml ./
 
-#### 阿里云/腾讯云部署
+# 安装依赖
+RUN pnpm install --frozen-lockfile
 
-使用云服务商提供的容器服务（如阿里云容器服务 ACK、腾讯云 TKE），参考 Docker 部署方式。
+# 复制项目文件
+COPY . .
+
+# 构建应用
+RUN pnpm build
+
+# 暴露端口
+EXPOSE 5000
+
+# 启动应用
+CMD ["pnpm", "start"]
+```
+
+#### 创建 docker-compose.yml
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/radio_network_log
+      - NODE_ENV=production
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=radio_network_log
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+```
+
+#### 启动服务
+```bash
+docker-compose up -d
+```
 
 ---
 
-## 📚 使用文档
+## 📖 使用文档
 
-### 基础操作
+### 用户角色说明
+
+#### 管理员（Admin）
+- **用户管理**：创建、编辑、删除用户
+- **台网统计**：查看所有历史台网数据
+- **管理工具**：管理系统配置
+- **页面配置**：动态修改网站内容
+
+#### 主控（User）
+- **创建会话**：发起台网会话
+- **录入记录**：添加台网日志记录
+- **实时协作**：与其他主控同时编辑
+- **查看历史**：查看自己的历史会话
+
+### 操作指南
 
 #### 1. 登录系统
-- 访问系统首页
-- 输入用户名和密码（默认：ADMIN / ADMIN123）
-- 点击"登录"按钮
+1. 访问系统地址
+2. 输入用户名和密码
+3. 点击"登录"按钮
 
 #### 2. 创建台网会话
-- 填写主控人员信息
-- 设置台网时间（默认为当前北京时间）
-- 点击"创建新台网会话"按钮
+1. 点击"创建新会话"
+2. 选择主控人员（可从现有用户中选择）
+3. 填写主控信息（设备、天线、QTH）
+4. 设置会话时间（北京时间）
+5. 点击"创建会话"
 
-#### 3. 添加台网记录
-- 在"台网记录信息录入"区域填写信息
-- 输入呼号（自动联想参与人员）
-- 填写 QTH、设备、天线、功率、信号（必填）
-- 可选填写报告和备注
-- 点击"添加记录"或按 Ctrl+Enter 快速添加
+#### 3. 录入台网记录
+1. 进入会话详情页
+2. 在呼号输入框中输入呼号（支持自动联想）
+3. 系统自动填充历史数据
+4. 确认或修改信息
+5. 点击"添加记录"或按 Ctrl+Enter
 
-#### 4. 查看活跃会话
-- 点击"查看当前台网"按钮
-- 在弹出的列表中选择要加入的会话
-- 点击"加入会话"按钮
+#### 4. 导出 Excel
+1. 进入会话详情页
+2. 点击"导出Excel"按钮
+3. 系统自动生成并下载 Excel 文件
 
-#### 5. 导出 Excel
-- 点击"导出 Excel"按钮
-- 系统自动生成带样式的 Excel 文件
-- 文件名为：`台网日志_日期.xlsx`
-
-### 管理员功能
-
-#### 1. 用户管理
-访问 `/admin/tools`：
-- 查看所有用户
-- 创建新用户
-- 更新用户信息
-- 设置用户角色
-
-#### 2. 页面配置管理
-访问 `/admin/page-configs`：
-- 修改网站标题
-- 更新版本号
-- 修改登录页标题和副标题
-- 修改首页页头标题
-- 修改联系方式
-
-#### 3. 台网统计
-访问 `/admin/stats`：
-- 查看所有历史会话
-- 查看会话详情
-- 导出会话数据
-
-### 高级功能
-
-#### 1. 多主控实时协作
-- 多个主控可以同时加入同一个会话
-- 实时看到其他主控添加、修改的记录
-- 使用 SSE 技术实现低延迟同步
-
-#### 2. 参与人员库管理
-访问 `/admin/tools`：
-- 查看所有参与人员
-- 搜索呼号
-- 更新人员信息
-
-#### 3. 呼号查询
-访问 `/query`：
-- 输入呼号进行查询
-- 查看该呼号的所有历史记录
-- 查看统计信息
+#### 5. 查询呼号
+1. 点击顶部"呼号查询"
+2. 输入呼号
+3. 点击"查询"按钮
+4. 查看该呼号的所有历史记录
 
 ---
 
-## 🎨 界面预览
+## 🔧 常见问题
 
-### 登录页面
-- 渐变背景（紫色到粉色）
-- 毛玻璃效果卡片
-- 动态标题和版本号显示
+### 1. 数据库连接失败
+**问题**：提示"数据库连接失败"
 
-### 主控页面
-- 顶部导航栏（标题、用户信息、退出按钮）
-- 台网主控人员信息卡片
-- 台网记录录入区域（左侧）
-- 台网记录列表（右侧）
-- 实时操作提示
+**解决方案**：
+- 检查 PostgreSQL 服务是否启动
+- 检查数据库用户名、密码是否正确
+- 检查 `.env` 文件中的 `DATABASE_URL` 配置
+- 确保数据库已创建
 
-### 管理员页面
-- 配置管理界面（按分类展示）
-- 用户管理界面
-- 统计数据展示
+### 2. 端口被占用
+**问题**：提示"端口 5000 已被占用"
 
----
-
-## 🔒 安全说明
-
-### 默认账户
-- **用户名**：`ADMIN`
-- **密码**：`ADMIN123`
-- **角色**：管理员
-
-⚠️ **重要提示**：首次登录后请立即修改默认密码！
-
-### 安全建议
-1. 使用强密码（至少 8 位，包含大小写字母、数字和特殊字符）
-2. 定期更换密码
-3. 启用 HTTPS（生产环境必须）
-4. 限制管理员账户数量
-5. 定期备份数据库
-6. 使用防火墙限制端口访问
-
-### 权限控制
-- **管理员**：拥有所有权限
-- **主控**：可以创建会话、添加和编辑记录、查看历史会话
-- **删除权限**：仅管理员可以删除记录
-
----
-
-## 🗄️ 数据库结构
-
-### 主要表
-1. **users** - 用户表
-2. **log_sessions** - 台网会话表
-3. **log_records** - 台网记录明细表
-4. **participants** - 参与人员信息表
-5. **page_configs** - 页面配置表
-
-### 数据库迁移
+**解决方案**：
 ```bash
-# 创建表结构
-pnpm drizzle-kit push:pg
-
-# 初始化配置
-curl -X POST http://localhost:5000/api/admin/migrate/page-configs
-```
-
----
-
-## 🐛 故障排查
-
-### 常见问题
-
-#### 1. 无法连接数据库
-```bash
-# 检查 PostgreSQL 是否运行
-sudo systemctl status postgresql
-
-# 检查连接配置
-echo $DATABASE_URL
-```
-
-#### 2. 端口被占用
-```bash
-# 查找占用 5000 端口的进程
+# 查找占用端口的进程
 lsof -i:5000
 
-# 杀死进程
+# 结束进程
 kill -9 <PID>
 ```
 
-#### 3. 权限错误
-```bash
-# 重新初始化管理员账户
-curl -X POST http://localhost:5000/api/reset-admin
-```
+### 3. 实时同步不工作
+**问题**：多个主控编辑时不同步
 
-#### 4. SSE 连接失败
-- 检查防火墙设置
-- 确保使用 HTTP/HTTPS 协议
-- 检查 WebSocket 支持
+**解决方案**：
+- 检查浏览器是否支持 SSE（Server-Sent Events）
+- 检查网络连接是否稳定
+- 检查防火墙是否阻止了 SSE 连接
 
-### 日志查看
-```bash
-# 查看应用日志
-pm2 logs radio-log
+### 4. Excel 导出失败
+**问题**：点击导出后无反应
 
-# 查看 Nginx 日志
-sudo tail -f /var/log/nginx/access.log
-```
+**解决方案**：
+- 检查是否有数据可导出
+- 检查浏览器是否阻止了下载
+- 尝试使用 Chrome 或 Firefox 浏览器
+
+### 5. 会话无法编辑
+**问题**：会话创建后无法添加记录
+
+**解决方案**：
+- 检查会话是否已超过 6 小时（自动过期）
+- 检查当前用户是否有主控权限
 
 ---
 
-## 📞 技术支持
+## 📝 更新日志
 
-### 联系方式
-- **邮箱**：contact@bi4ive.org
-- **GitHub Issues**：https://github.com/BI4IVE/Amateur-radio-network-log/issues
+### v1.4.0 (2026-02-12)
+- ✨ 将主页底部的"台网统计"和"管理工具"按钮移至顶部Header
+- ✨ 优化用户管理界面，所有操作改为弹窗模式
+- 🐛 修复登录API密码验证逻辑错误
+- 🐛 修复用户管理输入框字体颜色问题
+- 🔧 全站数据检查和优化
+- 📝 更新文档
 
-### 贡献指南
+### v1.3.0 (2026-02-12)
+- ✨ 新增用户管理弹窗式编辑功能
+- ✨ 优化输入框字体颜色（黑色）
+- 🔧 修复密码输入框代码结构错误
+- 🐛 修复编辑用户功能问题
+
+### v1.2.0 (2026-02-12)
+- ✨ 新增管理后台页面配置管理功能
+- ✨ 新增 AdminLayout 组件，实现左右布局及菜单收缩功能
+- ✨ 新增管理后台权限控制
+- 🔧 优化用户管理界面
+
+### v1.1.0 (2026-02-12)
+- ✨ 新增台网统计页面
+- ✨ 新增管理工具页面
+- ✨ 新增呼号查询页面
+- ✨ 新增Excel导出功能（带样式）
+- ✨ 新增参与人员库管理
+- 🔧 优化用户界面和交互
+
+### v1.0.0 (2026-01-09)
+- 🎉 初始版本发布
+- ✨ 基础用户认证和权限管理
+- ✨ 台网会话管理
+- ✨ 台网记录录入
+- ✨ 实时协作（SSE）
+- ✨ 会话自动过期功能
+- ✨ 北京时间统一显示
+
+---
+
+## 🤝 贡献指南
+
 欢迎提交 Issue 和 Pull Request！
 
-### 更新日志
-查看 [CHANGELOG.md](CHANGELOG.md) 了解版本更新历史。
+### 开发流程
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+### 代码规范
+- 使用 TypeScript 编写
+- 遵循 ESLint 规则
+- 编写清晰的注释
+- 提交信息使用 Conventional Commits 格式
 
 ---
 
-## 📄 许可证
+## 📄 开源协议
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+本项目采用 MIT 协议开源。
+
+---
+
+## 📮 联系方式
+
+- **项目地址**：[GitHub](https://github.com/BI4IVE/Amateur-radio-network-log)
+- **问题反馈**：[Issues](https://github.com/BI4IVE/Amateur-radio-network-log/issues)
+- **联系邮箱**：contact@bi4ive.org
 
 ---
 
 ## 🙏 致谢
 
-本项目由 **扣子 AI（Coze Coding）** 全程编程完成，感谢扣子 AI 提供的强大 AI 编程能力。
+感谢以下开源项目和技术：
 
-### 技术致谢
-- [Next.js](https://nextjs.org/) - React 框架
-- [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
-- [shadcn/ui](https://ui.shadcn.com/) - UI 组件库
-- [Drizzle ORM](https://orm.drizzle.team/) - 数据库 ORM
-- [PostgreSQL](https://www.postgresql.org/) - 数据库
+- [Next.js](https://nextjs.org/)
+- [React](https://react.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Drizzle ORM](https://orm.drizzle.team/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [Coze Coding](https://www.coze.cn/)
+
+特别感谢 **Coze Coding AI** 协助完成本项目的开发。
 
 ---
 
 <div align="center">
 
-**济南黄河业余无线电台网主控日志系统 v1.2.0**
+**如果这个项目对你有帮助，请给个 ⭐️ Star 支持一下！**
 
-**Made with ❤️ by Coze Coding**
+Made with ❤️ by BI4IVE
 
 </div>
