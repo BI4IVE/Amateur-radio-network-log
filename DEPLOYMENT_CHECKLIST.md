@@ -24,13 +24,12 @@
 
 ### 2. 检查版本信息
 访问以下页面，查看是否为新版本：
-- 诊断页面: `https://qx7q39dy6z.coze.site/debug`
-- 管理工具: `https://qx7q39dy6z.coze.site/admin-tools`
+
 
 如果页面无法访问或显示错误，说明部署环境未更新。
 
 ### 3. 查看用户列表
-访问管理工具页面: `https://qx7q39dy6z.coze.site/admin-tools`
+访问管理工具页面: 
 
 检查是否有以下用户：
 - ADMIN (管理员)
