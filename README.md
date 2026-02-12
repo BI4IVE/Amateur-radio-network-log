@@ -809,7 +809,7 @@ kill -9 <PID>
 
 - **项目地址**：[GitHub](https://github.com/BI4IVE/Amateur-radio-network-log)
 - **问题反馈**：[Issues](https://github.com/BI4IVE/Amateur-radio-network-log/issues)
-- **联系邮箱**：contact@bi4ive.org
+- **联系邮箱**：bi4ive@br4in.cn
 
 ---
 
