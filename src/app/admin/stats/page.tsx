@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { formatTime, formatDate, formatDateTime } from "@/utils/dateFormat"
+import AdminLayout from "@/components/AdminLayout"
 
 interface Session {
   id: string
@@ -145,51 +146,112 @@ export default function AdminStatsPage() {
     stat.callsign.toLowerCase().includes(searchTerm.toLowerCase())
   ) || []
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-black">台网信息统计</h1>
-          <div className="flex gap-2">
-            <button
-              onClick={() => router.push("/")}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-            >
-              返回首页
-            </button>
-            <button
-              onClick={handleExport}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              导出CSV
-            </button>
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+            <p className="mt-4 text-gray-600">加载中...</p>
           </div>
         </div>
+      </AdminLayout>
+    )
+  }
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">台网信息统计</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {startDate && endDate
+                ? `${startDate} 至 ${endDate} 的数据`
+                : "全部历史数据"}
+            </p>
+          </div>
+          <button
+            onClick={handleExport}
+            disabled={!statsData || statsData.sessions.length === 0}
+            className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            导出CSV
+          </button>
+        </div>
+
+        {/* Stats Overview Cards */}
+        {statsData && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm font-medium">总会话数</p>
+                  <p className="text-3xl font-bold mt-2">{statsData.stats.totalSessions}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-lg">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm font-medium">总记录数</p>
+                  <p className="text-3xl font-bold mt-2">{statsData.stats.totalRecords}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-lg">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg shadow-lg p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-pink-100 text-sm font-medium">唯一呼号数</p>
+                  <p className="text-3xl font-bold mt-2">{statsData.stats.totalUniqueCallsigns}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-lg">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Date Filter */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4">
           <div className="flex gap-4 items-end flex-wrap">
             <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-black mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 开始日期
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
             <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-black mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 结束日期
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             </div>
             <button
@@ -197,7 +259,7 @@ export default function AdminStatsPage() {
                 setStartDate("")
                 setEndDate("")
               }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
             >
               清除筛选
             </button>
@@ -205,226 +267,217 @@ export default function AdminStatsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              activeTab === "overview"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            概览
-          </button>
-          <button
-            onClick={() => setActiveTab("sessions")}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              activeTab === "sessions"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            台网会话
-          </button>
-          <button
-            onClick={() => setActiveTab("callsigns")}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              activeTab === "callsigns"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-black hover:bg-gray-50"
-            }`}
-          >
-            呼号统计
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="text-black">加载中...</div>
+        <div className="bg-white rounded-lg shadow">
+          <div className="border-b border-gray-200">
+            <nav className="flex">
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "overview"
+                    ? "border-indigo-600 text-indigo-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                概览
+              </button>
+              <button
+                onClick={() => setActiveTab("sessions")}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "sessions"
+                    ? "border-indigo-600 text-indigo-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                会话列表 ({statsData?.sessions.length || 0})
+              </button>
+              <button
+                onClick={() => setActiveTab("callsigns")}
+                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === "callsigns"
+                    ? "border-indigo-600 text-indigo-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                呼号统计 ({statsData?.callsignStats.length || 0})
+              </button>
+            </nav>
           </div>
-        ) : (
-          <>
+
+          <div className="p-6">
             {/* Overview Tab */}
             {activeTab === "overview" && statsData && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-black mb-2">总台网次数</h3>
-                  <p className="text-4xl font-bold text-blue-600">
-                    {statsData.stats.totalSessions}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-black mb-2">总记录数</h3>
-                  <p className="text-4xl font-bold text-green-600">
-                    {statsData.stats.totalRecords}
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold text-black mb-2">唯一呼号数</h3>
-                  <p className="text-4xl font-bold text-purple-600">
-                    {statsData.stats.totalUniqueCallsigns}
-                  </p>
-                </div>
-
-                {/* Recent Sessions */}
-                <div className="bg-white rounded-lg shadow p-6 md:col-span-3">
-                  <h3 className="text-lg font-semibold text-black mb-4">最近台网会话</h3>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">最近会话</h3>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                            序号
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                            日期
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                            主控
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                            QTH
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                            记录数
-                          </th>
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">日期</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">主控</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">记录数</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {statsData.sessions.slice(0, 5).map((session, index) => (
-                          <tr
-                            key={session.id}
-                            onClick={() => router.push(`/admin/stats/session/${session.id}`)}
-                            className="hover:bg-gray-50 cursor-pointer"
-                          >
-                            <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
-                            <td className="px-4 py-3 text-sm text-black">
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {statsData.sessions.slice(0, 5).map((session) => (
+                          <tr key={session.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-600">
                               {formatDate(session.sessionTime)}
                             </td>
-                            <td className="px-4 py-3 text-sm text-black">{session.controllerName}</td>
-                            <td className="px-4 py-3 text-sm text-black">{session.controllerQth || "-"}</td>
-                            <td className="px-4 py-3 text-sm text-black">{session.recordCount}</td>
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                              {session.controllerName}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {session.recordCount}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <button
+                                onClick={() => router.push(`/admin/stats/session/${session.id}`)}
+                                className="text-indigo-600 hover:text-indigo-900 font-medium"
+                              >
+                                查看
+                              </button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">活跃呼号（前10）</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    {statsData.callsignStats.slice(0, 10).map((stat, index) => (
+                      <div
+                        key={stat.callsign}
+                        className="bg-gray-50 rounded-lg p-4 text-center"
+                      >
+                        <div className="text-2xl font-bold text-indigo-600">
+                          #{index + 1}
+                        </div>
+                        <div className="text-lg font-semibold text-gray-900 mt-1">
+                          {stat.callsign}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {stat.count} 次呼叫
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Sessions Tab */}
-            {activeTab === "sessions" && statsData && (
-              <div className="bg-white rounded-lg shadow p-6">
+            {activeTab === "sessions" && (
+              <div>
                 <div className="mb-4">
                   <input
                     type="text"
-                    placeholder="搜索主控姓名或QTH..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    placeholder="搜索主控名称或QTH..."
+                    className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          序号
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          日期
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          主控姓名
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          QTH
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          设备
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          天线
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          记录数
-                        </th>
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">日期</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">主控</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">设备</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">QTH</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">记录数</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {filteredSessions.map((session, index) => (
-                        <tr
-                          key={session.id}
-                          onClick={() => router.push(`/admin/stats/session/${session.id}`)}
-                          className="hover:bg-gray-50 cursor-pointer"
-                        >
-                          <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
-                          <td className="px-4 py-3 text-sm text-black">
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredSessions.map((session) => (
+                        <tr key={session.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-600">
                             {formatDate(session.sessionTime)}
                           </td>
-                          <td className="px-4 py-3 text-sm text-black">{session.controllerName}</td>
-                          <td className="px-4 py-3 text-sm text-black">{session.controllerQth || "-"}</td>
-                          <td className="px-4 py-3 text-sm text-black">{session.controllerEquipment || "-"}</td>
-                          <td className="px-4 py-3 text-sm text-black">{session.controllerAntenna || "-"}</td>
-                          <td className="px-4 py-3 text-sm text-black">{session.recordCount}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            {session.controllerName}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            {session.controllerEquipment || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            {session.controllerQth || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            {session.recordCount}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <button
+                              onClick={() => router.push(`/admin/stats/session/${session.id}`)}
+                              className="text-indigo-600 hover:text-indigo-900 font-medium"
+                            >
+                              查看
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {filteredSessions.length === 0 && (
-                    <div className="text-center py-8 text-black">没有找到匹配的台网会话</div>
-                  )}
                 </div>
               </div>
             )}
 
             {/* Callsigns Tab */}
-            {activeTab === "callsigns" && statsData && (
-              <div className="bg-white rounded-lg shadow p-6">
+            {activeTab === "callsigns" && (
+              <div>
                 <div className="mb-4">
                   <input
                     type="text"
-                    placeholder="搜索呼号..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    placeholder="搜索呼号..."
+                    className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          排名
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          呼号
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-black uppercase">
-                          参与次数
-                        </th>
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">排名</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">呼号</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">呼叫次数</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-200">
                       {filteredCallsigns.map((stat, index) => (
                         <tr key={stat.callsign} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-black">{index + 1}</td>
-                          <td className="px-4 py-3 text-sm font-medium text-black">{stat.callsign}</td>
-                          <td className="px-4 py-3 text-sm text-black">{stat.count}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                              index === 0 ? "bg-yellow-100 text-yellow-800" :
+                              index === 1 ? "bg-gray-100 text-gray-800" :
+                              index === 2 ? "bg-orange-100 text-orange-800" :
+                              "bg-gray-50 text-gray-600"
+                            }`}>
+                              #{index + 1}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            {stat.callsign}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            {stat.count}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {filteredCallsigns.length === 0 && (
-                    <div className="text-center py-8 text-black">没有找到匹配的呼号</div>
-                  )}
                 </div>
               </div>
             )}
-          </>
-        )}
+          </div>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }
