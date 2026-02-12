@@ -778,6 +778,60 @@ export default function HomePage() {
               </svg>
               呼号查询
             </button>
+            {currentUser?.role === "admin" && (
+              <>
+                <button
+                  onClick={() => router.push("/admin/stats")}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 backdrop-blur-sm transition-all duration-200"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z"
+                    />
+                  </svg>
+                  台网统计
+                </button>
+                <button
+                  onClick={() => router.push("/admin/tools")}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 backdrop-blur-sm transition-all duration-200"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  管理工具
+                </button>
+              </>
+            )}
             <span className="text-sm text-white/90">
               当前用户: {currentUser?.name} ({currentUser?.role === "admin" ? "管理员" : "主控"})
             </span>
@@ -2147,57 +2201,6 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Admin Link */}
-        {currentUser?.role === "admin" && (
-          <div className="mt-6 flex gap-4">
-            <button
-              onClick={() => router.push("/admin/stats")}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-4 h-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z"
-                />
-              </svg>
-              台网统计
-            </button>
-            <button
-              onClick={() => router.push("/admin/tools")}
-              className="flex items-center gap-2 px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-4 h-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 5.472m0 0a9.66 9.66 0 01-1.336-2.224M12 12.75A6.994 6.994 0 005.25 7.5m13.5 5.25a6.994 6.994 0 00-6.75-6.75M5.25 7.5a7.5 7.5 0 0014.25 0"
-                />
-              </svg>
-              管理工具
-            </button>
           </div>
         )}
       </main>
