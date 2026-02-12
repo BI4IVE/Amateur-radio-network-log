@@ -1,17 +1,11 @@
 /**
- * 将本地时间转换为北京时间 ISO 格式字符串（用于显示）
- * @param date 可选的日期对象，默认为当前时间（本地时间）
+ * 将当前时间转换为北京时间 ISO 格式字符串（用于 datetime-local 输入框默认值）
+ * @param date 可选的日期对象，默认为当前时间
  * @returns 北京时间的 ISO 格式字符串 (yyyy-MM-ddTHH:mm)
  */
 export function toBeijingISOString(date: Date = new Date()): string {
-  // 获取本地时间戳
-  const localTimestamp = date.getTime()
-  // 获取本地时区偏移（分钟），转换为毫秒
-  const localOffset = date.getTimezoneOffset() * 60 * 1000
-  // 计算 UTC 时间戳
-  const utcTimestamp = localTimestamp + localOffset
-  // 转换为北京时间（UTC+8）
-  const beijingTimestamp = utcTimestamp + (8 * 60 * 60 * 1000)
+  // 直接使用 UTC 时间，加 8 小时得到北京时间
+  const beijingTimestamp = date.getTime() + (8 * 60 * 60 * 1000)
   const beijingDate = new Date(beijingTimestamp)
 
   const year = beijingDate.getUTCFullYear()
