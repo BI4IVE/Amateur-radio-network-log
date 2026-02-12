@@ -13,11 +13,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Convert username and password to uppercase
+    // Convert username to uppercase for case-insensitive lookup
     const uppercaseUsername = username.toUpperCase()
-    const uppercasePassword = password.toUpperCase()
 
-    const isValid = await userManager.verifyPassword(uppercaseUsername, uppercasePassword)
+    const isValid = await userManager.verifyPassword(uppercaseUsername, password)
 
     if (!isValid) {
       return NextResponse.json(
