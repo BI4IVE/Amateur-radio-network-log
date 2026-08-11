@@ -110,21 +110,16 @@ NODE_ENV=development
 执行数据库迁移：
 ```bash
 # 创建表结构
-pnpm drizzle-kit push:pg
+pnpm drizzle-kit push
 ```
 
-#### 6. 创建管理员账户
-使用管理工具页面创建管理员账户，或使用 API：
-```bash
-curl -X POST http://localhost:5000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "ADMIN",
-    "password": "ADMIN123",
-    "name": "管理员",
-    "role": "admin"
-  }'
+#### 6. 配置管理员初始密码
+管理员账户在**首次访问首页时自动初始化**（见 `src/app/page.tsx` 的 `initializeAdmin()`），无需手动创建。密码取自环境变量 `ADMIN_INIT_PASSWORD`：
+```env
+# .env 中设置（务必修改为强密码）
+ADMIN_INIT_PASSWORD=你的初始密码
 ```
+> ⚠️ 安全说明：v1.5.1 起 `/api/users` 的创建接口已要求管理员权限，**匿名调用会被 403 拒绝**，请勿再用 curl 匿名创建管理员。初始化接口 `/api/init` 同样依赖 `ADMIN_INIT_PASSWORD`，未设置则拒绝初始化。
 
 #### 7. 启动开发服务器
 ```bash
@@ -139,14 +134,18 @@ pnpm dev
 
 | 部署方式 | 适用场景 | 难度 | 说明 |
 |----------|----------|------|------|
-| 方式一 · Coze Coding 环境 | 官方沙箱开发与测试 | ⭐ | 平台预配置 Node/PG，一键构建部署 |
+| 方式一 · Coze Coding 环境 | ⚠️ 已弃用（前期平台） | ⭐ | 早期 Coze 沙箱方式，项目已迁出，仅作历史参考 |
 | 方式二 · 宝塔面板 | 国内服务器可视化管理 | ⭐⭐ | 图形化建站 + Nginx 反代，适合长期运维 |
 | 方式三 · 传统 Linux | 纯命令行 VPS / 云主机 | ⭐⭐⭐ | 手动安装依赖与 Nginx，灵活可控 |
 | 方式四 · Docker | 容器化 / 一键迁移 | ⭐⭐ | 镜像化部署，含 Postgres 服务 |
 
-### 方式一：当前平台部署（Coze Coding 环境）
+> 🔒 **安全提示（v1.5.1+）**：出于安全加固，以下调试/危险接口已被**永久删除**，请勿在文档或脚本中调用：`/api/reset-admin`、`/api/debug/*`。同时 `/api/users`、`/api/participants`、`/api/admin/page-configs`、`/api/sessions`（POST）等接口均已加入管理员权限校验，匿名访问将返回 403/401。
 
-本系统已在 Coze Coding 沙箱环境中成功部署，这是官方推荐的开发和测试环境。
+### 方式一：Coze Coding 环境（⚠️ 已弃用）
+
+> 💡 本项目数据库已从 `coze-coding-dev-sdk` 迁移为本地/宝塔直连 PostgreSQL（`src/storage/database/db.ts`）。以下为**前期平台的历史部署方式**，仅供追溯，**不再适用于当前版本**，请优先使用方式二/三/四。
+
+本系统早期曾在 Coze Coding 沙箱环境中部署，这是当时的官方推荐开发和测试环境。
 
 #### 环境特点
 - 预配置 Node.js 24 运行环境
@@ -263,25 +262,20 @@ wget -O install.sh http://download.bt.cn/install/install-ubuntu-6.0.sh && sudo b
    DATABASE_URL=postgresql://用户名:密码@localhost:5432/radio_network_log
    PORT=5000
    NODE_ENV=production
+   ADMIN_INIT_PASSWORD=你的初始管理员密码
    ```
-   *注意：将用户名和密码替换为实际的数据库用户名和密码*
+   *注意：将用户名和密码替换为实际的数据库用户名和密码。*
+   *`PORT` 决定 `pnpm start` 监听端口（start 脚本未硬编码端口，必须在此设置）；`ADMIN_INIT_PASSWORD` 为管理员初始密码，首次访问首页时自动初始化管理员账户。*
 
 ##### 8. 初始化数据库
 ```bash
-pnpm drizzle-kit push:pg
+pnpm drizzle-kit push
 ```
 
-##### 9. 创建管理员账户
-```bash
-curl -X POST http://localhost:5000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "ADMIN",
-    "password": "ADMIN123",
-    "name": "管理员",
-    "role": "admin"
-  }'
-```
+##### 9. 配置管理员初始密码
+管理员账户在**首次访问首页时自动初始化**，密码取自 `.env` 的 `ADMIN_INIT_PASSWORD`（请确保其已设置且为强密码）。无需手动创建。
+
+> ⚠️ v1.5.1 起匿名创建用户接口已返回 403，请勿再用 curl 调用 `/api/users` 创建管理员。
 
 ##### 10. 配置 PM2 守护进程
 1. 进入宝塔"软件商店"
@@ -331,7 +325,7 @@ curl -X POST http://localhost:5000/api/users \
 
 ##### 13. 测试访问
 - 访问你的域名：`http://your-domain.com` 或 `https://your-domain.com`
-- 使用管理员账户登录：`ADMIN` / `ADMIN123`
+- 使用管理员账户 `ADMIN` 登录，密码为 `.env` 中 `ADMIN_INIT_PASSWORD` 的值（首次访问首页已自动初始化）
 
 ---
 
@@ -428,20 +422,13 @@ NODE_ENV=production
 
 ##### 9. 初始化数据库
 ```bash
-pnpm drizzle-kit push:pg
+pnpm drizzle-kit push
 ```
 
-##### 10. 创建管理员账户
-```bash
-curl -X POST http://localhost:5000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "ADMIN",
-    "password": "ADMIN123",
-    "name": "管理员",
-    "role": "admin"
-  }'
-```
+##### 10. 配置管理员初始密码
+管理员账户在**首次访问首页时自动初始化**，密码取自 `.env` 的 `ADMIN_INIT_PASSWORD`（请确保其已设置且为强密码）。无需手动创建。
+
+> ⚠️ v1.5.1 起匿名创建用户接口已返回 403，请勿再用 curl 调用 `/api/users` 创建管理员。
 
 ##### 11. 构建生产版本
 ```bash
