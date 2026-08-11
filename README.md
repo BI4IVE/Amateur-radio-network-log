@@ -8,7 +8,7 @@
 ![React](https://img.shields.io/badge/react-19.x-61DAFB)
 ![Next](https://img.shields.io/badge/next-16.x-black)
 
-**本系统全部由扣子 AI（Coze Coding）编程完成**
+**本系统前期由扣子 AI（Coze Coding）编程完成，1.5.0 版本后由 CodeBuddy CN 接手开发**
 
 [功能特性](#功能特性) • [技术栈](#技术栈) • [快速开始](#快速开始) • [部署指南](#部署指南) • [使用文档](#使用文档)
 
