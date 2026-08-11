@@ -22,6 +22,8 @@
 
 本系统已成功应用于济南黄河业余无线电台网的实际运营中，为台网日志记录提供了高效、可靠的解决方案。
 
+1.5.0 版本起由 **CodeBuddy CN** 持续开发维护。
+
 ### 核心优势
 
 - 🎯 **专业设计**：专为业余无线电场景设计，贴合实际使用需求
@@ -150,6 +152,7 @@
 - **部署工具**：Coze CLI
 - **API**：RESTful API + SSE
 - **类型检查**：TypeScript strict mode
+- **AI 协作**：前期 Coze Coding，1.5.0 版本后由 CodeBuddy CN 接手开发
 
 ---
 
@@ -907,6 +910,7 @@ kill -9 <PID>
 - [Drizzle ORM](https://orm.drizzle.team/)
 - [PostgreSQL](https://www.postgresql.org/)
 - [Coze Coding](https://www.coze.cn/)
+- [CodeBuddy CN](https://www.codebuddy.ai/)
 
 特别感谢 **Coze Coding AI** 协助完成本项目的前期开发。后续开发 1.5.0 版本后由 **CodeBuddy CN** 接手开发。
 
@@ -915,6 +919,8 @@ kill -9 <PID>
 <div align="center">
 
 **如果这个项目对你有帮助，请给个 ⭐️ Star 支持一下！**
+
+1.5.0+ 版本开发维护：CodeBuddy CN
 
 Made with ❤️ by BI4IVE
 
