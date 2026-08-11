@@ -1,0 +1,73 @@
+node_modules
+dist
+.DS_Store
+*.swp
+.git/*
+__pycache__/
+*.pyc
+.venv/*
+*.o
+*.a
+/vendor
+*.egg-info/
+/.env
+.env
+
+# JS/TS bundlers & build outputs
+.next
+.nuxt
+.turbo
+.vercel
+.parcel-cache
+.cache
+coverage
+storybook-static
+
+# Package manager artifacts
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+.pnp*
+.npm
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# Go tooling
+bin/
+*.test
+
+# Editor / IDE
+.vscode/
+.idea/
+*.iml
+
+# OS / misc
+Thumbs.db
+ehthumbs.db
+
+# Logs
+output.log
+*.log
+*.log.*
+/logs/
+
+# Preview files
+.preview
+.cozeproj/reduction
+.codegraph
+
+# ===== 安全：禁止提交凭据与数据库导出 =====
+# 生产数据库导出 / dump（含明文密码）
+*.sql
+database_export*.sql
+production_database_export.sql
+# 含硬编码生产凭据的导出脚本
+export_prod.js
+generate_prod_export.py
+# 本地数据目录（prod_data 等含用户密码的 CSV）
+prod_data/
+*.csv
