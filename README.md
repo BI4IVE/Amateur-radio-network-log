@@ -908,7 +908,7 @@ kill -9 <PID>
 - [PostgreSQL](https://www.postgresql.org/)
 - [Coze Coding](https://www.coze.cn/)
 
-特别感谢 **Coze Coding AI** 协助完成本项目的开发。
+特别感谢 **Coze Coding AI** 协助完成本项目的前期开发。后续开发 1.5.0 版本后由 **CodeBuddy CN** 接手开发。
 
 ---
 
