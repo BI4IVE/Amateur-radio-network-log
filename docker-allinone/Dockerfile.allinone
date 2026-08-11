@@ -1,0 +1,41 @@
+# 一体化镜像：应用 + 内置 PostgreSQL，用户一条命令即可运行
+# 构建（在仓库根目录执行）：
+#   docker build -f docker-allinone/Dockerfile.allinone -t bi4ive/radio-log:allinone .
+# 运行：
+#   docker run -d -p 5000:5000 bi4ive/radio-log:allinone
+# 打开 http://localhost:5000 即可使用（管理员 ADMIN，密码见容器日志）
+
+FROM node:24-slim
+
+# 安装 PostgreSQL（Debian bookworm 默认 15）与 openssl（生成随机密钥用）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    postgresql postgresql-contrib openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+# 将 pg 命令加入 PATH（bookworm 的 postgresql 为 15）
+ENV PATH="/usr/lib/postgresql/15/bin:${PATH}"
+
+WORKDIR /app
+
+# 安装 pnpm
+RUN npm install -g pnpm
+
+# 复制依赖清单并安装（仓库 .gitignore 忽略 pnpm-lock.yaml，故用普通 install）
+COPY package.json ./
+RUN pnpm install
+
+# 复制项目源码并构建
+COPY . .
+RUN pnpm build
+
+# 复制一体化启动脚本
+COPY docker-allinone/entrypoint.sh /usr/local/bin/entrypoint.sh
+# 清洗可能的 Windows CRLF 行尾，避免 Linux 下 sh 解析失败
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && chmod +x /usr/local/bin/entrypoint.sh
+
+EXPOSE 5000
+
+# PostgreSQL 数据目录，建议挂卷持久化
+VOLUME ["/var/lib/postgresql/data"]
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -1,0 +1,37 @@
+== 一体化 Docker 镜像（应用 + 内置 PostgreSQL）使用说明 ==
+
+目标：用户只需一条命令拉取/运行，打开浏览器即可使用，无需自行安装或配置数据库。
+
+---------------- 1. 构建镜像（有源码时，在仓库根目录执行）----------------
+docker build -f docker-allinone/Dockerfile.allinone -t bi4ive/radio-log:allinone .
+
+（也可直接拉取已发布的镜像：docker pull bi4ive/radio-log:allinone）
+
+---------------- 2. 运行（最简，开箱即用）----------------
+docker run -d -p 5000:5000 bi4ive/radio-log:allinone
+
+等待约 1~2 分钟（首次会初始化内置数据库、自动建表）。
+浏览器打开 http://localhost:5000 即可。
+
+管理员账号：ADMIN
+管理员密码：容器日志里自动生成的 ADMIN_INIT_PASSWORD（见下方“查看密码”）。
+
+---------------- 3. 自定义管理员密码（推荐）----------------
+docker run -d -p 5000:5000 -e ADMIN_INIT_PASSWORD=你的密码 bi4ive/radio-log:allinone
+
+---------------- 4. 数据持久化（防止删容器丢数据）----------------
+docker run -d -p 5000:5000 -v radio-data:/var/lib/postgresql/data bi4ive/radio-log:allinone
+
+---------------- 5. 查看自动生成的管理员密码 / 日志 -----------------
+docker logs <容器ID或名> 2>&1 | grep ADMIN_INIT_PASSWORD
+
+---------------- 6. 常用命令 -----------------
+停止：   docker stop <容器ID>
+重启：   docker start <容器ID>
+删除：   docker rm -f <容器ID>
+
+---------------- 说明 -----------------
+- 该镜像在内部同时运行 PostgreSQL 与应用，无需外部数据库。
+- JWT_SECRET 未设置时会自动随机生成（容器重启会变化，正式使用建议 -e JWT_SECRET=随机串 固定）。
+- 数据库数据默认存在容器内；用 -v 挂卷可持久化。
+- 此方案与仓库原有的 Dockerfile / docker-compose.yml（应用+外部数据库分离）互不影响，按需选用。
