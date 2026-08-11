@@ -57,8 +57,15 @@ output.log
 
 # Preview files
 .preview
-.cozeproj/reduction
+.coze
+.cozeproj/
 .codegraph
+
+# 历史备份目录（含旧仓库 .git，不入库）
+bak/
+
+# 内部草稿说明（非对外文档）
+测试部署说明.txt
 
 # ===== 安全：禁止提交凭据与数据库导出 =====
 # 生产数据库导出 / dump（含明文密码）

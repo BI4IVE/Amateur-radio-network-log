@@ -1,0 +1,30 @@
+# 依赖与构建产物
+node_modules
+.next
+dist
+out
+
+# 环境变量（切勿打入镜像，避免泄露密钥）
+.env
+.env.*
+!.env.example
+
+# 版本控制与编辑器
+.git
+.gitignore
+.vscode
+.idea
+
+# 文档与无关文件
+bak
+*.md
+测试部署说明.txt
+AGENTS.md
+.DS_Store
+Thumbs.db
+
+# 日志与缓存
+*.log
+logs
+.cache
+.coverage

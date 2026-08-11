@@ -104,13 +104,19 @@ DATABASE_URL=postgresql://username:password@localhost:5432/radio_network_log
 # 应用配置
 PORT=5000
 NODE_ENV=development
+
+# JWT 签名密钥（必填！请用随机强字符串，例如：openssl rand -base64 48）
+JWT_SECRET=请替换为随机生成的强密钥
+
+# 初始化管理员密码（可选；首次访问首页自动创建 ADMIN 时使用的密码）
+ADMIN_INIT_PASSWORD=你的初始密码
 ```
 
 #### 5. 初始化数据库
 执行数据库迁移：
 ```bash
 # 创建表结构
-pnpm drizzle-kit push
+pnpm db:push
 ```
 
 #### 6. 配置管理员初始密码
@@ -262,14 +268,15 @@ wget -O install.sh http://download.bt.cn/install/install-ubuntu-6.0.sh && sudo b
    DATABASE_URL=postgresql://用户名:密码@localhost:5432/radio_network_log
    PORT=5000
    NODE_ENV=production
+   JWT_SECRET=请替换为随机生成的强密钥
    ADMIN_INIT_PASSWORD=你的初始管理员密码
    ```
    *注意：将用户名和密码替换为实际的数据库用户名和密码。*
-   *`PORT` 决定 `pnpm start` 监听端口（start 脚本未硬编码端口，必须在此设置）；`ADMIN_INIT_PASSWORD` 为管理员初始密码，首次访问首页时自动初始化管理员账户。*
+   *`PORT` 决定 `pnpm start` 监听端口（start 脚本未硬编码端口，必须在此设置）；`JWT_SECRET` 为 JWT 签名密钥，务必用随机强字符串（如 `openssl rand -base64 48`），缺失将使用不安全的硬编码默认值；`ADMIN_INIT_PASSWORD` 为管理员初始密码，首次访问首页时自动初始化管理员账户。*
 
 ##### 8. 初始化数据库
 ```bash
-pnpm drizzle-kit push
+pnpm db:push
 ```
 
 ##### 9. 配置管理员初始密码
@@ -418,11 +425,13 @@ nano .env
 DATABASE_URL=postgresql://radio_user:your_password@localhost:5432/radio_network_log
 PORT=5000
 NODE_ENV=production
+JWT_SECRET=请替换为随机生成的强密钥
+ADMIN_INIT_PASSWORD=你的初始管理员密码
 ```
 
 ##### 9. 初始化数据库
 ```bash
-pnpm drizzle-kit push
+pnpm db:push
 ```
 
 ##### 10. 配置管理员初始密码
@@ -501,6 +510,29 @@ sudo firewall-cmd --reload
 
 ### 方式四：Docker 部署（可选）
 
+#### 创建 .dockerignore（重要）
+在项目根目录创建 `.dockerignore`，避免把 `.env`、本地 `node_modules`、`.next` 等打进镜像（既防止密钥泄露，也避免构建异常）：
+```dockerignore
+node_modules
+.next
+dist
+out
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.vscode
+.idea
+bak
+*.md
+测试部署说明.txt
+AGENTS.md
+.DS_Store
+*.log
+logs
+```
+
 #### 创建 Dockerfile
 ```dockerfile
 FROM node:24-slim
@@ -510,11 +542,12 @@ WORKDIR /app
 # 安装 pnpm
 RUN npm install -g pnpm
 
-# 复制依赖文件
-COPY package.json pnpm-lock.yaml ./
+# 复制依赖清单（注意：仓库 .gitignore 默认忽略 pnpm-lock.yaml，
+# 因此此处只用 package.json，并采用普通 install 而非 --frozen-lockfile）
+COPY package.json ./
 
 # 安装依赖
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # 复制项目文件
 COPY . .
@@ -525,9 +558,13 @@ RUN pnpm build
 # 暴露端口
 EXPOSE 5000
 
-# 启动应用
-CMD ["pnpm", "start"]
+# 启动前先执行数据库迁移，再启动服务
+CMD ["sh", "-c", "pnpm db:push && pnpm start"]
 ```
+
+> 💡 若你本地已生成 `pnpm-lock.yaml` 并随项目一同打包进镜像，可把
+> `COPY package.json ./` 改为 `COPY package.json pnpm-lock.yaml ./`，
+> 并将 `pnpm install` 改为 `pnpm install --frozen-lockfile` 以锁定版本。
 
 #### 创建 docker-compose.yml
 ```yaml
@@ -541,8 +578,12 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@db:5432/radio_network_log
       - NODE_ENV=production
+      - JWT_SECRET=请替换为随机生成的强密钥
+      - ADMIN_INIT_PASSWORD=你的初始管理员密码
+    # 等待 db 健康后再启动；CMD 中已包含 pnpm db:push 建表
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   db:
@@ -553,6 +594,12 @@ services:
       - POSTGRES_PASSWORD=password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # 健康检查：pg_isready 返回 0 才视为就绪
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d radio_network_log"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
 volumes:
@@ -563,6 +610,7 @@ volumes:
 ```bash
 docker-compose up -d
 ```
+> 启动后 `app` 容器会先自动执行 `pnpm db:push` 创建表结构（依赖 `db` 健康检查通过后才进行），随后启动服务。访问 `http://localhost:5000`，首次打开首页会自动初始化 `ADMIN` 管理员账户（密码为 `ADMIN_INIT_PASSWORD`）。可用 `docker-compose logs -f app` 查看启动与建表日志。
 
 ---
 
