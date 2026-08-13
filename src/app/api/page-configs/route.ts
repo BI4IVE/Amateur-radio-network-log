@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
       configMap[config.key] = config.value
     })
     
-    return NextResponse.json({ configs: configMap })
+    // [v1.5.9] 禁止缓存，确保后台配置修改后前台立即可见
+    return NextResponse.json(
+      { configs: configMap },
+      { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate", "Pragma": "no-cache", "Expires": "0" } }
+    )
   } catch (error) {
     console.error("Get public page configs error:", error)
     return NextResponse.json(

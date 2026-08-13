@@ -30,7 +30,8 @@ export default function QueryPage() {
   useEffect(() => {
     const loadCertConfig = async () => {
       try {
-        const res = await fetch("/api/page-configs")
+        // [v1.5.9] 加时间戳 + no-store，避免浏览器/中间层缓存导致后台配置修改后证书不更新
+        const res = await fetch(`/api/page-configs?t=${Date.now()}`, { cache: "no-store" })
         const data = await res.json()
         const map = (data.configs as Record<string, string>) || {}
         if (map.cert_sign_unit) setCertSignUnit(map.cert_sign_unit)
