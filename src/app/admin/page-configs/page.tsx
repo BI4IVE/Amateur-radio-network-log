@@ -267,6 +267,7 @@ function getCategoryName(category: string): string {
     login: "登录页配置",
     home: "首页配置",
     session: "会话详情页配置",
+    certificate: "证书设置",
   }
   return names[category] || category
 }
