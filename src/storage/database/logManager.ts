@@ -1,4 +1,4 @@
-import { eq, and, SQL, like, desc, gte } from "drizzle-orm"
+import { eq, and, SQL, like, desc, gte, sql } from "drizzle-orm"
 import { getDb } from "./db"
 import {
   logSessions,
@@ -29,6 +29,19 @@ export class LogManager {
   async getLogSessionById(id: string): Promise<LogSession | null> {
     const db = await getDb()
     const [session] = await db.select().from(logSessions).where(eq(logSessions.id, id))
+    return session || null
+  }
+
+  // 按北京时间日期查询当天是否已存在台网会话（一天仅允许一场台网）
+  async findSessionByBeijingDate(date: Date): Promise<LogSession | null> {
+    const db = await getDb()
+    const [session] = await db
+      .select()
+      .from(logSessions)
+      .where(
+        sql`DATE(${logSessions.sessionTime} AT TIME ZONE 'Asia/Shanghai') = DATE(${date} AT TIME ZONE 'Asia/Shanghai')`
+      )
+      .limit(1)
     return session || null
   }
 

@@ -336,6 +336,63 @@ pnpm db:push
 
 ---
 
+#### ⚠️ 宝塔部署真实避坑记录（来自 v1.5.7 / v1.5.8 实测部署）
+
+以下为生产环境部署中真实遇到的问题与解决办法，照做可少走弯路。
+
+**坑 1：必须用宝塔「Node 项目」托管才能申请 SSL，但会和 PM2 抢端口**
+- 现象：用 PM2 手动 `next start -p 5000` 后，再在宝塔建 Node 项目也会监听 5000，报 `EADDRINUSE`。
+- 解决：**二选一，不要并存**。要么纯 PM2（但拿不到宝塔 SSL 自动管理），要么纯宝塔 Node 项目托管（推荐，SSL/开机自启都在宝塔里）。
+- 若已用 PM2 占住端口：先在宝塔把 Node 项目停掉/删掉，再 `pm2 delete` 释放端口，最后只用宝塔启动 Node 项目即可。
+- 注意：宝塔 Node 项目底层**不是**全局 pm2，用 `pm2 list` 看不到它；它的进程是 `node .../next-server`（用户 `www`）。
+
+**坑 2：`.env` 用 `cp` 覆盖时被交互确认打断，导致仍是模板**
+- 现象：`cp .env.example .env` 提示是否覆盖，非交互终端下直接跳过，`.env` 内容还是模板，`db:push` 连不上库。
+- 解决：用 `cat > .env <<'EOF' ... EOF` 强制写入，或 `cp -f`。
+
+**坑 3：`pnpm db:push` 报 `permission denied for schema public (42501)`**
+- 现象：数据库用户（如 `logtest`）对 `public` schema 无建表权限。
+- 解决：用全路径 psql 授权（宝塔 PostgreSQL 的 psql 不在默认 PATH）：
+  ```bash
+  /www/server/pgsql/bin/psql "postgresql://logtest:密码@127.0.0.1:5432/logtest" \
+    -c "GRANT ALL ON SCHEMA public TO logtest;"
+  /www/server/pgsql/bin/psql "postgresql://logtest:密码@127.0.0.1:5432/logtest" \
+    -c "ALTER DATABASE logtest OWNER TO logtest;"
+  ```
+  授权后再 `pnpm db:push`。
+
+**坑 4：非交互远程 shell 里 `pnpm` / `node` 找不到（command not found）**
+- 原因：plink/脚本执行的 shell PATH 为空，读不到 nvm/宝塔的 node。
+- 解决：远程命令前加 `export PATH=/www/server/nodejs/v24.12.0/bin:$PATH`（按实际版本调整）。
+
+**坑 5：原生模块 bcrypt / sharp 编译失败或运行时报错**
+- 现象：构建/启动报 `bcrypt` 或 `sharp` 原生绑定错误。
+- 解决：项目目录执行 `pnpm rebuild bcrypt sharp`，确保用部署环境的 Node 版本重新编译。
+
+**坑 6：改了 package.json 的 `start` 脚本端口不生效**
+- 现象：`next start` 不读 `.env` 的 `PORT`，默认监听 3000，与宝塔反代 5000 对不上。
+- 解决：把 `package.json` 的 `start` 改为 `next start -p 5000`（显式指定端口），或用宝塔 Node 项目的「端口」配置项填写 5000。
+
+**坑 7：后台版本号显示「v1.1.0 兜底默认值（数据库读取失败）」**
+- 原因：全新库 `page_configs` 表是空的，版本接口读不到就回退兜底值。
+- 解决：登录后台调一次初始化接口补齐配置，再触发版本检测即可同步为真实版本：
+  ```bash
+  TOKEN=$(curl -s -X POST http://127.0.0.1:5000/api/auth/login \
+    -H 'Content-Type: application/json' \
+    -d '{"username":"ADMIN","password":"你的密码"}' | grep -o '"token":"[^"]*"' | sed 's/"token":"//;s/"//')
+  curl -s -X POST http://127.0.0.1:5000/api/admin/migrate/page-configs -H "Authorization: Bearer $TOKEN"
+  curl -s http://127.0.0.1:5000/api/admin/upgrade/check -H "Authorization: Bearer $TOKEN"
+  ```
+  若想让「在线更新检测」真正可用，在 `.env` 设：
+  `UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-network-log/main/version/upgrade-manifest.json`
+  （不设也能用，只是检测时看不到远程清单，显示「当前已是最新版本」）。
+
+**坑 8：测试站与正式站共用端口/数据库的风险**
+- 现象：同一服务器两站都 `PORT=5000`、连同一库，重启容易误操作另一站。
+- 解决：测试站独立服务器 + 独立数据库 + 独立端口，彻底隔离（本项目测试站即采用此方案）。
+
+---
+
 ### 方式三：传统 Linux 服务器部署
 
 #### 前提条件
@@ -799,6 +856,17 @@ kill -9 <PID>
 ---
 
 ## 更新日志
+
+### v1.5.8 (2026-08-13)
+
+**🔒 台网日期唯一约束（新增业务规则）**
+
+- 🔒 新增**台网日期唯一约束**：以**北京时间日期**为唯一键，**同一天仅允许一场台网**。当天已存在台网时，再次创建（无论是后台「台网历史管理」指定日期新建，还是前台「台网记录信息录入」实时建台网）将被拒绝，返回 `409` 并提示「该日期台网已存在，请到台网历史管理中修改已有的台网记录」，同时返回 `existingSessionId` 便于前端跳转修改。
+- 🔒 历史台网导入的数据与实时记录统一存入 `log_records` 表，按 `(session_id + 呼号)` 区分；导入台网记录前须先有当天台网会话，已存在则只能修改，避免重复录入。
+- 🛠 新增 `LogManager.findSessionByBeijingDate(date)`：按 `DATE(session_time AT TIME ZONE 'Asia/Shanghai')` 查重，全站统一以北京时间判定「同一天」。
+- ✅ 验证：同日期第二次创建返回拦截提示，跨日期创建正常放行。
+
+> ⚠️ 注意：v1.5.8 **未改动数据库表结构**（仅新增服务端查重逻辑，无新增/修改字段），升级只需拉代码 + 重新构建部署即可，无需执行额外表迁移。后续若需支持「一天多场台网」，再扩展判定键（如日期+主控/时段）。
 
 ### v1.5.7 (2026-08-13)
 
