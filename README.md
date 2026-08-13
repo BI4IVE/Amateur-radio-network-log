@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.5.7-blue)
+![Version](https://img.shields.io/badge/version-1.5.9-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-24.x-brightgreen)
 ![React](https://img.shields.io/badge/react-19.x-61DAFB)
@@ -856,6 +856,18 @@ kill -9 <PID>
 ---
 
 ## 更新日志
+
+### v1.5.9 (2026-08-14)
+
+**📜 证书配置后台化 + 防缓存修复 + 呼号查询免登录**
+
+- ✨ **证书签发单位 / 签发机构后台可配置**：新增 `cert_sign_unit`（证书标题处单位）与 `cert_sign_org`（证书底部签发机构）两个页面配置项，可在后台「页面配置管理」中修改，实时生效。
+- 🛠 **修复证书名称不生效（根因：客户端 JS 缓存）**：原实现依赖前端 `fetch('/api/page-configs')` 取配置，浏览器若缓存旧版 JS chunk 则永远显示写死保底值。现改为在 `query/layout.tsx`（服务端组件，`force-dynamic`）**直读数据库**并经 Client Provider（`certConfig.tsx`）注入 RSC payload，配置随每次请求服务端实时下发，**不再依赖任何客户端 fetch / 浏览器 JS 缓存**。
+- 🔓 **呼号查询页免登录公开访问**：`/query` 路由未加入 middleware 受保护路径，前台呼号查询与生成证书无需登录即可使用；同时前台页面（非 `/api`）响应头统一加 `no-store` 防止后台配置改动后仍显示旧版。
+- 🔽 **呼号参与查询降序排列**：用户查询返回的参与记录按日期降序排列（最新在前）。
+- 📄 版本更新页「当前已是最新版本」下方新增「当前版本更新日志」展示。
+
+> ⚠️ 注意：v1.5.9 **未改动数据库表结构**（证书配置复用既有 `page_configs` 表，新增 key 由后台初始化接口补齐），升级只需拉代码 + 重新构建部署即可，无需执行额外表迁移。
 
 ### v1.5.8 (2026-08-13)
 
