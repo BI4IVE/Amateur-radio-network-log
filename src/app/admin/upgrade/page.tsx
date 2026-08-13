@@ -19,6 +19,15 @@ interface UpgradeInfo {
   downloadUrl?: string | null
   detailUrl?: string | null
   minRequired?: string | null
+  versions?: {
+    version: string
+    releaseDate?: string
+    title?: string
+    summary?: string
+    dbSchema?: string
+    downloadUrl?: string
+    sourceUrl?: string
+  }[]
   autoUpdated?: boolean
   message?: string
   manifestError?: string | null
@@ -210,6 +219,73 @@ export default function UpgradePage() {
                 {info.manifestError && (
                   <p className="text-xs text-gray-400 mt-2">{info.manifestError}</p>
                 )}
+              </div>
+            )}
+
+            {/* 历史版本（可安装旧版） */}
+            {info.versions && info.versions.length > 0 && (
+              <div className="bg-white rounded-lg shadow p-6 space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">历史版本</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    如需安装指定版本（例如退回旧版），可在此下载对应源码自行部署。各版本数据库表结构兼容说明见每项标注。
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {info.versions.map((v) => (
+                    <div
+                      key={v.version}
+                      className="border border-gray-200 rounded-lg p-4 flex flex-wrap items-start justify-between gap-4"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-base font-semibold text-gray-900">v{v.version}</span>
+                          {v.title && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                              {v.title}
+                            </span>
+                          )}
+                          {v.releaseDate && (
+                            <span className="text-xs text-gray-400">{v.releaseDate}</span>
+                          )}
+                        </div>
+                        {v.summary && (
+                          <p className="text-sm text-gray-600 mt-1.5">{v.summary}</p>
+                        )}
+                        {v.dbSchema && (
+                          <p className="text-xs text-gray-400 mt-1.5">
+                            数据库兼容：{v.dbSchema}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 flex-shrink-0">
+                        {v.sourceUrl && (
+                          <a
+                            href={v.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm"
+                          >
+                            下载源码
+                          </a>
+                        )}
+                        {v.downloadUrl && v.downloadUrl !== v.sourceUrl && (
+                          <a
+                            href={v.downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
+                          >
+                            查看发布页
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-400 pt-1">
+                  提示：安装历史版本请参考 README「更新方式」章节。若版本间存在数据库表结构差异，请先备份数据库并按说明执行迁移。
+                </p>
               </div>
             )}
           </div>

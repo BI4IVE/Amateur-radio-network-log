@@ -10,5 +10,25 @@
     "版本号同步至 1.5.7"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
-  "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log"
+  "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
+  "versions": [
+    {
+      "version": "1.5.7",
+      "releaseDate": "2026-08-13",
+      "title": "紧急修复版（推荐）",
+      "summary": "含版本检测能力 + 录入重复/呼号归类 BUG 修复。与 1.5.6 表结构完全一致，可直接覆盖升级。",
+      "dbSchema": "same-as-1.5.6",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.7",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.7.tar.gz"
+    },
+    {
+      "version": "1.5.6",
+      "releaseDate": "2026-08-13",
+      "title": "历史版本（功能基线为 v1.5.5）",
+      "summary": "对应 1.5.5 代码基线（不含后台版本检测能力，版本检测在 v1.5.7 中引入）。如需安装早期无版本检测的代码可选装此版本；数据库表结构与 v1.5.7 相同，可共用同一数据库。",
+      "dbSchema": "same-as-1.5.7",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.6",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.6.tar.gz"
+    }
+  ]
 }

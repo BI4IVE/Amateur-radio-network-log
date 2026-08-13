@@ -111,6 +111,7 @@ export async function GET(request: NextRequest) {
       downloadUrl: manifest.downloadUrl || null,
       detailUrl: manifest.detailUrl || null,
       minRequired: manifest.minRequired || null,
+      versions: Array.isArray(manifest.versions) ? manifest.versions : [],
       message: autoUpdated
         ? `已自动将数据库版本号同步为 v${latestVersion}`
         : hasUpdate
