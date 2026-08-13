@@ -1,4 +1,4 @@
-// @version v1.5.8
+// @version v1.5.9
 // Session utility functions
 
 /**

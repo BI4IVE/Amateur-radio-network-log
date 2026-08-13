@@ -1,4 +1,4 @@
-// @version v1.5.8
+// @version v1.5.9
 "use client"
 
 import { useState, useRef, useEffect } from "react"
@@ -23,6 +23,25 @@ export default function QueryPage() {
   } | null>(null)
   const [showCertificate, setShowCertificate] = useState(false)
 
+  // [v1.5.9] 证书签发单位/机构从后台页面配置读取（带写死兜底）
+  const [certSignUnit, setCertSignUnit] = useState("济南黄河业余无线电台网活动")
+  const [certSignOrg, setCertSignOrg] = useState("济南黄河业余无线电中继台")
+
+  useEffect(() => {
+    const loadCertConfig = async () => {
+      try {
+        const res = await fetch("/api/page-configs")
+        const data = await res.json()
+        const map = (data.configs as Record<string, string>) || {}
+        if (map.cert_sign_unit) setCertSignUnit(map.cert_sign_unit)
+        if (map.cert_sign_org) setCertSignOrg(map.cert_sign_org)
+      } catch {
+        // 忽略：使用兜底默认值
+      }
+    }
+    loadCertConfig()
+  }, [])
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
@@ -44,6 +63,14 @@ export default function QueryPage() {
         setError(data.error || "查询失败")
         setLoading(false)
         return
+      }
+
+      // [v1.5.9] 参与记录按日期降序（最近参与在前）
+      if (Array.isArray(data.participationTimes)) {
+        data.participationTimes.sort(
+          (a: ParticipationRecord, b: ParticipationRecord) =>
+            new Date(b.time).getTime() - new Date(a.time).getTime()
+        )
       }
 
       setResult(data)
@@ -326,7 +353,7 @@ export default function QueryPage() {
                           在过去一年中积极参与
                         </p>
                         <p className="text-yellow-900 text-2xl font-semibold tracking-wide">
-                          济南黄河业余无线电台网活动
+                          {certSignUnit}
                         </p>
                         <div className="flex items-center justify-center gap-6 py-6">
                           <div className="w-1 h-20 bg-gradient-to-b from-transparent via-yellow-700 to-transparent"></div>
@@ -350,7 +377,7 @@ export default function QueryPage() {
                         <div className="text-center">
                           <p className="text-gray-700 font-bold text-lg mb-3 tracking-wide">签发机构</p>
                           <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-                            <p className="text-yellow-900 font-semibold text-base">济南黄河业余无线电中继台</p>
+                            <p className="text-yellow-900 font-semibold text-base">{certSignOrg}</p>
                           </div>
                         </div>
                         <div className="text-center">

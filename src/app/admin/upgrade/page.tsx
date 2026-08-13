@@ -1,4 +1,4 @@
-// @version v1.5.8
+// @version v1.5.9
 "use client"
 
 import { useState, useEffect } from "react"
@@ -74,6 +74,19 @@ export default function UpgradePage() {
       setLoading(false)
     }
   }
+
+  // [v1.5.9] 当前版本更新日志（按版本倒序展示）
+  const CHANGELOG = [
+    {
+      version: "1.5.9",
+      date: "2026-08-14",
+      changes: [
+        "新增参与证书生成：签发单位与底部签发机构改为后台「页面配置」可配置",
+        "后台「页面配置」新增「证书配置」分组（cert_sign_unit / cert_sign_org）",
+        "呼号参与查询页：用户查询结果按参与日期降序排列（最近参与在前）",
+      ],
+    },
+  ]
 
   return (
     <AdminLayout>
@@ -222,6 +235,26 @@ export default function UpgradePage() {
                 )}
               </div>
             )}
+
+            {/* [v1.5.9] 当前版本更新日志 */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900">当前版本更新日志</h3>
+              <div className="mt-4 space-y-5">
+                {CHANGELOG.map((log) => (
+                  <div key={log.version} className="border-l-4 border-indigo-500 pl-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-base font-semibold text-gray-900">v{log.version}</span>
+                      <span className="text-xs text-gray-400">{log.date}</span>
+                    </div>
+                    <ul className="mt-2 space-y-1.5 list-disc list-inside text-sm text-gray-600">
+                      {log.changes.map((c, i) => (
+                        <li key={i}>{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* 历史版本（可安装旧版） */}
             {info.versions && info.versions.length > 0 && (

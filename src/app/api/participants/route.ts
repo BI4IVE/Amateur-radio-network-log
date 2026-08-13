@@ -1,4 +1,4 @@
-// @version v1.5.8
+// @version v1.5.9
 import { NextRequest, NextResponse } from "next/server"
 import { participantManager } from "@/storage/database"
 import { getAuthUser, requireUser, requireAdmin } from "@/lib/auth"
