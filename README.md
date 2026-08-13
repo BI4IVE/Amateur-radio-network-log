@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.5.5-blue)
+![Version](https://img.shields.io/badge/version-1.5.6-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-24.x-brightgreen)
 ![React](https://img.shields.io/badge/react-19.x-61DAFB)
@@ -713,6 +713,16 @@ kill -9 <PID>
 ---
 
 ## 更新日志
+
+### v1.5.6 (2026-08-13)
+
+**🔔 后台版本检测**
+
+- ✨ 新增**后台「版本更新」菜单**：管理员可在后台一键检测是否有新版本
+- 🔒 **版本号改为数据库存储且后台只读**：页面配置中 `version` 项仅展示、不可手动修改，避免误改；数据库连接异常时回退显示 `1.1.0`
+- 🌐 **远程版本清单比对**：检测接口读取远程 `version/upgrade-manifest.json`（可经 `UPGRADE_MANIFEST_URL` 指向 GitHub raw 地址），与数据库当前版本比对，展示更新日志与仓库地址
+- 🔄 **代码更新后自动同步版本号**：当管理员已把程序代码更新到与远程清单一致（`CODE_VERSION >= latest`），但数据库 `version` 仍落后时，检测接口会自动将数据库 `version` 回写为最新版，避免一直提示有新版本
+- 📝 仓库新增 `version/` 目录专门存放版本清单；发版时需同步：① `version/upgrade-manifest.json` 的 `latest`/`changelog` ② `src/lib/version.ts` 的 `CODE_VERSION` ③ 部署后数据库 `page_configs.version` 会自动同步
 
 ### v1.5.5 (2026-08-10)
 

@@ -217,7 +217,12 @@ export default function HomePage() {
             break
 
           case "record_added":
-            setRecords((prev) => [...prev, data.record])
+            // 按 id 去重：避免「本地乐观插入 + SSE 回声」导致同一条记录出现两次
+            setRecords((prev) =>
+              prev.some((r) => r.id === data.record.id)
+                ? prev
+                : [...prev, data.record]
+            )
             break
 
           case "record_updated":
@@ -619,7 +624,12 @@ export default function HomePage() {
       })
 
       const data = await response.json()
-      setRecords([...records, data.record])
+      // 按 id 去重：若 SSE 回声已先插入，则不重复添加
+      setRecords((prev) =>
+        prev.some((r) => r.id === data.record.id)
+          ? prev
+          : [...prev, data.record]
+      )
 
       // Reload participants to get updated data
       loadParticipants()

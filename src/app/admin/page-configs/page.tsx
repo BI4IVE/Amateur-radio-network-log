@@ -202,7 +202,12 @@ export default function PageConfigsPage() {
                           <h4 className="font-medium text-gray-900">{config.description}</h4>
                           <p className="text-xs text-gray-500 mt-1">配置键: {config.key}</p>
                         </div>
-                        {editingKey !== config.key && (
+                        {/* version 为系统版本号，后台只读展示，不可手动修改 */}
+                        {config.key === "version" ? (
+                          <span className="px-3 py-1.5 text-xs bg-gray-100 text-gray-500 rounded-lg font-medium">
+                            系统版本（只读）
+                          </span>
+                        ) : editingKey !== config.key && (
                           <button
                             onClick={() => handleEdit(config)}
                             className="px-3 py-1.5 text-sm bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors font-medium"

@@ -207,7 +207,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center">
             <p className="text-sm text-gray-500">
-              {pageConfigs.version || "v1.1.0"} By BR4IN
+              {pageConfigs.version || "1.1.0"} By BR4IN
             </p>
           </div>
         </div>
