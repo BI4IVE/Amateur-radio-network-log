@@ -1,7 +1,27 @@
 // @version v1.5.9
-// [v1.5.9] 强制 /query 段动态渲染，避免 Next.js 给静态预渲染页加 s-maxage=31536000 强缓存，
-// 导致后台修改证书配置后用户浏览器长期显示旧版证书逻辑。
+// [v1.5.9] 服务端组件：直读数据库证书配置，经 context 传给客户端页面，避免客户端 fetch 缓存导致配置不生效
+import { PageConfigManager } from "@/storage/database/pageConfigManager"
+
 export const dynamic = "force-dynamic"
-export default function QueryLayout({ children }: { children: React.ReactNode }) {
-  return children
+
+export default async function QueryLayout({ children }: { children: React.ReactNode }) {
+  let certSignUnit = "济南黄河业余无线电台网活动"
+  let certSignOrg = "济南黄河业余无线电中继台"
+  try {
+    const mgr = new PageConfigManager()
+    const [u, o] = await Promise.all([
+      mgr.getConfigByKey("cert_sign_unit"),
+      mgr.getConfigByKey("cert_sign_org"),
+    ])
+    if (u?.value) certSignUnit = u.value
+    if (o?.value) certSignOrg = o.value
+  } catch (e) {
+    // 读取失败时保留保底值，不影响页面渲染
+  }
+  const { CertConfigContext } = await import("./certConfig")
+  return (
+    <CertConfigContext.Provider value={{ certSignUnit, certSignOrg }}>
+      {children}
+    </CertConfigContext.Provider>
+  )
 }

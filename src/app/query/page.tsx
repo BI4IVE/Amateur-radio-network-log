@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { formatDateTime } from "@/utils/dateFormat"
+import { useCertConfig } from "./certConfig"
 
 interface ParticipationRecord {
   time: string
@@ -16,6 +17,12 @@ interface ParticipationRecord {
 
 export default function QueryPage() {
   const router = useRouter()
+  const serverCert = useCertConfig()
+
+  // [v1.5.9] 优先用服务端直读的配置初始化，再用客户端 fetch 兜底覆盖，避免客户端 JS 缓存导致配置不生效
+  const [certSignUnit, setCertSignUnit] = useState(serverCert.certSignUnit)
+  const [certSignOrg, setCertSignOrg] = useState(serverCert.certSignOrg)
+
   const [callsign, setCallsign] = useState("BR4IN")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -25,10 +32,6 @@ export default function QueryPage() {
     participationTimes: ParticipationRecord[]
   } | null>(null)
   const [showCertificate, setShowCertificate] = useState(false)
-
-  // [v1.5.9] 证书签发单位/机构从后台页面配置读取（带写死兜底）
-  const [certSignUnit, setCertSignUnit] = useState("济南黄河业余无线电台网活动")
-  const [certSignOrg, setCertSignOrg] = useState("济南黄河业余无线电中继台")
 
   useEffect(() => {
     const loadCertConfig = async () => {
