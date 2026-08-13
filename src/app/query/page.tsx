@@ -1,6 +1,9 @@
 // @version v1.5.9
 "use client"
 
+// [v1.5.9] 强制动态渲染，避免静态预渲染被 CDN/浏览器强缓存导致后台配置修改后证书不更新
+export const dynamic = "force-dynamic"
+
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { formatDateTime } from "@/utils/dateFormat"
