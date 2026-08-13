@@ -1,17 +1,10 @@
 // @version v1.5.9
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
-import { getAuthUser, requireLogin } from "@/lib/auth"
+// [v1.5.9] 记录公开查询接口，无需登录（middleware 已将 /api/records/search 列入 publicPaths）
 
 export async function GET(request: NextRequest) {
   try {
-    // 验证登录状态
-    const user = await getAuthUser(request)
-    const loginError = requireLogin(user)
-    if (loginError.error) {
-      return NextResponse.json({ error: loginError.error }, { status: 401 })
-    }
-
     const { searchParams } = new URL(request.url)
     const field = searchParams.get("field")
     const query = searchParams.get("query")
