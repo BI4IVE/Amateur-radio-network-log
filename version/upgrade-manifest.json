@@ -1,18 +1,27 @@
 {
-  "latest": "1.5.8",
+  "latest": "1.5.9",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-08-13",
-  "title": "v1.5.8 版本更新",
-  "summary": "新增台网日期唯一约束：同一天（北京时间）仅允许一场台网，重复录入改为「已存在则只能修改」。",
+  "releaseDate": "2026-08-14",
+  "title": "v1.5.9 版本更新",
+  "summary": "版本更新页增加当前版本更新日志；后台页面配置新增证书配置组（签发单位/签发机构可后台配置）；呼号参与查询返回结果按日期降序排列。",
   "changelog": [
-    "新增台网日期唯一约束：以北京时间日期为唯一键，同一天已存在台网时禁止再次创建，返回 409 并提示到台网历史管理修改",
-    "新增 LogManager.findSessionByBeijingDate()：按 DATE(session_time AT TIME ZONE 'Asia/Shanghai') 查重",
-    "后台「台网历史管理」与前台「台网记录信息录入」创建会话前均做日期查重",
-    "版本号同步至 1.5.8"
+    "版本更新页「当前已是最新版本」下方新增「当前版本更新日志」展示当前版本变更说明",
+    "后台「页面配置管理」新增证书配置组：参与证书签发单位（cert_sign_unit）与底部签发机构（cert_sign_org）均可在后台配置",
+    "呼号参与查询页：用户查询返回的参与记录按日期降序排列（最新在前）",
+    "版本号同步至 1.5.9"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.9",
+      "releaseDate": "2026-08-14",
+      "title": "证书配置化 + 查询降序 + 更新日志",
+      "summary": "版本更新页新增当前版本更新日志；后台页面配置新增证书配置组（签发单位/签发机构可后台配置）；呼号参与查询返回结果按日期降序排列。与 1.5.8 表结构完全一致，可直接覆盖升级。",
+      "dbSchema": "same-as-1.5.8",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.9",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.9.tar.gz"
+    },
     {
       "version": "1.5.7",
       "releaseDate": "2026-08-13",
