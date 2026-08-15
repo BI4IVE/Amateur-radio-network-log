@@ -1,4 +1,4 @@
-// @version v1.5.9
+﻿// @version v1.5.10
 import { NextRequest, NextResponse } from "next/server"
 import { pageConfigManager } from "@/storage/database"
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       configMap[config.key] = config.value
     })
     
-    // [v1.5.9] 禁止缓存，确保后台配置修改后前台立即可见
+    // [v1.5.10] 禁止缓存，确保后台配置修改后前台立即可见
     return NextResponse.json(
       { configs: configMap },
       { headers: { "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate", "Pragma": "no-cache", "Expires": "0" } }

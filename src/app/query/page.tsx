@@ -1,7 +1,7 @@
-// @version v1.5.9
+﻿// @version v1.5.10
 "use client"
 
-// [v1.5.9] 强制动态渲染，避免静态预渲染被 CDN/浏览器强缓存导致后台配置修改后证书不更新
+// [v1.5.10] 强制动态渲染，避免静态预渲染被 CDN/浏览器强缓存导致后台配置修改后证书不更新
 export const dynamic = "force-dynamic"
 
 import { useState, useRef, useEffect } from "react"
@@ -19,7 +19,7 @@ export default function QueryPage() {
   const router = useRouter()
   const serverCert = useCertConfig()
 
-  // [v1.5.9] 优先用服务端直读的配置初始化，再用客户端 fetch 兜底覆盖，避免客户端 JS 缓存导致配置不生效
+  // [v1.5.10] 优先用服务端直读的配置初始化，再用客户端 fetch 兜底覆盖，避免客户端 JS 缓存导致配置不生效
   const [certSignUnit, setCertSignUnit] = useState(serverCert.certSignUnit)
   const [certSignOrg, setCertSignOrg] = useState(serverCert.certSignOrg)
 
@@ -36,7 +36,7 @@ export default function QueryPage() {
   useEffect(() => {
     const loadCertConfig = async () => {
       try {
-        // [v1.5.9] 加时间戳 + no-store，避免浏览器/中间层缓存导致后台配置修改后证书不更新
+        // [v1.5.10] 加时间戳 + no-store，避免浏览器/中间层缓存导致后台配置修改后证书不更新
         const res = await fetch(`/api/page-configs?t=${Date.now()}`, { cache: "no-store" })
         const data = await res.json()
         const map = (data.configs as Record<string, string>) || {}
@@ -72,7 +72,7 @@ export default function QueryPage() {
         return
       }
 
-      // [v1.5.9] 参与记录按日期降序（最近参与在前）
+      // [v1.5.10] 参与记录按日期降序（最近参与在前）
       if (Array.isArray(data.participationTimes)) {
         data.participationTimes.sort(
           (a: ParticipationRecord, b: ParticipationRecord) =>

@@ -1,18 +1,27 @@
 {
-  "latest": "1.5.9",
+  "latest": "1.5.10",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-08-14",
-  "title": "v1.5.9 版本更新",
-  "summary": "版本更新页增加当前版本更新日志；后台页面配置新增证书配置组（签发单位/签发机构可后台配置）；呼号参与查询返回结果按日期降序排列。",
+  "releaseDate": "2026-08-15",
+  "title": "v1.5.10 版本更新",
+  "summary": "彻底修复台网记录提交时出现重复两组数据的 BUG（提交响应插入与 SSE 实时回声因 React 状态更新时序导致去重失效）。",
   "changelog": [
-    "版本更新页「当前已是最新版本」下方新增「当前版本更新日志」展示当前版本变更说明",
-    "后台「页面配置管理」新增证书配置组：参与证书签发单位（cert_sign_unit）与底部签发机构（cert_sign_org）均可在后台配置",
-    "呼号参与查询页：用户查询返回的参与记录按日期降序排列（最新在前）",
-    "版本号同步至 1.5.9"
+    "彻底修复「台网记录提交时同时出现两组相同数据、重新进入后消失」的问题：在客户端所有记录插入/合并点引入 dedupeRecords 按 id 唯一性兜底，覆盖提交响应与 SSE 回声的任意到达时序",
+    "原 v1.5.7 的去重逻辑（依赖两处各自判断 prev 快照）存在竞态缝隙，本次升级为统一的物理唯一键去重，确保 UI 层永不渲染重复条目",
+    "数据库层记录写入本身始终为单条，重复仅存在于前端展示，重新进入台网（全量重拉）即消失的现象与此一致",
+    "版本号同步至 1.5.10"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.10",
+      "releaseDate": "2026-08-15",
+      "title": "彻底修复提交重复数据",
+      "summary": "彻底修复台网记录提交时出现重复两组数据的 BUG：客户端所有记录插入/合并点引入 dedupeRecords 按 id 唯一性兜底，覆盖提交响应与 SSE 实时回声的任意到达时序。与 1.5.9 表结构完全一致，可直接覆盖升级。",
+      "dbSchema": "same-as-1.5.9",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.10",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.10.tar.gz"
+    },
     {
       "version": "1.5.9",
       "releaseDate": "2026-08-14",

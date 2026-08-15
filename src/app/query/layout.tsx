@@ -1,5 +1,5 @@
-// @version v1.5.9
-// [v1.5.9] 服务端组件：直读数据库证书配置，经 context provider 传给客户端页面，避免客户端 fetch 缓存导致配置不生效
+﻿// @version v1.5.10
+// [v1.5.10] 服务端组件：直读数据库证书配置，经 context provider 传给客户端页面，避免客户端 fetch 缓存导致配置不生效
 import { PageConfigManager } from "@/storage/database/pageConfigManager"
 import { CertConfigProvider } from "./certConfig"
 

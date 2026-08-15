@@ -1,9 +1,9 @@
-// @version v1.5.9
+﻿// @version v1.5.10
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import { getDb } from "@/storage/database/db"
 import { logSessions } from "@/storage/database/shared/schema"
-// [v1.5.9] 呼号参与查询为公开接口，无需登录（middleware 已将 /api/records/callsign-stats 列入 publicPaths）
+// [v1.5.10] 呼号参与查询为公开接口，无需登录（middleware 已将 /api/records/callsign-stats 列入 publicPaths）
 
 export async function GET(request: NextRequest) {
   try {

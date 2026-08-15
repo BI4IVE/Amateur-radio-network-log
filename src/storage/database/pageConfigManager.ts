@@ -1,4 +1,4 @@
-// @version v1.5.9
+﻿// @version v1.5.10
 import { eq, and, SQL, sql } from "drizzle-orm"
 import { getDb } from "./db"
 import { pageConfigs, insertPageConfigSchema, updatePageConfigSchema } from "./shared/schema"
@@ -122,7 +122,7 @@ export class PageConfigManager {
         category: "session",
         description: "会话详情页标题",
       },
-      // 证书配置（[v1.5.9] 参与证书生成页可配置项）
+      // 证书配置（[v1.5.10] 参与证书生成页可配置项）
       {
         key: "cert_sign_unit",
         value: "济南黄河业余无线电台网活动",

@@ -1,4 +1,4 @@
-// @version v1.5.9
+﻿// @version v1.5.10
 "use client"
 
 import { useState, useEffect } from "react"
@@ -75,7 +75,7 @@ export default function UpgradePage() {
     }
   }
 
-  // [v1.5.9] 当前版本更新日志（按版本倒序展示）
+  // [v1.5.10] 当前版本更新日志（按版本倒序展示）
   const CHANGELOG = [
     {
       version: "1.5.9",
@@ -236,7 +236,7 @@ export default function UpgradePage() {
               </div>
             )}
 
-            {/* [v1.5.9] 当前版本更新日志 */}
+            {/* [v1.5.10] 当前版本更新日志 */}
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900">当前版本更新日志</h3>
               <div className="mt-4 space-y-5">

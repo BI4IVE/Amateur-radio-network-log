@@ -1,4 +1,4 @@
-// @version v1.5.9
+﻿// @version v1.5.10
 import { NextResponse } from "next/server"
 
 
@@ -493,7 +493,7 @@ export async function middleware(request: NextRequest) {
 
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 
-  // [v1.5.9] 前台页面（非 /api）禁止缓存，避免后台配置修改后证书等页面仍显示旧版
+  // [v1.5.10] 前台页面（非 /api）禁止缓存，避免后台配置修改后证书等页面仍显示旧版
   if (!pathname.startsWith("/api")) {
     response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
     response.headers.set("Pragma", "no-cache")

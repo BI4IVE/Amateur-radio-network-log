@@ -1,4 +1,4 @@
-// @version v1.5.9
+﻿// @version v1.5.10
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -81,6 +81,24 @@ export default function HomePage() {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [records, setRecords] = useState<LogRecord[]>([])
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
+
+  // [v1.5.10] 按 id 去重：保留最后出现的一条，确保数组内记录唯一。
+  // 彻底修复「提交响应插入 + SSE 回声插入」因 React 状态快照时序导致的重复渲染。
+  const dedupeRecords = (list: LogRecord[]): LogRecord[] => {
+    const seen = new Set<string>()
+    const result: LogRecord[] = []
+    for (const r of list) {
+      if (r && r.id != null) {
+        if (!seen.has(String(r.id))) {
+          seen.add(String(r.id))
+          result.push(r)
+        }
+      } else {
+        result.push(r)
+      }
+    }
+    return result
+  }
 
   // Session expiration
   const [sessionExpired, setSessionExpired] = useState(false)
@@ -218,17 +236,13 @@ export default function HomePage() {
             break
 
           case "record_added":
-            // 按 id 去重：避免「本地乐观插入 + SSE 回声」导致同一条记录出现两次
-            setRecords((prev) =>
-              prev.some((r) => r.id === data.record.id)
-                ? prev
-                : [...prev, data.record]
-            )
+            // [v1.5.10] 按 id 兜底去重：无论提交响应与 SSE 回声的到达时序如何，最终数组唯一
+            setRecords((prev) => dedupeRecords([...prev, data.record]))
             break
 
           case "record_updated":
             setRecords((prev) =>
-              prev.map((r) => (r.id === data.record.id ? data.record : r))
+              dedupeRecords(prev.map((r) => (r.id === data.record.id ? data.record : r)))
             )
             break
 
@@ -625,12 +639,8 @@ export default function HomePage() {
       })
 
       const data = await response.json()
-      // 按 id 去重：若 SSE 回声已先插入，则不重复添加
-      setRecords((prev) =>
-        prev.some((r) => r.id === data.record.id)
-          ? prev
-          : [...prev, data.record]
-      )
+      // [v1.5.10] 按 id 兜底去重：与 SSE 回声合并时永不产生重复条目
+      setRecords((prev) => dedupeRecords([...prev, data.record]))
 
       // Reload participants to get updated data
       loadParticipants()
