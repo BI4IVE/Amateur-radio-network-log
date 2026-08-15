@@ -20,6 +20,13 @@ interface UpgradeInfo {
   downloadUrl?: string | null
   detailUrl?: string | null
   minRequired?: string | null
+  currentVersionLog?: {
+    version: string
+    releaseDate?: string
+    title?: string
+    summary?: string
+    changelog: string[]
+  } | null
   versions?: {
     version: string
     releaseDate?: string
@@ -75,18 +82,9 @@ export default function UpgradePage() {
     }
   }
 
-  // [v1.5.10] 当前版本更新日志（按版本倒序展示）
-  const CHANGELOG = [
-    {
-      version: "1.5.9",
-      date: "2026-08-14",
-      changes: [
-        "新增参与证书生成：签发单位与底部签发机构改为后台「页面配置」可配置",
-        "后台「页面配置」新增「证书配置」分组（cert_sign_unit / cert_sign_org）",
-        "呼号参与查询页：用户查询结果按参与日期降序排列（最近参与在前）",
-      ],
-    },
-  ]
+  // [v1.5.10] 当前版本更新日志：取自接口返回的 currentVersionLog（与当前实际版本一致），
+  // 不再硬编码，发版时只需更新 version/upgrade-manifest.json 即可自动同步。
+  const currentLog = info?.currentVersionLog || null
 
   return (
     <AdminLayout>
@@ -236,23 +234,37 @@ export default function UpgradePage() {
               </div>
             )}
 
-            {/* [v1.5.10] 当前版本更新日志 */}
+            {/* [v1.5.10] 当前版本更新日志（跟随实际版本，取自 manifest 中匹配的版本条目） */}
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900">当前版本更新日志</h3>
               <div className="mt-4 space-y-5">
-                {CHANGELOG.map((log) => (
-                  <div key={log.version} className="border-l-4 border-indigo-500 pl-4">
+                {currentLog ? (
+                  <div className="border-l-4 border-indigo-500 pl-4">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-base font-semibold text-gray-900">v{log.version}</span>
-                      <span className="text-xs text-gray-400">{log.date}</span>
+                      <span className="text-base font-semibold text-gray-900">v{currentLog.version}</span>
+                      {currentLog.releaseDate && (
+                        <span className="text-xs text-gray-400">{currentLog.releaseDate}</span>
+                      )}
+                      {currentLog.title && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                          {currentLog.title}
+                        </span>
+                      )}
                     </div>
-                    <ul className="mt-2 space-y-1.5 list-disc list-inside text-sm text-gray-600">
-                      {log.changes.map((c, i) => (
-                        <li key={i}>{c}</li>
-                      ))}
-                    </ul>
+                    {currentLog.summary && (
+                      <p className="text-sm text-gray-600 mt-2">{currentLog.summary}</p>
+                    )}
+                    {currentLog.changelog && currentLog.changelog.length > 0 && (
+                      <ul className="mt-2 space-y-1.5 list-disc list-inside text-sm text-gray-600">
+                        {currentLog.changelog.map((c, i) => (
+                          <li key={i}>{c}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-sm text-gray-500">暂无当前版本的更新日志。</p>
+                )}
               </div>
             </div>
 

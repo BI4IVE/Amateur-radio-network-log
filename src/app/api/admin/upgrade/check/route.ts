@@ -96,6 +96,40 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 当前版本更新日志：优先匹配 versions 中 version === currentVersion 的条目；
+    // 找不到（如当前版本早于清单最旧记录）则回退使用顶层 latest 的 changelog。
+    let currentVersionLog: {
+      version: string
+      releaseDate?: string
+      title?: string
+      summary?: string
+      changelog: string[]
+    } | null = null
+    const matched = Array.isArray(manifest.versions)
+      ? manifest.versions.find((v: any) => String(v.version) === String(currentVersion))
+      : null
+    if (matched) {
+      // 仅当当前版本恰为 latest 时，才展示详细 changelog（manifest.changelog 即 latest 的）；
+      // 否则 versions 条目仅有 title/summary，避免把 latest 的详细条目张冠李戴。
+      const isLatest = String(matched.version) === String(latestVersion)
+      currentVersionLog = {
+        version: String(matched.version),
+        releaseDate: matched.releaseDate || undefined,
+        title: matched.title || undefined,
+        summary: matched.summary || undefined,
+        changelog: isLatest && Array.isArray(manifest.changelog) ? manifest.changelog : [],
+      }
+    } else if (Array.isArray(manifest.changelog) && manifest.changelog.length > 0) {
+      // 回退：当前版本未在 versions 中，用 latest 的 changelog 展示，但标注为 latest 版本
+      currentVersionLog = {
+        version: String(latestVersion),
+        releaseDate: manifest.releaseDate || undefined,
+        title: manifest.title || undefined,
+        summary: manifest.summary || undefined,
+        changelog: manifest.changelog,
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       checked: true,
@@ -109,6 +143,7 @@ export async function GET(request: NextRequest) {
       summary: manifest.summary || "",
       releaseDate: manifest.releaseDate || null,
       changelog: Array.isArray(manifest.changelog) ? manifest.changelog : [],
+      currentVersionLog,
       downloadUrl: manifest.downloadUrl || null,
       detailUrl: manifest.detailUrl || null,
       minRequired: manifest.minRequired || null,
