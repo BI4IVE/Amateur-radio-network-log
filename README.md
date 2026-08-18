@@ -32,8 +32,6 @@
 | [更新日志](docs/09-changelog.md) | 全部版本变更记录（v1.0.0 起） |
 | [贡献指南](docs/10-contributing.md) | 开发流程、代码规范、协议与致谢 |
 
-> 📋 文档统一头部/尾部模板见 [`docs/HEADER.md`](docs/HEADER.md) 与 [`docs/FOOTER.md`](docs/FOOTER.md)。
-
 ---
 
 ## 开源协议
