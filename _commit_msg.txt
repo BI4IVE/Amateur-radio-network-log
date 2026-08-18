@@ -1,9 +1,0 @@
-fix: 修复管理员角色写入失效 + 后台配置对标正式站 + 实况大屏
-
-- 修复后台「原有主控人员调整为管理员」功能无效：updateUserSchema 补回 role 字段
-- 后台页面配置（page_configs）全面对标正式站，补齐证书/首页/登录/会话四类共 11 条配置
-- 版本检测改为联机拉取 GitHub 官方清单（启用 UPGRADE_MANIFEST_URL），移除测试站专属旧版 public/version/upgrade-manifest.json
-- 新增实况大屏 /live（SSE 实时滚动在网呼号与最新记录）
-- 新增调试接口 /api/debug 与会话详情接口 /api/sessions/[sessionId]
-- 优化登出逻辑与前台/后台布局
-- 版本号同步至 1.5.11（含 package.json 修正为 1.5.11，此前停留在 1.5.8）
