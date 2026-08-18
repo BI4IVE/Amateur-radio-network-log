@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.5.9-blue)
+![Version](https://img.shields.io/badge/version-1.5.11-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-24.x-brightgreen)
 ![React](https://img.shields.io/badge/react-19.x-61DAFB)
@@ -145,7 +145,7 @@ pnpm dev
 | 方式三 · 传统 Linux | 纯命令行 VPS / 云主机 | ⭐⭐⭐ | 手动安装依赖与 Nginx，灵活可控 |
 | 方式四 · Docker | 容器化 / 一键迁移 | ⭐⭐ | 镜像化部署，含 Postgres 服务 |
 
-> 🔒 **安全提示（v1.5.1+）**：出于安全加固，以下调试/危险接口已被**永久删除**，请勿在文档或脚本中调用：`/api/reset-admin`、`/api/debug/*`。同时 `/api/users`、`/api/participants`、`/api/admin/page-configs`、`/api/sessions`（POST）等接口均已加入管理员权限校验，匿名访问将返回 403/401。
+> 🔒 **安全提示（v1.5.1+）**：出于安全加固，危险接口 `/api/reset-admin` 已**永久删除**，请勿在文档或脚本中调用。自 **v1.5.11** 起，受管理员权限保护的调试接口 `/api/debug` 重新引入（仅管理员可访问，匿名返回 401/403）。同时 `/api/users`、`/api/participants`、`/api/admin/page-configs`、`/api/sessions`（POST）等接口均已加入管理员权限校验，匿名访问将返回 403/401。
 
 ### 方式一：Coze Coding 环境（⚠️ 已弃用）
 
