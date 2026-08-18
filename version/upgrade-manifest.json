@@ -1,18 +1,29 @@
 {
-  "latest": "1.5.10",
+  "latest": "1.5.11",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-08-15",
-  "title": "v1.5.10 版本更新",
-  "summary": "彻底修复台网记录提交时出现重复两组数据的 BUG（提交响应插入与 SSE 实时回声因 React 状态更新时序导致去重失效）。",
+  "releaseDate": "2026-08-18",
+  "title": "v1.5.11 版本更新",
+  "summary": "修复「主控人员调整为管理员」角色写入失效；后台页面配置全面对标正式站（补齐证书/首页/登录/会话四类配置）；版本检测改为联机拉取 GitHub 清单；新增实况大屏 /live 与调试/会话详情接口。",
   "changelog": [
-    "彻底修复「台网记录提交时同时出现两组相同数据、重新进入后消失」的问题：在客户端所有记录插入/合并点引入 dedupeRecords 按 id 唯一性兜底，覆盖提交响应与 SSE 回声的任意到达时序",
-    "原 v1.5.7 的去重逻辑（依赖两处各自判断 prev 快照）存在竞态缝隙，本次升级为统一的物理唯一键去重，确保 UI 层永不渲染重复条目",
-    "数据库层记录写入本身始终为单条，重复仅存在于前端展示，重新进入台网（全量重拉）即消失的现象与此一致",
-    "版本号同步至 1.5.10"
+    "修复后台「原有主控人员调整为管理员」功能无效：updateUserSchema 补回 role 字段，管理员角色写入不再被 zod 截断",
+    "后台页面配置（page-configs）全面对标正式站：测试站补齐证书设置、首页设置、登录页设置、会话详情页配置四类，与正式站 11 条配置一致",
+    "版本更新检测改为联机拉取 GitHub 官方清单（启用 UPGRADE_MANIFEST_URL），检测信息与正式站完全一致",
+    "新增实况大屏 /live 页面（SSE 实时滚动在网呼号与最新记录）",
+    "新增调试接口 /api/debug 与会话详情接口 /api/sessions/[sessionId]",
+    "优化登出逻辑与前台/后台布局；版本号同步至 1.5.11"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.11",
+      "releaseDate": "2026-08-18",
+      "title": "角色修复 + 配置对标 + 实况大屏",
+      "summary": "修复管理员角色写入失效、后台配置对标正式站、版本检测联机化、新增实况大屏 /live 与调试/会话详情接口。与 1.5.10 表结构完全一致，可直接覆盖升级。",
+      "dbSchema": "same-as-1.5.10",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.11",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.11.tar.gz"
+    },
     {
       "version": "1.5.10",
       "releaseDate": "2026-08-15",

@@ -1,4 +1,4 @@
-﻿// @version v1.5.10
+﻿// @version v1.5.11
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -122,9 +122,39 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   }, [pathname, router])
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // 清除 httpOnly cookie，否则 /api/auth/verify 会把用户拉回登录态
+      await fetch("/api/auth/logout", { method: "POST" })
+    } catch {
+      // 接口失败也继续本地退出
+    }
     localStorage.removeItem("user")
     router.push("/login")
+  }
+
+  // [v1.5.11] 后台"清理缓存"：清除本地存储 + Service Worker 缓存，并以 cache-bust 参数强制刷新，
+  // 绕过浏览器对 HTML 的磁盘缓存（JS 无法直接清 disk cache，靠访问未缓存的新 URL 实现）
+  const handleClearCache = async () => {
+    if (!window.confirm("确定要清理浏览器缓存吗？\n将清除本地存储并强制刷新页面（不会删除任何服务器数据）。")) {
+      return
+    }
+    try {
+      localStorage.clear()
+      sessionStorage.clear()
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations()
+        for (const reg of regs) { await reg.unregister() }
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys()
+        await Promise.all(keys.map((k) => caches.delete(k)))
+      }
+    } catch {
+      // 忽略清理异常，继续刷新
+    }
+    const sep = window.location.search ? "&" : "?"
+    window.location.href = window.location.pathname + sep + "_cb=" + Date.now()
   }
 
   // 根据用户角色过滤菜单项
@@ -168,6 +198,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             )}
           </div>
           <div className="flex items-center gap-3">
+            {currentUser?.role === "admin" && (
+              <button
+                onClick={handleClearCache}
+                className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors"
+                title="清理浏览器缓存并强制刷新页面"
+              >
+                清理缓存
+              </button>
+            )}
             <button
               onClick={() => router.push("/")}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"

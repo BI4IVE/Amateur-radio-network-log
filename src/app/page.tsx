@@ -1,4 +1,4 @@
-﻿// @version v1.5.10
+﻿// @version v1.5.11
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -161,25 +161,8 @@ export default function HomePage() {
   const eventSourceRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
-    // Check authentication
-    const userStr = localStorage.getItem("user")
-
-    const finish = (user: any) => {
-      setCurrentUser(user)
-      // Initialize admin if needed
-      initializeAdmin()
-    }
-
-    if (userStr) {
-      try {
-        finish(JSON.parse(userStr))
-        return
-      } catch {
-        // 解析失败则继续走 cookie 校验
-      }
-    }
-
-    // localStorage 没有时，用 httpOnly cookie 兜底校验(如登录页写入的 token)
+    // [v1.5.11-fix] 始终以服务端 httpOnly cookie 为准，避免 localStorage 残留旧登录态
+    // 导致「退出后刷新又自动登录 / 退不出去」。localStorage 仅作缓存，不再单独信任。
     const verify = async () => {
       try {
         const res = await fetch("/api/auth/verify")
@@ -187,13 +170,16 @@ export default function HomePage() {
           const d = await res.json()
           if (d.authenticated && d.user) {
             localStorage.setItem("user", JSON.stringify(d.user))
-            finish(d.user)
+            setCurrentUser(d.user)
+            initializeAdmin()
             return
           }
         }
       } catch {
         // ignore
       }
+      // 服务端未登录：清除可能残留的本地登录态，跳登录页
+      localStorage.removeItem("user")
       router.push("/login")
     }
     verify()
@@ -201,7 +187,13 @@ export default function HomePage() {
 
   useEffect(() => {
     if (currentUser) {
-      loadUsers()
+      // 仅管理员需要加载用户列表（主控无权限访问 /api/users，避免 403 弹错）
+      if (currentUser.role === "admin") {
+        loadUsers()
+      } else if (currentUser.role === "user") {
+        // 主控：直接以自身作为默认主控，不依赖 /api/users
+        setSelectedControllerId(currentUser.id)
+      }
       loadParticipants()
       setSessionTime(toBeijingISOString())
       loadPageConfigs()
@@ -368,7 +360,7 @@ export default function HomePage() {
 
   const joinSession = async (sessionId: string) => {
     try {
-      const response = await fetch(`/api/admin/stats/session/${sessionId}`)
+      const response = await fetch(`/api/sessions/${sessionId}`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -693,7 +685,14 @@ export default function HomePage() {
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      // 调用退出接口清除 httpOnly cookie（浏览器无法直接删除 httpOnly cookie，
+      // 不清的话 /api/auth/verify 会把用户拉回登录态，导致"退出不了"）
+      await fetch("/api/auth/logout", { method: "POST" })
+    } catch {
+      // 接口失败也继续本地退出
+    }
     localStorage.removeItem("user")
     router.push("/login")
   }

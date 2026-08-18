@@ -1,4 +1,4 @@
-﻿// @version v1.5.10
+﻿// @version v1.5.11
 import { pgTable, varchar, text, timestamp, boolean } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { createSchemaFactory } from "drizzle-zod"
@@ -123,6 +123,7 @@ export const updateUserSchema = createCoercedInsertSchema(users)
     antenna: true,
     qth: true,
     password: true,
+    role: true,
   })
   .partial()
 

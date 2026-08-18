@@ -1,20 +1,21 @@
-﻿// @version v1.5.11
+// @version v1.5.11
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { getAuthUser, requireUser } from "@/lib/auth"
 
+// 获取单个会话详情（含记录），登录用户即可访问，供"主控加入进行中台网"使用
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
-    if (adminError.error) {
-      return NextResponse.json({ error: adminError.error }, { status: 403 })
+    const authError = requireUser(user)
+    if (authError.error) {
+      return NextResponse.json({ error: authError.error }, { status: 401 })
     }
 
-    const { id: sessionId } = await params
+    const { sessionId } = await params
 
     // 获取会话详情
     const session = await logManager.getLogSessionById(sessionId)
