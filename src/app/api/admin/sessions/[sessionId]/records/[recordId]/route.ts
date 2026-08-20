@@ -51,16 +51,19 @@ export async function DELETE(
 
     const { recordId } = await params
 
-    const success = await logManager.deleteLogRecord(recordId)
+    const success = await logManager.softDeleteLogRecord(recordId, {
+      userId: user?.userId,
+      username: user?.username,
+    })
 
     if (!success) {
       return NextResponse.json(
-        { error: "记录不存在" },
+        { error: "记录不存在或已删除" },
         { status: 404 }
       )
     }
 
-    return NextResponse.json({ message: "记录已删除" })
+    return NextResponse.json({ message: "记录已移入回收站", recycled: true })
   } catch (error) {
     console.error("Admin delete record error:", error)
     return NextResponse.json(

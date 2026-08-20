@@ -39,6 +39,10 @@ export const logSessions = pgTable("log_sessions", {
   controllerAntenna: varchar("controller_antenna", { length: 255 }),
   controllerQth: varchar("controller_qth", { length: 255 }),
   sessionTime: timestamp("session_time", { withTimezone: true }).notNull(),
+  title: varchar("title", { length: 100 }),
+  scheduledTime: timestamp("scheduled_time", { withTimezone: true }),
+  status: varchar("status", { length: 20 }).notNull().default("active"),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 })
 
@@ -56,8 +60,26 @@ export const logRecords = pgTable("log_records", {
   signal: varchar("signal", { length: 50 }),
   report: varchar("report", { length: 255 }),
   remarks: text("remarks"),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 })
+
+// 审计日志表 - 记录删除/恢复等关键操作（软删除可追溯）
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 }),
+  username: varchar("username", { length: 50 }),
+  action: varchar("action", { length: 30 }).notNull(), // SOFT_DELETE / RESTORE / CREATE / UPDATE / START
+  entityType: varchar("entity_type", { length: 20 }).notNull(), // session / record
+  entityId: varchar("entity_id", { length: 36 }).notNull(),
+  detail: text("detail"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
+// 审计日志类型（显式导出，供 logManager / 页面复用）
+export type AuditLog = typeof auditLogs.$inferSelect
 
 // 参与人员信息表
 export const participants = pgTable("participants", {
@@ -136,6 +158,8 @@ export const updateLogSessionSchema = createCoercedInsertSchema(logSessions)
     controllerAntenna: true,
     controllerQth: true,
     sessionTime: true,
+    title: true,
+    scheduledTime: true,
   })
   .partial()
 

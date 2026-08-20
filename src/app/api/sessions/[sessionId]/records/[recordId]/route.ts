@@ -109,7 +109,10 @@ export async function DELETE(
       )
     }
 
-    const success = await logManager.deleteLogRecord(recordId)
+    const success = await logManager.softDeleteLogRecord(recordId, {
+      userId: user?.userId,
+      username: user?.username,
+    })
 
     if (!success) {
       return NextResponse.json(
@@ -118,10 +121,11 @@ export async function DELETE(
       )
     }
 
-    // 广播记录删除
+    // 广播记录删除（软删，带 deletedAt 标记便于前端隐藏）
     broadcastToSession(sessionId, {
       type: "record_deleted",
       recordId,
+      deletedAt: new Date().toISOString(),
     })
 
     return NextResponse.json({ success: true })
