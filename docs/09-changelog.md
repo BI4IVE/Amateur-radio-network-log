@@ -2,6 +2,36 @@
 
 # 更新日志
 
+## v1.5.12 (2026-08-20)
+
+**🚀 主控轮值表 + 软删除/回收站 + 审计日志 + 台网预告 + 后台 UI 美化**
+
+- ✨ 新增**主控轮值表 `/admin/rotation`**：按主控聚合台网场次数、最近主持时间与分布（修复同名主控因 `controllerId` 有无/不同被重复拆分的问题，按 `controllerName` 归并统计）。
+- 🗑 新增**软删除与回收站 `/admin/recycle`**：会话与记录改为软删除（新增 `deleted_at` 字段），可恢复，避免误删丢失数据。
+- 📋 新增**审计日志 `/admin/audit`**：记录删除/恢复等操作，可追溯（新增 `audit_logs` 表）。
+- 📅 新增**台网预告与排期 `/admin/schedules`**：后台创建预告，首页与 `/live` 显示倒计时；新增「开始台网」按钮到点一键开始。
+- 🎨 实况大屏 `/live` 与后台页 UI 美化，信息更突出。
+- 🛠 修复主控轮值表 `controllers` 字段回归（连同返回类型注解）。
+- 🔐 修复后台权限：前台「查看历史台网」按钮缺少 admin 守卫，普通主控误入 `/admin` 页面导致浏览器显示裸 JSON「无权限进入」；`middleware` 后台页面路径非管理员访问改为重定向回首页（接口路径仍返回 403 JSON）。
+
+> ⚠️ **注意：v1.5.12 含数据库表结构变更**，升级必须执行迁移（详见 `docs/05-deployment.md` 坑 9）：
+> 1. 新增 `audit_logs` 表；
+> 2. `log_sessions`、`log_records` 各新增 `deleted_at` 字段（`timestamptz`，可空）。
+>
+> 迁移 SQL（幂等）：
+> ```sql
+> CREATE TABLE IF NOT EXISTS audit_logs (
+>   id varchar(36) PRIMARY KEY DEFAULT gen_random_uuid(),
+>   user_id varchar(36), username varchar(50),
+>   action varchar(30) NOT NULL, entity_type varchar(20) NOT NULL,
+>   entity_id varchar(36) NOT NULL, detail text,
+>   created_at timestamptz DEFAULT now() NOT NULL
+> );
+> ALTER TABLE log_sessions ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+> ALTER TABLE log_records  ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+> ```
+> 迁移后部署，数据库 `page_configs.version` 由后台「版本更新」检测自动同步为 `1.5.12`（或手动 upsert）。
+
 ## v1.5.11 (2026-08-18)
 
 **🛠 角色修复 + 配置对标 + 实况大屏**
