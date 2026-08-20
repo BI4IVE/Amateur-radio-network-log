@@ -1,24 +1,30 @@
 {
-  "latest": "1.5.13",
+  "latest": "1.5.14",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-08-20",
-  "title": "v1.5.13 版本更新（安全加固）",
-  "summary": "集中修复 11 项安全审计发现的高危/中危漏洞：移除可伪造的 x-user-* 认证绕过、强制 JWT_SECRET 配置、登录限流改用不可伪造的真实 IP 并新增账号级锁定、会话创建强制主控身份归属（堵住 controllerId 伪造）、记录增删改按归属鉴权、公开接口过滤软删数据、init 接口加凭证保护；数据库新增「一天一场」唯一约束兜底并发。注意：本版本需在 .env 配置 JWT_SECRET，且需执行数据库迁移（唯一索引）。",
+  "releaseDate": "2026-08-21",
+  "title": "v1.5.14 版本更新（实况大屏多模板）",
+  "summary": "新增三款实况大屏模板（默认科幻/极简黑白/复古街机），右上角可切换；同时修复登录、软删重建、缓存等历史问题。",
   "changelog": [
-    "【高危】修复认证绕过：移除对客户端可伪造的 x-user-* 请求头的信任，鉴权仅依赖经 HMAC 签名的 JWT",
-    "【高危】强制 JWT_SECRET 显式配置：缺失即拒绝启动，杜绝使用硬编码弱密钥伪造 token",
-    "【高危】登录限流加固：改用 Nginx 覆写的 X-Real-IP 取真实 IP（不可被伪造 XFF 绕过），并新增账号级连续失败 5 次锁定 15 分钟",
-    "【中危】会话创建强制主控身份归属：controllerId/controllerName 由服务端按登录身份写入，管理员可代录但必须指定真实存在的用户，杜绝伪造 controllerId 冒名主控",
-    "【中危】记录增删改按归属鉴权：普通用户仅可操作自己主持的会话记录，管理员不受限",
-    "【中危】收敛会话创建 schema 为白名单字段，杜绝整表字段注入",
-    "【中危】公开接口（呼号统计/字段搜索）过滤软删数据，避免泄露已删除记录",
-    "【中危】主控轮值统计改按 controllerId 归并（不再按 name 合并不同 id），并排除软删会话",
-    "【中危】init 初始化接口增加凭证校验（需携带与 ADMIN_INIT_PASSWORD 一致的 X-Init-Token）",
-    "【中危】数据库新增「一天一场」唯一索引，杜绝并发 TOCTOU 重复建场（升级需执行迁移 SQL）"
+    "新增三款实况大屏模板：默认科幻指挥中心、极简黑白、复古街机（右上角下拉切换，URL 记忆）",
+    "实况大屏接入真实数据：当前主控、最新参与者、台网人数、最近记录、信号报告（RST 解析）实时刷新",
+    "信号环根据信号报告（11~59 / 599）动态显示强度、颜色与可读性表述",
+    "实况大屏底部显示今日日期、右上角发射/接收频率/亚音参数",
+    "修复：登录后旧缓存导致页面白屏（新增前端自动刷新兜底 + 首页清理缓存按钮）",
+    "修复：删除当日台网后无法重新创建（查重忽略软删、唯一索引改为部分索引）",
+    "修复：正式站 PM2 与手动进程抢端口导致偶发加载旧版（统一 PM2 管理）",
+    "正式站静态资源缓存调整为 5 分钟，部署后更快生效"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.14",
+      "releaseDate": "2026-08-21",
+      "title": "实况大屏多模板 + 多项修复",
+      "summary": "新增三款实况大屏模板（默认/极简/街机，可切换），修复登录缓存、软删重建、双进程抢端口等问题。",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.14",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.14.tar.gz"
+    },
     {
       "version": "1.5.13",
       "releaseDate": "2026-08-20",
