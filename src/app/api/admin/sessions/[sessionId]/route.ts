@@ -69,7 +69,7 @@ export async function PUT(
   }
 }
 
-// DELETE - 删除会话及其所有记录
+// DELETE - 软删除会话（保留数据，可恢复）
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> }
@@ -83,18 +83,19 @@ export async function DELETE(
 
     const { sessionId } = await params
 
-    // 先删除记录，再删除会话
-    await logManager.deleteLogRecordsBySessionId(sessionId)
-    const success = await logManager.deleteLogSession(sessionId)
+    const success = await logManager.softDeleteLogSession(sessionId, {
+      userId: user?.userId,
+      username: user?.username,
+    })
 
     if (!success) {
       return NextResponse.json(
-        { error: "会话不存在" },
+        { error: "会话不存在或已删除" },
         { status: 404 }
       )
     }
 
-    return NextResponse.json({ message: "会话已删除" })
+    return NextResponse.json({ message: "会话已移入回收站", recycled: true })
   } catch (error) {
     console.error("Admin delete session error:", error)
     return NextResponse.json(

@@ -20,7 +20,7 @@ export async function GET(
     // 获取会话详情
     const session = await logManager.getLogSessionById(sessionId)
 
-    if (!session) {
+    if (!session || session.deletedAt) {
       return NextResponse.json(
         { error: "会话不存在" },
         { status: 404 }

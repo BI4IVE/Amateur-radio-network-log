@@ -178,7 +178,7 @@ export default function AdminLogsPage() {
   }
 
   const handleDeleteRecord = async (recordId: string) => {
-    if (!selectedSession || !confirm("确定删除此记录?")) return
+    if (!selectedSession || !confirm("确定删除此记录? 删除后可到「回收站/审计」恢复。")) return
     try {
       const userStr = localStorage.getItem("user")
       const u = userStr ? JSON.parse(userStr) : null
@@ -190,7 +190,7 @@ export default function AdminLogsPage() {
   }
 
   const handleDeleteSession = async (sessionId: string) => {
-    if (!confirm("确定删除此会话及其所有记录? 此操作不可恢复!")) return
+    if (!confirm("确定删除此会话? 会话将移入回收站，可恢复，其记录暂不清除。")) return
     try {
       const userStr = localStorage.getItem("user")
       const u = userStr ? JSON.parse(userStr) : null

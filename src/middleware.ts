@@ -396,17 +396,14 @@ export async function middleware(request: NextRequest) {
 
 
   if (isAdminPath && payload.role !== "admin") {
-
-
-
-    console.log(`[Middleware] ${pathname} - Admin required but user role is ${payload.role}, returning 403`)
-
-
-
-    return NextResponse.json({ error: "需要管理员权限" }, { status: 403 })
-
-
-
+    // API 路径：返回 JSON 403，由前端处理
+    if (pathname.startsWith("/api/")) {
+      console.log(`[Middleware] ${pathname} - Admin required but user role is ${payload.role}, returning 403`)
+      return NextResponse.json({ error: "需要管理员权限" }, { status: 403 })
+    }
+    // 页面路径：已登录但非管理员，重定向回首页，避免浏览器直接渲染裸 JSON「无权限进入」
+    console.log(`[Middleware] ${pathname} - Admin required but user role is ${payload.role}, redirect to /`)
+    return NextResponse.redirect(new URL("/", request.url))
   }
 
 
