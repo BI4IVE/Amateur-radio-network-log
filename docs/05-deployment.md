@@ -255,6 +255,36 @@ pnpm db:push
 - 现象：同一服务器两站都 `PORT=5000`、连同一库，重启容易误操作另一站。
 - 解决：测试站独立服务器 + 独立数据库 + 独立端口，彻底隔离（本项目测试站即采用此方案）。
 
+**坑 9：v1.5.12 升级必须手动迁移数据库（含表结构变更）**
+- 现象：从 v1.5.11 及更早升级到 **v1.5.12** 时，仅 `git checkout` / `git pull` + `pnpm build` 不够——新版本引入了**软删除 + 审计日志**，数据库缺少对应表与字段，运行后会报错或功能异常。
+- 根因：v1.5.12 在 `schema.ts` 中**新增 `audit_logs` 表**，并为 `log_sessions`、`log_records` 各**新增 `deleted_at` 字段**（见 `version/upgrade-manifest.json` 中 `dbSchema: "1.5.12-add-audit-and-softdelete"`）。
+- 解决（升级到 v1.5.12 必做，幂等、可重复执行）：
+  ```bash
+  # 用部署环境全路径 psql（宝塔默认 PATH 无 psql）
+  /www/server/pgsql/bin/psql "$DATABASE_URL" -c \
+    "CREATE TABLE IF NOT EXISTS audit_logs (
+       id varchar(36) PRIMARY KEY DEFAULT gen_random_uuid(),
+       user_id varchar(36),
+       username varchar(50),
+       action varchar(30) NOT NULL,
+       entity_type varchar(20) NOT NULL,
+       entity_id varchar(36) NOT NULL,
+       detail text,
+       created_at timestamptz DEFAULT now() NOT NULL
+     );
+     ALTER TABLE log_sessions ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+     ALTER TABLE log_records  ADD COLUMN IF NOT EXISTS deleted_at timestamptz;"
+  ```
+  - 若已配置 `pnpm db:push`，也可直接 `pnpm db:push`（Drizzle 会按 schema 自动增量建表/加列，不删数据）；本项目正式站实测采用上面的手写幂等 SQL。
+  - 迁移后**务必同步版本号**：登录后台「版本更新」点一次检测，接口会自动把 `page_configs.version` 回写为 `1.5.12`；若未自动同步，可执行：
+    ```bash
+    /www/server/pgsql/bin/psql "$DATABASE_URL" -c \
+      "INSERT INTO page_configs (id,key,value,category,description,updated_at)
+       VALUES (gen_random_uuid(),'version','1.5.12','general','系统版本号',now())
+       ON CONFLICT (key) DO UPDATE SET value='1.5.12', updated_at=now();"
+    ```
+- 注意：后续若再发含表结构变更的版本，同样需先执行对应迁移再 build/重启（判断方法见 [更新方式](../docs/06-update.md) 第二节）。
+
 ---
 
 ## 方式三：传统 Linux 服务器部署
