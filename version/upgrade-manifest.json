@@ -1,20 +1,31 @@
 {
-  "latest": "1.5.11",
+  "latest": "1.5.12",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-08-18",
-  "title": "v1.5.11 版本更新",
-  "summary": "修复「主控人员调整为管理员」角色写入失效；后台页面配置全面对标正式站（补齐证书/首页/登录/会话四类配置）；版本检测改为联机拉取 GitHub 清单；新增实况大屏 /live 与调试/会话详情接口。",
+  "releaseDate": "2026-08-20",
+  "title": "v1.5.12 版本更新",
+  "summary": "新增主控轮值表、软删除与回收站、审计日志、台网预告与「开始台网」按钮；实况大屏与后台 UI 美化；修复主控轮值表同名拆分与后台权限误入（普通用户误入后台显示「无权限进入」）等问题。注意：本版本含数据库表结构变更，升级需执行迁移。",
   "changelog": [
-    "修复后台「原有主控人员调整为管理员」功能无效：updateUserSchema 补回 role 字段，管理员角色写入不再被 zod 截断",
-    "后台页面配置（page-configs）全面对标正式站：测试站补齐证书设置、首页设置、登录页设置、会话详情页配置四类，与正式站 11 条配置一致",
-    "版本更新检测改为联机拉取 GitHub 官方清单（启用 UPGRADE_MANIFEST_URL），检测信息与正式站完全一致",
-    "新增实况大屏 /live 页面（SSE 实时滚动在网呼号与最新记录）",
-    "新增调试接口 /api/debug 与会话详情接口 /api/sessions/[sessionId]",
-    "优化登出逻辑与前台/后台布局；版本号同步至 1.5.11"
+    "新增主控轮值表（/admin/rotation）：按主控聚合台网场次数、最近主持时间与分布",
+    "新增软删除与回收站（/admin/recycle）：会话与记录改为软删除，可恢复，避免误删丢失",
+    "新增审计日志（/admin/audit）：记录删除/恢复等操作可追溯",
+    "新增台网预告与排期（/admin/schedules）：后台创建预告，首页与 /live 显示倒计时；新增「开始台网」按钮到点一键开始",
+    "实况大屏 /live 与后台页 UI 美化，信息更突出",
+    "修复主控轮值表同名主控因 controllerId 有无/不同被重复拆分的问题",
+    "修复主控轮值表 controllers 字段回归（连同返回类型注解）",
+    "修复后台权限：前台「查看历史台网」按钮缺少 admin 守卫，普通主控误入 /admin 页面导致浏览器显示裸 JSON「无权限进入」；middleware 后台页面路径非管理员访问改为重定向回首页"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.12",
+      "releaseDate": "2026-08-20",
+      "title": "轮值表 + 软删除审计 + 台网预告 + 权限修复",
+      "summary": "新增主控轮值表、软删除与回收站、审计日志、台网预告与「开始台网」按钮；UI 美化；修复轮值表同名拆分与后台权限误入问题。注意：含数据库表结构变更（新增 audit_logs 表，log_sessions/log_records 增加 deleted_at 列），升级需执行迁移。",
+      "dbSchema": "1.5.12-add-audit-and-softdelete",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.12",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.12.tar.gz"
+    },
     {
       "version": "1.5.11",
       "releaseDate": "2026-08-18",
