@@ -1,4 +1,4 @@
-﻿// @version v1.5.12
+﻿// @version v1.5.13
 // 版本号兜底常量与比对工具。
 //
 // 设计原则（与后台策略一致）：
@@ -14,7 +14,7 @@ export const FALLBACK_VERSION = "1.1.0"
 // 发版时请同步更新此值（与 version/upgrade-manifest.json 的 latest 保持一致）。
 // 用途：检测接口比对时，若「数据库 version 落后于清单 latest」但「本次部署代码版本已 >= latest」，
 // 说明管理员已把代码更新到与远程一致，则自动把数据库 version 回写为最新版，避免一直提示有新版本。
-export const CODE_VERSION = "1.5.12"
+export const CODE_VERSION = "1.5.13"
 
 /**
  * 比较版本号大小。

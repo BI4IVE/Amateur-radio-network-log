@@ -1,22 +1,33 @@
 {
-  "latest": "1.5.12",
+  "latest": "1.5.13",
   "minRequired": "1.0.0",
   "releaseDate": "2026-08-20",
-  "title": "v1.5.12 版本更新",
-  "summary": "新增主控轮值表、软删除与回收站、审计日志、台网预告与「开始台网」按钮；实况大屏与后台 UI 美化；修复主控轮值表同名拆分与后台权限误入（普通用户误入后台显示「无权限进入」）等问题。注意：本版本含数据库表结构变更，升级需执行迁移。",
+  "title": "v1.5.13 版本更新（安全加固）",
+  "summary": "集中修复 11 项安全审计发现的高危/中危漏洞：移除可伪造的 x-user-* 认证绕过、强制 JWT_SECRET 配置、登录限流改用不可伪造的真实 IP 并新增账号级锁定、会话创建强制主控身份归属（堵住 controllerId 伪造）、记录增删改按归属鉴权、公开接口过滤软删数据、init 接口加凭证保护；数据库新增「一天一场」唯一约束兜底并发。注意：本版本需在 .env 配置 JWT_SECRET，且需执行数据库迁移（唯一索引）。",
   "changelog": [
-    "新增主控轮值表（/admin/rotation）：按主控聚合台网场次数、最近主持时间与分布",
-    "新增软删除与回收站（/admin/recycle）：会话与记录改为软删除，可恢复，避免误删丢失",
-    "新增审计日志（/admin/audit）：记录删除/恢复等操作可追溯",
-    "新增台网预告与排期（/admin/schedules）：后台创建预告，首页与 /live 显示倒计时；新增「开始台网」按钮到点一键开始",
-    "实况大屏 /live 与后台页 UI 美化，信息更突出",
-    "修复主控轮值表同名主控因 controllerId 有无/不同被重复拆分的问题",
-    "修复主控轮值表 controllers 字段回归（连同返回类型注解）",
-    "修复后台权限：前台「查看历史台网」按钮缺少 admin 守卫，普通主控误入 /admin 页面导致浏览器显示裸 JSON「无权限进入」；middleware 后台页面路径非管理员访问改为重定向回首页"
+    "【高危】修复认证绕过：移除对客户端可伪造的 x-user-* 请求头的信任，鉴权仅依赖经 HMAC 签名的 JWT",
+    "【高危】强制 JWT_SECRET 显式配置：缺失即拒绝启动，杜绝使用硬编码弱密钥伪造 token",
+    "【高危】登录限流加固：改用 Nginx 覆写的 X-Real-IP 取真实 IP（不可被伪造 XFF 绕过），并新增账号级连续失败 5 次锁定 15 分钟",
+    "【中危】会话创建强制主控身份归属：controllerId/controllerName 由服务端按登录身份写入，管理员可代录但必须指定真实存在的用户，杜绝伪造 controllerId 冒名主控",
+    "【中危】记录增删改按归属鉴权：普通用户仅可操作自己主持的会话记录，管理员不受限",
+    "【中危】收敛会话创建 schema 为白名单字段，杜绝整表字段注入",
+    "【中危】公开接口（呼号统计/字段搜索）过滤软删数据，避免泄露已删除记录",
+    "【中危】主控轮值统计改按 controllerId 归并（不再按 name 合并不同 id），并排除软删会话",
+    "【中危】init 初始化接口增加凭证校验（需携带与 ADMIN_INIT_PASSWORD 一致的 X-Init-Token）",
+    "【中危】数据库新增「一天一场」唯一索引，杜绝并发 TOCTOU 重复建场（升级需执行迁移 SQL）"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.13",
+      "releaseDate": "2026-08-20",
+      "title": "安全加固（11 项漏洞修复）",
+      "summary": "集中修复安全审计发现的高危/中危漏洞：认证绕过、弱 JWT_SECRET、限流伪造、controllerId 冒名、记录越权、软删泄露、init 无防护、TOCTOU 并发。需在 .env 配置 JWT_SECRET，并执行数据库迁移（新增「一天一场」唯一索引）。",
+      "dbSchema": "1.5.13-security-fixes",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.13",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.13.tar.gz"
+    },
     {
       "version": "1.5.12",
       "releaseDate": "2026-08-20",

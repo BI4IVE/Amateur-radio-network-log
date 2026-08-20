@@ -285,6 +285,45 @@ pnpm db:push
     ```
 - 注意：后续若再发含表结构变更的版本，同样需先执行对应迁移再 build/重启（判断方法见 [更新方式](../docs/06-update.md) 第二节）。
 
+**坑 10：v1.5.13 安全加固——JWT_SECRET 必配 + 数据库「一天一场」唯一索引迁移**
+- 现象：升级到 **v1.5.13** 后，若 `.env` 未配置 `JWT_SECRET`，服务**直接拒绝启动**（这是有意的安全设计，不再静默使用硬编码弱密钥）。
+- 根因：v1.5.13 移除认证绕过漏洞后，`JWT_SECRET` 缺失即抛错；同时为堵「一天一场」并发 TOCTOU，`schema.ts` 声明了唯一索引 `log_sessions_one_per_day_idx`（需对已有库执行迁移）。
+- 解决（升级到 v1.5.13 必做）：
+  1. **配置 JWT_SECRET**（务必随机强密钥）：
+     ```bash
+     echo "JWT_SECRET=$(openssl rand -base64 48)" >> .env
+     ```
+  2. **清理历史重复 + 建唯一索引**（幂等；先清理再建，否则唯一索引对重复数据建不起来）：
+     ```bash
+     /www/server/pgsql/bin/psql "$DATABASE_URL" -c \
+       "DELETE FROM log_sessions a USING log_sessions b \
+        WHERE a.id > b.id AND a.deleted_at IS NOT NULL \
+          AND date_trunc('day',a.session_time AT TIME ZONE 'Asia/Shanghai')=date_trunc('day',b.session_time AT TIME ZONE 'Asia/Shanghai');
+        DELETE FROM log_sessions a USING log_sessions b \
+        WHERE a.id > b.id AND a.deleted_at IS NULL AND b.deleted_at IS NOT NULL \
+          AND date_trunc('day',a.session_time AT TIME ZONE 'Asia/Shanghai')=date_trunc('day',b.session_time AT TIME ZONE 'Asia/Shanghai');
+        DELETE FROM log_sessions a USING log_sessions b \
+        WHERE a.id > b.id \
+          AND date_trunc('day',a.session_time AT TIME ZONE 'Asia/Shanghai')=date_trunc('day',b.session_time AT TIME ZONE 'Asia/Shanghai');
+        CREATE UNIQUE INDEX IF NOT EXISTS log_sessions_one_per_day_idx \
+          ON log_sessions (date_trunc('day', session_time AT TIME ZONE 'Asia/Shanghai')) WHERE deleted_at IS NULL;"
+     ```
+     - 说明：索引为**部分唯一索引**（`WHERE deleted_at IS NULL`），仅约束未软删会话——当日台网被删除后可重新创建，同时仍防同一活跃台网被并发重复插入。
+     - ⚠️ 若此前已按旧 SQL 建过「无 WHERE 子句」的完整唯一索引，需先删除重建为部分索引，否则软删当日台网后仍无法重新创建：
+       ```bash
+       DROP INDEX IF EXISTS log_sessions_one_per_day_idx;
+       /www/server/pgsql/bin/psql "$DATABASE_URL" -c \
+         "CREATE UNIQUE INDEX IF NOT EXISTS log_sessions_one_per_day_idx \
+          ON log_sessions (date_trunc('day', session_time AT TIME ZONE 'Asia/Shanghai')) WHERE deleted_at IS NULL;"
+       ```
+  3. **两站 Nginx 覆写真实 IP**（登录限流依赖，`log.br4in.cn` 与 `test.log.br4in.cn` 的 `proxy_set_header` 都要加）：
+     ```nginx
+     proxy_set_header X-Real-IP $remote_addr;
+     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+     ```
+  4. 迁移后同步版本号（`page_configs.version` 回写为 `1.5.13`，方法同坑 9 步骤三）。
+- 若 `pnpm db:push` 可用，唯一索引也可由 Drizzle 自动创建，但仍建议先手动清理重复数据。
+
 ---
 
 ## 方式三：传统 Linux 服务器部署
