@@ -698,6 +698,32 @@ export default function HomePage() {
     router.push("/login")
   }
 
+  // [v1.5.13] 清理浏览器缓存并强制刷新，供所有登录用户（主控 + 管理员）使用。
+  // 只清除 Service Worker + Cache Storage + sessionStorage，**保留登录态**（user 在 localStorage 不清），
+  // 避免清理后需要重新登录。用于解决升级后旧 JS 资源(chunk)加载失败、页面白屏的问题。
+  const handleClearCache = async () => {
+    if (!window.confirm("确定要清理浏览器缓存吗？\n将清除缓存的页面资源并强制刷新，不会删除任何服务器数据，也不会影响您的登录状态。")) {
+      return
+    }
+    try {
+      // 保留登录态：只清非登录相关缓存
+      sessionStorage.clear()
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations()
+        for (const reg of regs) { await reg.unregister() }
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys()
+        await Promise.all(keys.map((k) => caches.delete(k)))
+      }
+    } catch {
+      // 忽略清理异常，继续刷新
+    }
+    const sep = window.location.search ? "&" : "?"
+    // 带时间戳刷新，绕过浏览器对 HTML 的磁盘缓存（JS 无法直接清 disk cache）
+    window.location.href = window.location.pathname + sep + "_cb=" + Date.now()
+  }
+
   const handleEditRecord = (record: LogRecord) => {
     // 检查权限：管理员和主控都可以编辑任何记录
     if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
@@ -917,6 +943,27 @@ export default function HomePage() {
             <span className="text-sm text-white/90">
               当前用户: {currentUser?.name} ({currentUser?.role === "admin" ? "管理员" : "主控"})
             </span>
+            <button
+              onClick={handleClearCache}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm bg-white/20 text-white rounded-lg hover:bg-white/30 backdrop-blur-sm transition-all duration-200"
+              title="清理浏览器缓存并强制刷新，解决升级后旧页面/资源加载失败的问题"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                />
+              </svg>
+              清理缓存
+            </button>
             <button
               onClick={handleLogout}
               className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 shadow-md"
