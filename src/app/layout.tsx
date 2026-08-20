@@ -1,4 +1,4 @@
-﻿// @version v1.5.11
+﻿// @version v1.5.13
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -29,11 +29,26 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // [v1.5.13] 内联脚本：监听脚本/资源加载失败与未捕获异常，自动刷新一次避开 bfcache 旧页。
+  // 仅对 "_next/static"（哈希 chunk）加载失败自动刷新；普通业务异常交给错误边界。
+  const reloadScript = `(function(){
+    try {
+      var done = false;
+      function go(){ if(done) return; done = true; setTimeout(function(){ location.href = location.origin + location.pathname + "?cb=" + Date.now(); }, 800); }
+      window.addEventListener('error', function(e){
+        if(e && e.target && e.target.tagName === 'SCRIPT' && e.target.src && e.target.src.indexOf('/_next/static/') > -1){
+          console.warn('[Cache] chunk加载失败，自动刷新:', e.target.src);
+          go();
+        }
+      }, true);
+    } catch(e){}
+  })();`
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script dangerouslySetInnerHTML={{ __html: reloadScript }} />
         {children}
       </body>
     </html>
