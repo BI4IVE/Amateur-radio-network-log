@@ -1,9 +1,17 @@
-﻿// @version v1.5.11
+﻿// @version v1.5.13
 import { NextRequest, NextResponse } from "next/server"
 import { userManager } from "@/storage/database"
 
 export async function POST(request: NextRequest) {
   try {
+    // [v1.5.13 安全] 初始化接口必须携带与 .env 中 ADMIN_INIT_PASSWORD 一致的请求头凭证，
+    // 防止无凭证的端口扫描/CSRF 触发管理员创建。
+    const initToken = request.headers.get("x-init-token")
+    const expected = process.env.ADMIN_INIT_PASSWORD
+    if (!initToken || !expected || initToken !== expected) {
+      return NextResponse.json({ error: "未授权" }, { status: 403 })
+    }
+
     // 检查是否已有管理员
     const existingAdmin = await userManager.getUserByUsername("ADMIN")
 

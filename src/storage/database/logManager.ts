@@ -37,13 +37,17 @@ export class LogManager {
   }
 
   // 按北京时间日期查询当天是否已存在台网会话（一天仅允许一场台网）
+  // [v1.5.13 修复] 仅统计未软删的会话：当日台网被删除后应允许重新创建。
   async findSessionByBeijingDate(date: Date): Promise<LogSession | null> {
     const db = await getDb()
     const [session] = await db
       .select()
       .from(logSessions)
       .where(
-        sql`DATE(${logSessions.sessionTime} AT TIME ZONE 'Asia/Shanghai') = DATE(${date} AT TIME ZONE 'Asia/Shanghai')`
+        and(
+          sql`DATE(${logSessions.sessionTime} AT TIME ZONE 'Asia/Shanghai') = DATE(${date} AT TIME ZONE 'Asia/Shanghai')`,
+          isNull(logSessions.deletedAt)
+        )
       )
       .limit(1)
     return session || null
@@ -156,6 +160,7 @@ export class LogManager {
   }> {
     const db = await getDb()
 
+    // [v1.5.13 安全] 统计仅基于未软删的会话；排除 deletedAt 非空的记录。
     const rows = await db
       .select({
         controllerId: logSessions.controllerId,
@@ -164,10 +169,11 @@ export class LogManager {
         lastSessionAt: sql<Date>`max(${logSessions.sessionTime})`,
       })
       .from(logSessions)
+      .where(isNull(logSessions.deletedAt))
       .groupBy(logSessions.controllerId, logSessions.controllerName)
 
-    // 归并分组键：优先用 controllerId（非空），为空则用 controllerName 兜底，
-    // 使「同名不同 id」的历史记录合并为同一主控，避免排行榜重复拆分。
+    // [v1.5.13 修复] 归并分组键：优先用 controllerId（强制身份后必存在且稳定），
+    // 同名不同 id 的历史脏数据不再被错误合并；name 仅作为展示名兜底。
     type Agg = {
       controllerId: string | null
       controllerName: string
@@ -177,13 +183,8 @@ export class LogManager {
     }
     const merged = new Map<string, Agg>()
     for (const r of rows) {
-      // 优先按 controllerName 归并（同名即视为同一主控，避免历史记录因
-      // controllerId 有无/不同而被拆成多行）；name 为空才退化为按 id 分组。
-      const nameKey = (r.controllerName || "").trim()
-      const key =
-        nameKey.length > 0
-          ? `name:${nameKey}`
-          : `id:${r.controllerId || "未知主控"}`
+      const idKey = (r.controllerId || "").trim()
+      const key = idKey.length > 0 ? `id:${idKey}` : `name:${r.controllerName || "未知主控"}`
       const exist = merged.get(key)
       if (exist) {
         exist.sessionCount += Number(r.sessionCount)
@@ -428,10 +429,11 @@ export class LogManager {
     // 使用 SQL 查询特定字段
     const condition = (logRecords as any)[field]
 
+    // [v1.5.13 安全] 仅返回未软删的记录，避免公开接口泄露已删除数据。
     return db
       .select()
       .from(logRecords)
-      .where(like(condition, `%${query}%`))
+      .where(and(like(condition, `%${query}%`), isNull(logRecords.deletedAt)))
       .orderBy((logRecords as any)[field])
       .limit(50)
   }
@@ -444,6 +446,7 @@ export class LogManager {
     const oneYearAgo = new Date()
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
 
+    // [v1.5.13 安全] 同时过滤一年内的记录与未软删的记录。
     return db
       .select()
       .from(logRecords)
@@ -451,7 +454,8 @@ export class LogManager {
         and(
           eq(logRecords.callsign, callsign),
           // 直接在 SQL 层过滤一年内的记录，避免拉取全量历史再内存过滤
-          gte(logRecords.createdAt, oneYearAgo)
+          gte(logRecords.createdAt, oneYearAgo),
+          isNull(logRecords.deletedAt)
         )
       )
       .orderBy(desc(logRecords.createdAt))

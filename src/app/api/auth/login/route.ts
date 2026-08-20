@@ -1,22 +1,45 @@
-﻿// @version v1.5.11
+﻿// @version v1.5.13
 import { NextRequest, NextResponse } from "next/server"
 import { userManager } from "@/storage/database"
 import { signToken } from "@/lib/auth"
 import { verifyPassword, isPasswordHashed, hashPassword } from "@/lib/password"
 import { RateLimiterMemory } from "rate-limiter-flexible"
 
-// 速率限制：每分钟最多 10 次登录尝试
+// [v1.5.13 安全] 获取真实客户端 IP。
+// 信任顺序：X-Real-IP（由 Nginx 用 $remote_addr 覆写，客户端无法伪造）
+//   → X-Forwarded-For 最左（仅当无 X-Real-IP 时作为兜底，仍可被伪造，故 Nginx 必须覆写 X-Real-IP）。
+// 旧实现直接取 x-forwarded-for 全部由客户端可控，攻击者可随意伪造 IP 绕过限流。
+function getClientIp(request: NextRequest): string {
+  const realIp = request.headers.get("x-real-ip")
+  if (realIp) {
+    // X-Real-IP 应为单个 IP（Nginx 覆写），取第一段防注入
+    return realIp.split(",")[0].trim()
+  }
+  const xff = request.headers.get("x-forwarded-for")
+  if (xff) {
+    // 取最左（最早代理）作为最接近客户端的公网 IP
+    return xff.split(",")[0].trim()
+  }
+  return "unknown"
+}
+
+// 速率限制：每分钟最多 10 次登录尝试（按 IP）
 const rateLimiter = new RateLimiterMemory({
   points: 10,
   duration: 60,
 })
 
+// [v1.5.13 安全] 用户名级失败锁定：同一账号连续失败 5 次锁定 15 分钟，
+// 防止针对单账号的密码爆破（与 IP 限流互补）。
+const accountLimiter = new RateLimiterMemory({
+  points: 5,
+  duration: 15 * 60,
+})
+
 export async function POST(request: NextRequest) {
   try {
-    // 获取客户端 IP
-    const ip = request.headers.get("x-forwarded-for") || 
-               request.headers.get("x-real-ip") || 
-               "unknown"
+    // 获取客户端真实 IP
+    const ip = getClientIp(request)
 
     // 检查速率限制
     try {
@@ -43,6 +66,8 @@ export async function POST(request: NextRequest) {
     const user = await userManager.getUserByUsername(username)
 
     if (!user) {
+      // 账号不存在：仍按账号名消耗锁定额度，避免攻击者探测哪些账号存在
+      try { await accountLimiter.consume(String(username).toLowerCase()) } catch { /* 锁定中 */ }
       return NextResponse.json(
         { error: "用户名或密码错误" },
         { status: 401 }
@@ -52,11 +77,23 @@ export async function POST(request: NextRequest) {
     const isValid = await verifyPassword(password, user.password)
 
     if (!isValid) {
+      // [v1.5.13 安全] 账号级失败计数，连续失败达上限锁定该账号
+      try {
+        await accountLimiter.consume(String(username).toLowerCase())
+      } catch {
+        return NextResponse.json(
+          { error: "该账号已被临时锁定，请 15 分钟后再试" },
+          { status: 429 }
+        )
+      }
       return NextResponse.json(
         { error: "用户名或密码错误" },
         { status: 401 }
       )
     }
+
+    // 登录成功：重置该账号的失败计数
+    await accountLimiter.delete(String(username).toLowerCase())
 
     // 如果密码是明文，自动升级为哈希
     if (!isPasswordHashed(user.password)) {

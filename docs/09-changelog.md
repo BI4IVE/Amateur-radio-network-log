@@ -2,6 +2,58 @@
 
 # 更新日志
 
+## v1.5.13 (2026-08-20)
+
+**🔐 安全加固：集中修复安全审计发现的 11 项漏洞**
+
+- **【高危】修复认证绕过**：移除对客户端可伪造的 `x-user-*` 请求头的信任，鉴权仅依赖经 HMAC 签名的 JWT（此前攻击者可在未登录时伪造 `x-user-*` 头绕过鉴权访问后台接口）。
+- **【高危】强制 `JWT_SECRET` 显式配置**：缺失即拒绝启动，杜绝使用硬编码弱密钥伪造 token。部署必须 `.env` 中配置强随机 `JWT_SECRET`。
+- **【高危】登录限流加固**：改用 Nginx 覆写的 `X-Real-IP` 取真实 IP（不可再通过伪造 `X-Forwarded-For` 绕过限流），并新增账号级连续失败 5 次锁定 15 分钟。
+- **【中危】会话创建强制主控身份归属**：`controllerId`/`controllerName` 由服务端按登录身份写入，管理员可代录但必须指定真实存在的用户，杜绝伪造 `controllerId` 冒名主控。
+- **【中危】记录增删改按归属鉴权**：普通用户仅可操作自己主持的会话记录，管理员不受限（PUT/DELETE 均校验）。
+- **【中危】收敛会话创建 schema** 为白名单字段，杜绝整表字段注入。
+- **【中危】公开接口过滤软删数据**：呼号统计、字段搜索不再返回已软删记录。
+- **【中危】主控轮值统计改按 `controllerId` 归并**（不再按 name 合并不同 id），并排除软删会话。
+- **【中危】`init` 初始化接口增加凭证校验**：需携带与 `ADMIN_INIT_PASSWORD` 一致的 `X-Init-Token` 请求头。
+- **【中危】数据库新增「一天一场」唯一索引**，杜绝并发 TOCTOU 重复建场。
+
+> ⚠️ **注意：v1.5.13 需在 `.env` 配置 `JWT_SECRET`，且升级必须执行数据库迁移**（新增「一天一场」唯一索引）：
+> ```sql
+> -- 先清理历史同一天重复台网（保留 id 最小的一场），再建唯一索引：
+> DELETE FROM log_sessions a
+> USING log_sessions b
+> WHERE a.id > b.id
+>   AND a.deleted_at IS NOT NULL
+>   AND date_trunc('day', a.session_time AT TIME ZONE 'Asia/Shanghai')
+>       = date_trunc('day', b.session_time AT TIME ZONE 'Asia/Shanghai');
+>
+> DELETE FROM log_sessions a
+> USING log_sessions b
+> WHERE a.id > b.id
+>   AND a.deleted_at IS NULL
+>   AND b.deleted_at IS NOT NULL
+>   AND date_trunc('day', a.session_time AT TIME ZONE 'Asia/Shanghai')
+>       = date_trunc('day', b.session_time AT TIME ZONE 'Asia/Shanghai');
+>
+> -- 若仍有重复（仅当历史数据无 deleted_at 区分时，保留 id 最小的一条）：
+> DELETE FROM log_sessions a
+> USING log_sessions b
+> WHERE a.id > b.id
+>   AND date_trunc('day', a.session_time AT TIME ZONE 'Asia/Shanghai')
+>       = date_trunc('day', b.session_time AT TIME ZONE 'Asia/Shanghai');
+>
+> CREATE UNIQUE INDEX IF NOT EXISTS log_sessions_one_per_day_idx
+>   ON log_sessions (date_trunc('day', session_time AT TIME ZONE 'Asia/Shanghai'))
+>   WHERE deleted_at IS NULL;
+> ```
+> - 说明：索引为**部分唯一索引**（`WHERE deleted_at IS NULL`），仅约束未软删会话——当日台网被删除后可重新创建，同时仍防同一活跃台网被并发重复插入。
+> - 若此前已建过「无 WHERE」的完整唯一索引，需先 `DROP INDEX IF EXISTS log_sessions_one_per_day_idx;` 再按上面带 `WHERE` 的语句重建，否则软删当日台网后无法重新创建。
+> 同时建议在宝塔 Nginx 的 `log.br4in.cn` 与 `test.log.br4in.cn` 反向代理 location 中覆写真实 IP（两站都要做）：
+> ```nginx
+> proxy_set_header X-Real-IP $remote_addr;
+> proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+> ```
+
 ## v1.5.12 (2026-08-20)
 
 **🚀 主控轮值表 + 软删除/回收站 + 审计日志 + 台网预告 + 后台 UI 美化**

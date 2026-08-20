@@ -29,22 +29,32 @@ export const users = pgTable(
 )
 
 // 台网会话表
-export const logSessions = pgTable("log_sessions", {
-  id: varchar("id", { length: 36 })
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  controllerId: varchar("controller_id", { length: 36 }).notNull(),
-  controllerName: varchar("controller_name", { length: 100 }).notNull(),
-  controllerEquipment: varchar("controller_equipment", { length: 255 }),
-  controllerAntenna: varchar("controller_antenna", { length: 255 }),
-  controllerQth: varchar("controller_qth", { length: 255 }),
-  sessionTime: timestamp("session_time", { withTimezone: true }).notNull(),
-  title: varchar("title", { length: 100 }),
-  scheduledTime: timestamp("scheduled_time", { withTimezone: true }),
-  status: varchar("status", { length: 20 }).notNull().default("active"),
-  deletedAt: timestamp("deleted_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-})
+export const logSessions = pgTable(
+  "log_sessions",
+  {
+    id: varchar("id", { length: 36 })
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    controllerId: varchar("controller_id", { length: 36 }).notNull(),
+    controllerName: varchar("controller_name", { length: 100 }).notNull(),
+    controllerEquipment: varchar("controller_equipment", { length: 255 }),
+    controllerAntenna: varchar("controller_antenna", { length: 255 }),
+    controllerQth: varchar("controller_qth", { length: 255 }),
+    sessionTime: timestamp("session_time", { withTimezone: true }).notNull(),
+    title: varchar("title", { length: 100 }),
+    scheduledTime: timestamp("scheduled_time", { withTimezone: true }),
+    status: varchar("status", { length: 20 }).notNull().default("active"),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    // [v1.5.13 安全] 一天仅允许一场台网：按北京时间以天为单位唯一。
+    // 应用层 findSessionByBeijingDate 查重之外，再加数据库层唯一约束兜底，杜绝并发 TOCTOU。
+    // 使用「部分唯一索引」仅约束未软删的记录：当日台网被删除（软删，deleted_at 非空）后可重新创建，
+    // 同时仍防止同一活跃台网被并发重复插入。
+    oneSessionPerDayIdx: sql`CREATE UNIQUE INDEX IF NOT EXISTS log_sessions_one_per_day_idx ON log_sessions (date_trunc('day', session_time AT TIME ZONE 'Asia/Shanghai')) WHERE deleted_at IS NULL`,
+  })
+)
 
 // 台网记录明细表
 export const logRecords = pgTable("log_records", {
@@ -150,7 +160,21 @@ export const updateUserSchema = createCoercedInsertSchema(users)
   .partial()
 
 // LogSession schemas
+// [v1.5.13 安全] insertLogSessionSchema 收敛为白名单字段，禁止整表 schema 注入。
+// controllerId/controllerName 虽在 schema 中保留（createLogSession 写库需要），
+// 但其取值由服务端在路由层强制覆盖为登录身份，请求体传入值不可信、会被覆盖（见 sessions/route.ts / admin/sessions/route.ts）。
+// id/createdAt/deletedAt/status 等系统字段一律不允许从请求体传入。
 export const insertLogSessionSchema = createCoercedInsertSchema(logSessions)
+  .pick({
+    controllerId: true,
+    controllerName: true,
+    controllerEquipment: true,
+    controllerAntenna: true,
+    controllerQth: true,
+    sessionTime: true,
+    title: true,
+    scheduledTime: true,
+  })
 export const updateLogSessionSchema = createCoercedInsertSchema(logSessions)
   .pick({
     controllerName: true,

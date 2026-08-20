@@ -1,8 +1,15 @@
-﻿// @version v1.5.11
+﻿// @version v1.5.13
 // 简单的 token 认证工具（兼容 Edge runtime）
 // 使用 Base64 编码的 JSON 作为 token，配合 HMAC 签名
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
+// [v1.5.13 安全] JWT_SECRET 必须显式配置，禁止硬编码默认值（高危：默认密钥可被伪造签名）。
+// 缺失时直接抛错，迫使部署方在 .env 中配置，避免静默使用弱密钥。
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error(
+    "[安全] 未配置 JWT_SECRET 环境变量。请在 .env 中设置强随机密钥后再启动服务。"
+  )
+}
 
 // UTF-8 safe Base64 (btoa/atob do not support multibyte chars like Chinese)
 function utf8Btoa(str: string): string {
@@ -94,13 +101,10 @@ export async function getAuthUser(request: { headers: Headers }): Promise<JwtPay
     if (payload) return payload
   }
 
-  // 从 middleware 设置的 headers 获取（用于 API 路由）
-  const userId = request.headers.get("x-user-id")
-  const username = request.headers.get("x-user-name")
-  const role = request.headers.get("x-user-role")
-  if (userId && username && role) {
-    return { userId, username, role, exp: 0 }
-  }
+  // [v1.5.13 安全] 不再信任 x-user-* header。
+  // 这些 header 仅由本服务 middleware 在内部注入（见 src/middleware.ts），
+  // 但客户端请求无法伪造经签名验证的 Bearer token / cookie，
+  // 合法身份只能经由 verifyToken 校验，杜绝伪造 x-user-* 绕过鉴权的高危漏洞。
 
   // 从 cookie 获取 token
   const cookieHeader = request.headers.get("cookie")
