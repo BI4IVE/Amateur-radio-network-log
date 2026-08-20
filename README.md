@@ -1,6 +1,6 @@
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.5.11-blue)
+![Version](https://img.shields.io/badge/version-1.5.12-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Node](https://img.shields.io/badge/node-24.x-brightgreen)
 ![React](https://img.shields.io/badge/react-19.x-61DAFB)
