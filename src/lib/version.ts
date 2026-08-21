@@ -11,7 +11,7 @@
 export const FALLBACK_VERSION = "1.1.0"
 
 // 当前部署代码的版本号。
-// 发版时请同步更新此值（与 version/upgrade-manifest.json 的 latest 保持一致）。
+// 发版时请同步更新此值（与 public/version/upgrade-manifest.json 的 latest 保持一致）。
 // 用途：检测接口比对时，若「数据库 version 落后于清单 latest」但「本次部署代码版本已 >= latest」，
 // 说明管理员已把代码更新到与远程一致，则自动把数据库 version 回写为最新版，避免一直提示有新版本。
 export const CODE_VERSION = "1.5.15"
