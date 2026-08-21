@@ -1,6 +1,6 @@
 "use client"
 
-// @version v1.5.13
+// @version v1.5.15
 // 全局错误边界：当客户端因「旧构建资源(chunk)被删除」导致渲染崩溃时，
 // 自动刷新到最新页面，避免用户卡在 bfcache 恢复的旧页面报错页。
 // 根因：Next.js 哈希文件名 chunk，部署后旧 chunk 被清；浏览器前进/后退 bfcache

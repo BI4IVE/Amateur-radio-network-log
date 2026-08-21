@@ -1,14 +1,12 @@
 "use client";
 
-// @version v1.5.13
+// @version v1.5.15
 // 街机大屏：复古街机风（A9 参考），霓虹粉/青/黄 + CRT 扫描线 + 像素风
 
 import {
   LiveRecord,
   SessionInfo,
-  TX_FREQ,
-  RX_FREQ,
-  TX_TONE,
+  ScreenConfig,
   parseSignal,
   readabilityLabel,
 } from "../liveData";
@@ -20,6 +18,7 @@ interface Props {
   latestParticipant: LiveRecord | null;
   error: string | null;
   localTime: string;
+  screenConfig: ScreenConfig;
 }
 
 export default function ArcadeScreen({
@@ -29,6 +28,7 @@ export default function ArcadeScreen({
   latestParticipant,
   error,
   localTime,
+  screenConfig,
 }: Props) {
   const { strength } = parseSignal(latestParticipant?.signal);
   const segs = Math.max(1, Math.round(strength * 10));
@@ -45,12 +45,12 @@ export default function ArcadeScreen({
 
       <main className="ac-hud">
         <header className="ac-title">
-          <h1>济南黄河业余无线电中继台 BR4IN</h1>
+          <h1>{screenConfig.title}</h1>
           <div className="ac-sub">台网大屏 · 每日大屏 · ARCADE MODE</div>
           <div className="ac-freqs">
-            <span className="ac-fq">发射 <b>{TX_FREQ}MHz</b></span>
-            <span className="ac-fq">接收 <b>{RX_FREQ}MHz</b></span>
-            <span className="ac-fq">亚音 <b>{TX_TONE}</b></span>
+            <span className="ac-fq">接收 <b>{screenConfig.rxFreq}MHz</b></span>
+            <span className="ac-fq">发射 <b>{screenConfig.txFreq}MHz</b></span>
+            <span className="ac-fq">亚音 <b>{screenConfig.tone}</b></span>
           </div>
         </header>
 

@@ -1,14 +1,12 @@
 "use client";
 
-// @version v1.5.13
+// @version v1.5.15
 // 极简大屏：黑白高对比极简风（A8 参考）
 
 import {
   LiveRecord,
   SessionInfo,
-  TX_FREQ,
-  RX_FREQ,
-  TX_TONE,
+  ScreenConfig,
   parseSignal,
   signalColor,
   readabilityLabel,
@@ -21,6 +19,7 @@ interface Props {
   latestParticipant: LiveRecord | null;
   error: string | null;
   localTime: string;
+  screenConfig: ScreenConfig;
 }
 
 export default function MinimalScreen({
@@ -30,6 +29,7 @@ export default function MinimalScreen({
   latestParticipant,
   error,
   localTime,
+  screenConfig,
 }: Props) {
   const { strength } = parseSignal(latestParticipant?.signal);
   const color = signalColor(strength);
@@ -44,13 +44,13 @@ export default function MinimalScreen({
         {/* 顶栏 */}
         <header className="mn-top">
           <div className="mn-brand">
-            <span className="mn-title">BR4IN 台网大屏</span>
+            <span className="mn-title">{screenConfig.title}</span>
             <span className="mn-sub">济南黄河业余无线电中继台 · 每日大屏</span>
           </div>
           <div className="mn-meta">
-            <span>TX {TX_FREQ}</span>
-            <span>RX {RX_FREQ}</span>
-            <span>CT {TX_TONE}</span>
+            <span>RX {screenConfig.rxFreq}</span>
+            <span>TX {screenConfig.txFreq}</span>
+            <span>CT {screenConfig.tone}</span>
             <span className="mn-clock">{localTime || "--:--:--"}</span>
           </div>
         </header>

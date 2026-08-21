@@ -1,6 +1,6 @@
 "use client";
 
-// @version v1.5.13
+// @version v1.5.15
 // 实况大屏共享数据 hook 与信号解析工具
 
 import { useCallback, useEffect, useState } from "react";
@@ -30,10 +30,55 @@ export interface LiveRecord {
   deletedAt?: string | null;
 }
 
-// 台网频率参数
-export const TX_FREQ = "439.110";
-export const RX_FREQ = "434.110";
+// 台网频率参数（硬编码兜底，优先使用后台 page_configs 的 screen 分类配置）
+export const TX_FREQ = "434.110";
+export const RX_FREQ = "439.110";
 export const TX_TONE = "88.5";
+export const SCREEN_TITLE_DEFAULT = "济南黄河业余无线电中继台BR4IN台网大屏";
+
+// 大屏可配置项（来自后台「页面配置管理 → 大屏配置」）
+export interface ScreenConfig {
+  title: string;
+  rxFreq: string;
+  txFreq: string;
+  tone: string;
+}
+
+// 拉取后台大屏配置，失败时使用硬编码兜底，确保大屏始终可渲染
+export function useScreenConfig(): ScreenConfig {
+  const [config, setConfig] = useState<ScreenConfig>({
+    title: SCREEN_TITLE_DEFAULT,
+    rxFreq: RX_FREQ,
+    txFreq: TX_FREQ,
+    tone: TX_TONE,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/page-configs", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const map: Record<string, string> = data.configs || {};
+        if (cancelled) return;
+        setConfig({
+          title: map.screen_title || SCREEN_TITLE_DEFAULT,
+          rxFreq: map.screen_rx_freq || RX_FREQ,
+          txFreq: map.screen_tx_freq || TX_FREQ,
+          tone: map.screen_tone || TX_TONE,
+        });
+      } catch {
+        // 网络异常时保持兜底值
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return config;
+}
 
 // 解析信号报告，支持 RS（2位）与 RST（3位，CW）
 // R 可读性 1-5，S 信号强度 1-9，T 音质 1-9（仅 CW）
