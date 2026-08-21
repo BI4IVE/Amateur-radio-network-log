@@ -1,4 +1,4 @@
-﻿// @version v1.5.11
+﻿// @version v1.5.15
 import { eq, and, SQL, like, sql } from "drizzle-orm"
 import { getDb } from "./db"
 import { users, insertUserSchema, updateUserSchema } from "./shared/schema"

@@ -1,4 +1,4 @@
-﻿// @version v1.5.11
+﻿// @version v1.5.15
 import { eq, and, SQL, sql } from "drizzle-orm"
 import { getDb } from "./db"
 import { pageConfigs, insertPageConfigSchema, updatePageConfigSchema } from "./shared/schema"
@@ -62,6 +62,14 @@ export class PageConfigManager {
   /**
    * 批量初始化默认配置
    */
+  // 默认配置 key 缓存（在 initializeDefaultConfigs 内填充，供缺失检测使用）
+  private defaultConfigKeys: string[] = [];
+
+  // 返回所有默认配置的 key（用于检测缺失项并自愈补齐）
+  getDefaultConfigKeys(): string[] {
+    return this.defaultConfigKeys;
+  }
+
   async initializeDefaultConfigs(): Promise<void> {
     const defaultConfigs: InsertPageConfig[] = [
       // 通用配置
@@ -135,8 +143,34 @@ export class PageConfigManager {
         category: "certificate",
         description: "参与证书-底部签发机构",
       },
+      // 大屏配置（[v1.5.14] 实况大屏可配置项）
+      {
+        key: "screen_title",
+        value: "济南黄河业余无线电中继台BR4IN台网大屏",
+        category: "screen",
+        description: "大屏顶部名称",
+      },
+      {
+        key: "screen_rx_freq",
+        value: "439.110",
+        category: "screen",
+        description: "接收频率",
+      },
+      {
+        key: "screen_tx_freq",
+        value: "434.110",
+        category: "screen",
+        description: "发射频率",
+      },
+      {
+        key: "screen_tone",
+        value: "88.5",
+        category: "screen",
+        description: "亚音",
+      },
     ]
 
+    this.defaultConfigKeys = defaultConfigs.map((c) => c.key);
     for (const config of defaultConfigs) {
       await this.upsertConfig(config)
     }

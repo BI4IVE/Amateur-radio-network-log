@@ -1,6 +1,6 @@
 {
   "name": "projects",
-  "version": "1.5.11",
+  "version": "1.5.15",
   "private": true,
   "scripts": {
     "dev": "next dev -p 5000",

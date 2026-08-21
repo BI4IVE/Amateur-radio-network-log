@@ -1,4 +1,4 @@
-﻿// @version v1.5.11
+﻿// @version v1.5.15
 "use client"
 
 import { useState, useEffect } from "react"
@@ -268,6 +268,7 @@ function getCategoryName(category: string): string {
     home: "首页配置",
     session: "会话详情页配置",
     certificate: "证书设置",
+    screen: "大屏配置",
   }
   return names[category] || category
 }

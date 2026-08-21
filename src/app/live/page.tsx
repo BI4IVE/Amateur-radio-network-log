@@ -1,13 +1,13 @@
 "use client";
 
-// @version v1.5.13
+// @version v1.5.15
 // 实况大屏 /live —— 多模板容器
 // 支持 默认大屏 / 极简大屏 / 街机大屏 三种模板，右上角下拉切换（URL ?screen= 记忆）
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "./live.css";
-import { useLiveData, useActiveCallers } from "./liveData";
+import { useLiveData, useActiveCallers, useScreenConfig } from "./liveData";
 import DefaultScreen from "./screens/DefaultScreen";
 import MinimalScreen from "./screens/MinimalScreen";
 import ArcadeScreen from "./screens/ArcadeScreen";
@@ -25,6 +25,7 @@ export default function LivePage() {
   const { session, records, error } = useLiveData();
   const activeCallers = useActiveCallers(records);
   const latestParticipant = records[0] || null;
+  const screenConfig = useScreenConfig();
 
   const [screen, setScreen] = useState<ScreenType>("default");
   const [localTime, setLocalTime] = useState("");
@@ -65,6 +66,7 @@ export default function LivePage() {
     latestParticipant,
     error,
     localTime,
+    screenConfig,
   };
 
   return (

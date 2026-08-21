@@ -1,4 +1,4 @@
-﻿// @version v1.5.11
+﻿// @version v1.5.15
 import { NextRequest, NextResponse } from "next/server"
 import { pageConfigManager } from "@/storage/database"
 import { getAuthUser, requireAdmin } from "@/lib/auth"
@@ -14,8 +14,14 @@ export async function GET(request: NextRequest) {
 
     let configs = await pageConfigManager.getAllConfigs()
 
-    // 自愈：配置表为空时（迁移未写入默认数据或数据丢失）自动初始化默认配置，避免页面空白
-    if (configs.length === 0) {
+    // 自愈：配置表为空（迁移未写入默认数据或数据丢失），或缺失新增的默认配置项时，
+    // 自动补齐默认配置，避免页面空白或新功能配置缺失
+    const missingDefaults =
+      configs.length === 0 ||
+      pageConfigManager.getDefaultConfigKeys().some(
+        (k) => !configs.some((c) => c.key === k)
+      );
+    if (missingDefaults) {
       await pageConfigManager.initializeDefaultConfigs()
       configs = await pageConfigManager.getAllConfigs()
     }

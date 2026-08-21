@@ -1,15 +1,13 @@
 "use client";
 
-// @version v1.5.13
+// @version v1.5.15
 // 默认大屏：琥珀金 + 薄荷绿科幻指挥中心风
 
 import { useEffect, useRef } from "react";
 import {
   LiveRecord,
   SessionInfo,
-  TX_FREQ,
-  RX_FREQ,
-  TX_TONE,
+  ScreenConfig,
   parseSignal,
   signalColor,
   readabilityLabel,
@@ -22,6 +20,7 @@ interface Props {
   latestParticipant: LiveRecord | null;
   error: string | null;
   localTime: string;
+  screenConfig: ScreenConfig;
 }
 
 export default function DefaultScreen({
@@ -31,6 +30,7 @@ export default function DefaultScreen({
   latestParticipant,
   error,
   localTime,
+  screenConfig,
 }: Props) {
   const starCvRef = useRef<HTMLCanvasElement>(null);
   const spCvRef = useRef<HTMLCanvasElement>(null);
@@ -208,21 +208,21 @@ export default function DefaultScreen({
           <div className="brand">
             <div className="brand-mark">◈</div>
             <div>
-              <h1>济南黄河业余无线电中继台BR4IN台网大屏</h1>
+              <h1>{screenConfig.title}</h1>
             </div>
           </div>
           <div className="topmeta">
             <div className="meta-item">
-              <span className="meta-label">发射频率</span>
-              <span className="meta-value amber">{TX_FREQ}</span>
+              <span className="meta-label">接收频率</span>
+              <span className="meta-value">{screenConfig.rxFreq}</span>
             </div>
             <div className="meta-item">
-              <span className="meta-label">接收频率</span>
-              <span className="meta-value">{RX_FREQ}</span>
+              <span className="meta-label">发射频率</span>
+              <span className="meta-value amber">{screenConfig.txFreq}</span>
             </div>
             <div className="meta-item">
               <span className="meta-label">发射亚音</span>
-              <span className="meta-value">{TX_TONE}</span>
+              <span className="meta-value">{screenConfig.tone}</span>
             </div>
             <div className="meta-item">
               <span className="meta-label">LOCAL</span>
