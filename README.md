@@ -1,10 +1,31 @@
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.5.15-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Node](https://img.shields.io/badge/node-24.x-brightgreen)
-![React](https://img.shields.io/badge/react-19.x-61DAFB)
-![Next](https://img.shields.io/badge/next-16.x-black)
+### 📊 项目状态
+
+![Release](https://img.shields.io/github/v/release/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Release&color=ff9d3f)
+![Release Date](https://img.shields.io/github/release-date/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Release%20Date&color=ff9d3f)
+![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![Last Commit](https://img.shields.io/github/last-commit/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Last%20Commit&color=8fa3c8)
+
+### 🌟 社区热度
+
+![Stars](https://img.shields.io/github/stars/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Stars&color=ffd78a)
+![Forks](https://img.shields.io/github/forks/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Forks&color=ffd78a)
+![Issues](https://img.shields.io/github/issues/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Issues&color=ffd78a)
+![Contributors](https://img.shields.io/github/contributors/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Contributors&color=ffd78a)
+
+### 🛠️ 技术栈
+
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16.x-black?style=flat-square&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19.x-61DAFB?style=flat-square&logo=react&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-24.x-brightgreen?style=flat-square&logo=nodedotjs&logoColor=white)
+
+### 📦 仓库规模
+
+![Language](https://img.shields.io/github/languages/top/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Language&color=141a2e)
+![Code Size](https://img.shields.io/github/languages/code-size/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Code%20Size&color=141a2e)
+![Repo Size](https://img.shields.io/github/repo-size/BI4IVE/Amateur-radio-network-log?style=flat-square&label=Repo%20Size&color=141a2e)
 
 <sub>前期由 扣子 AI（Coze Coding）编程完成，1.5.0 版本后由 CodeBuddy CN 接手开发</sub>
 
