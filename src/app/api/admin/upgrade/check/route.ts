@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     }
 
     // 2) 远程版本清单：优先使用环境变量指定的公网地址，否则读取同域静态文件。
-    // 推荐：将 version/upgrade-manifest.json 提交到 GitHub 仓库，并设置
-    // UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-network-log/main/version/upgrade-manifest.json
+    // 推荐：将 public/version/upgrade-manifest.json 提交到 GitHub 仓库，并设置
+    // UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-network-log/main/public/version/upgrade-manifest.json
     // 以后发新版本只需改该文件的 latest / changelog 并提交，程序即可检测到。
     const manifestUrl =
       process.env.UPGRADE_MANIFEST_URL ||
