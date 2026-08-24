@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-// @version v1.5.15
+// @version v1.5.16
 // 默认大屏：琥珀金 + 薄荷绿科幻指挥中心风
 
 import { useEffect, useRef } from "react";
