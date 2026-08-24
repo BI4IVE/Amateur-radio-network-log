@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
-// @version v1.5.15
+// @version v1.5.16
 // 实况大屏 /live —— 多模板容器
-// 支持 默认大屏 / 极简大屏 / 街机大屏 三种模板，右上角下拉切换（URL ?screen= 记忆）
+// 支持 默认大屏 / 默认大屏M（竖屏）/ 极简大屏 / 街机大屏 / 手机版 五种模板，右上角下拉切换（URL ?screen= 记忆）
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,13 +11,23 @@ import { useLiveData, useActiveCallers, useScreenConfig } from "./liveData";
 import DefaultScreen from "./screens/DefaultScreen";
 import MinimalScreen from "./screens/MinimalScreen";
 import ArcadeScreen from "./screens/ArcadeScreen";
+import PortraitScreen from "./screens/PortraitScreen";
 
-export type ScreenType = "default" | "minimal" | "arcade";
+export type ScreenType = "default" | "defaultM" | "minimal" | "arcade" | "portrait";
 
+// 右上角下拉：仅电脑版模板
 const SCREEN_OPTIONS: { value: ScreenType; label: string }[] = [
   { value: "default", label: "默认大屏" },
+  { value: "defaultM", label: "默认大屏M" },
   { value: "minimal", label: "极简大屏" },
   { value: "arcade", label: "街机大屏" },
+];
+
+// 底部切换：手机版专属（竖屏入口互切 + 回到电脑版）
+const PORTRAIT_OPTIONS: { value: ScreenType; label: string }[] = [
+  { value: "defaultM", label: "默认大屏M" },
+  { value: "portrait", label: "手机版" },
+  { value: "default", label: "电脑版" },
 ];
 
 export default function LivePage() {
@@ -93,6 +103,13 @@ export default function LivePage() {
       </button>
 
       {screen === "default" && <DefaultScreen {...commonProps} />}
+      {(screen === "defaultM" || screen === "portrait") && (
+        <PortraitScreen
+          {...commonProps}
+          currentScreen={screen}
+          onChangeScreen={changeScreen}
+        />
+      )}
       {screen === "minimal" && <MinimalScreen {...commonProps} />}
       {screen === "arcade" && <ArcadeScreen {...commonProps} />}
     </div>

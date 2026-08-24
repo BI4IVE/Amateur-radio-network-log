@@ -1,4 +1,4 @@
-﻿// @version v1.5.15
+﻿// @version v1.5.16
 import bcrypt from "bcrypt"
 
 const SALT_ROUNDS = 10

@@ -305,6 +305,7 @@
   border-left: 4px solid var(--amber);
   border-radius: 6px;
   padding: 14px 18px;
+  min-width: 0;
   transition: border-color 0.4s, background 0.4s, box-shadow 0.4s;
 }
 .info-cell:hover {
@@ -1332,4 +1333,158 @@
 @media (max-width: 1050px) {
   .ac-game { grid-template-columns: 1fr; }
   .ac-hud { overflow-y: auto; height: auto; }
+}
+
+/* =========================================================
+   默认大屏 M 版（竖屏 / 手机）：在默认大屏基础上重排为单栏竖屏
+   ========================================================= */
+.live-portrait {
+  overflow-x: hidden;
+}
+.portrait-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 14px 14px calc(18px + env(safe-area-inset-bottom));
+  grid-template-rows: none;
+}
+.portrait-topbar {
+  flex-direction: column;
+  gap: 10px;
+}
+.portrait-topbar .brand h1 {
+  white-space: normal;
+  font-size: clamp(13px, 3.4vw, 18px);
+  letter-spacing: 0.14em;
+  line-height: 1.3;
+}
+.portrait-topmeta {
+  justify-content: space-between;
+  gap: 6px;
+}
+.portrait-topmeta .meta-item {
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+.portrait-topmeta .meta-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+}
+.portrait-topmeta .meta-value {
+  font-size: clamp(15px, 4vw, 22px);
+}
+/* 信号环与质量水平并排，环居中放大 */
+.live-portrait .radar-wrap {
+  margin-top: 14px;
+  align-items: center;
+}
+.live-portrait .signal-ring-wrap {
+  width: clamp(120px, 32vw, 160px);
+}
+.live-portrait .radar-note {
+  align-items: flex-start;
+  gap: 8px;
+}
+/* 人数放大、进度条加粗 */
+.live-portrait .count-big .num {
+  font-size: clamp(60px, 22vw, 96px);
+}
+.live-portrait .count-unit {
+  font-size: clamp(10px, 2.6vw, 13px);
+  letter-spacing: 0.18em;
+}
+.live-portrait .count-bar {
+  height: 6px;
+}
+.live-portrait .mini b {
+  font-size: clamp(18px, 5vw, 24px);
+}
+/* 最近记录给一个可滚动高度，避免竖屏过长 */
+.live-portrait .roster {
+  padding: 12px 14px;
+}
+.live-portrait .roster-scroll {
+  max-height: 240px;
+  flex: none;
+}
+.live-portrait .roster-list {
+  position: static;
+  position: relative;
+  inset: auto;
+}
+/* 频谱 + 日期改为竖排 */
+.live-portrait .spectrum {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.live-portrait #spectrum {
+  height: clamp(54px, 16vw, 72px);
+}
+.live-portrait .ticker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 193, 78, 0.2);
+  border-radius: 4px;
+  background: rgba(40, 28, 8, 0.3);
+}
+.live-portrait .tick-date {
+  font-size: clamp(22px, 6vw, 30px);
+}
+/* 竖屏模式下隐藏右上角电脑版下拉（手机版切换统一放底部） */
+.live-shell:has(.live-portrait) .live-screen-switch {
+  display: none;
+}
+/* 底部切换条：手机版专属 */
+.portrait-switch {
+  position: sticky;
+  bottom: 0;
+  margin-top: 4px;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(6,11,10,0) 0%, rgba(6,11,10,0.96) 28%, rgba(6,11,10,0.98) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 5;
+}
+.portrait-switch-label {
+  font-family: var(--mono, "Consolas", monospace);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--ink-dim, #8ba59c);
+  text-align: center;
+}
+.portrait-switch-tabs {
+  display: flex;
+  gap: 8px;
+}
+.portrait-switch-tab {
+  flex: 1;
+  padding: 12px 6px;
+  font-family: var(--mono, "Consolas", monospace);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--mint, #7de8b8);
+  background: rgba(14, 30, 26, 0.7);
+  border: 1px solid rgba(125, 232, 184, 0.28);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.portrait-switch-tab:active {
+  transform: scale(0.97);
+}
+.portrait-switch-tab.active {
+  color: #1a1100;
+  background: var(--amber, #ffc14e);
+  border-color: var(--amber, #ffc14e);
+  box-shadow: 0 0 16px rgba(255, 193, 78, 0.45);
 }

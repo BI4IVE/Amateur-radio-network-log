@@ -1,20 +1,25 @@
 {
-  "latest": "1.5.15",
+  "latest": "1.5.16",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-08-21",
-  "title": "v1.5.15 版本更新（实况大屏可配置化 + 显眼化）",
-  "summary": "实况大屏参数支持后台配置（顶部名称/接收频率/发射频率/亚音），默认大屏 QTH/设备/天馈/功率改为高亮数据卡，显著提升可读性。",
+  "releaseDate": "2026-08-24",
+  "title": "v1.5.16 版本更新（竖屏大屏 + 信息卡健壮性）",
+  "summary": "新增竖屏大屏（默认大屏M / 手机版），适配手机观看，切换入口置于底部；修复信息卡超长文本挤压布局。",
   "changelog": [
-    "实况大屏参数后台可配置：进入「页面配置管理 → 大屏配置」可修改顶部名称、接收频率、发射频率、亚音，保存后大屏即时生效（复用 page_configs，零数据库结构变更）",
-    "默认大屏「QTH / 使用设备 / 天馈 / 功率」改为高亮数据卡（琥珀金大字 + 发光 + 亮边框），显著提升可读性",
-    "新增三款实况大屏模板：默认科幻指挥中心、极简黑白、复古街机（右上角下拉切换，URL 记忆）",
-    "实况大屏接入真实数据：当前主控、最新参与者、台网人数、最近记录、信号报告（RST 解析）实时刷新",
-    "信号环根据信号报告（11~59 / 599）动态显示强度、颜色与可读性表述",
-    "实况大屏底部显示今日日期、右上角发射/接收频率/亚音参数"
+    "新增竖屏大屏：默认大屏M（竖屏重排）与手机版，单栏布局适配手机观看，切换入口置于页面底部",
+    "电脑版模板切换保留在右上角下拉（默认大屏 / 默认大屏M / 极简 / 街机）",
+    "修复当前参与者信息卡：超长 QTH 等字段改为格内省略号截断，不再挤压同排字段"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.16",
+      "releaseDate": "2026-08-24",
+      "title": "竖屏大屏 + 信息卡健壮性",
+      "summary": "新增竖屏大屏（默认大屏M / 手机版），适配手机观看，切换入口置于底部；修复信息卡超长文本挤压布局。",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.16",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.16.tar.gz"
+    },
     {
       "version": "1.5.15",
       "releaseDate": "2026-08-21",
