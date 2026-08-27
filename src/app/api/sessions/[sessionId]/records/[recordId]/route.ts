@@ -1,4 +1,4 @@
-﻿// @version v1.5.16
+// @version v1.5.17
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
@@ -44,10 +44,10 @@ export async function PUT(
       return NextResponse.json({ error: perm.error }, { status: 403 })
     }
 
-    // 检查会话是否已过期（6小时）
-    if (isSessionExpired(session.sessionTime)) {
+    // 检查会话是否已过期（时限由后台配置，默认 6 小时）
+    if (await isSessionExpired(session.sessionTime)) {
       return NextResponse.json(
-        { error: "该会话已过期（超过6小时），无法更新记录" },
+        { error: "该会话已过期，无法更新记录" },
         { status: 403 }
       )
     }
@@ -106,10 +106,10 @@ export async function DELETE(
       return NextResponse.json({ error: perm.error }, { status: 403 })
     }
 
-    // 检查会话是否已过期（6小时）
-    if (isSessionExpired(session.sessionTime)) {
+    // 检查会话是否已过期（时限由后台配置，默认 6 小时）
+    if (await isSessionExpired(session.sessionTime)) {
       return NextResponse.json(
-        { error: "该会话已过期（超过6小时），无法删除记录" },
+        { error: "该会话已过期，无法删除记录" },
         { status: 403 }
       )
     }

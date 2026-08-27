@@ -1,4 +1,4 @@
-﻿// @version v1.5.16
+// @version v1.5.17
 import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/storage/database/db"
 import { sql } from "drizzle-orm"
