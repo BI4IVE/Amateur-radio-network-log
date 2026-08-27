@@ -1,4 +1,4 @@
-﻿// @version v1.5.16
+// @version v1.5.17
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -259,7 +259,7 @@ export default function HomePage() {
     }
   }, [currentSession?.id])
 
-  // 检查会话是否过期
+  // 检查会话是否过期（时限由后台配置 session_edit_hours，默认 6 小时）
   useEffect(() => {
     if (!currentSession) return
 
@@ -268,7 +268,10 @@ export default function HomePage() {
       const now = new Date()
       const hoursSinceStart = (now.getTime() - sessionTime.getTime()) / (1000 * 60 * 60)
 
-      if (hoursSinceStart >= 6) {
+      const configured = Number(pageConfigs.session_edit_hours)
+      const editHours = Number.isFinite(configured) && configured >= 0 ? configured : 6
+
+      if (hoursSinceStart >= editHours) {
         setSessionExpired(true)
       }
     }
@@ -280,7 +283,7 @@ export default function HomePage() {
     const timer = setInterval(checkExpiration, 60 * 1000)
 
     return () => clearInterval(timer)
-  }, [currentSession?.id, currentSession?.sessionTime])
+  }, [currentSession?.id, currentSession?.sessionTime, pageConfigs])
 
   // Handle CTRL+Enter to add record
   useEffect(() => {
@@ -376,11 +379,13 @@ export default function HomePage() {
       // 更新输入框的值显示会话的实际时间
       setSessionTime(utcToBeijingLocalString(data.session.sessionTime))
 
-      // 立即检查会话是否过期
+      // 立即检查会话是否过期（时限由后台配置，默认 6 小时）
       const sessionTime = new Date(data.session.sessionTime)
       const now = new Date()
       const hoursSinceStart = (now.getTime() - sessionTime.getTime()) / (1000 * 60 * 60)
-      setSessionExpired(hoursSinceStart >= 6)
+      const configured = Number(pageConfigs.session_edit_hours)
+      const editHours = Number.isFinite(configured) && configured >= 0 ? configured : 6
+      setSessionExpired(hoursSinceStart >= editHours)
 
       // 关闭模态框
       setShowActiveSessionsModal(false)
@@ -572,7 +577,7 @@ export default function HomePage() {
 
     // 检查会话是否过期
     if (sessionExpired) {
-      alert("会话已超过6小时，无法添加记录")
+      alert("会话已超过可编辑时限，无法添加记录")
       return
     }
 
@@ -740,7 +745,7 @@ export default function HomePage() {
 
     // 检查会话是否过期
     if (sessionExpired) {
-      alert("会话已超过6小时，无法删除记录")
+      alert("会话已超过可编辑时限，无法删除记录")
       return
     }
 
@@ -776,7 +781,7 @@ export default function HomePage() {
 
     // 检查会话是否过期
     if (sessionExpired) {
-      alert("会话已超过6小时，无法更新记录")
+      alert("会话已超过可编辑时限，无法更新记录")
       return
     }
 
@@ -1829,7 +1834,7 @@ export default function HomePage() {
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                       </svg>
-                      会话已超过6小时，无法添加、更新或删除记录
+                      会话已超过可编辑时限，无法添加、更新或删除记录
                     </span>
                   </div>
                 )}

@@ -1,4 +1,4 @@
-﻿// @version v1.5.16
+// @version v1.5.17
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, participantManager } from "@/storage/database"
 import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
@@ -29,10 +29,10 @@ export async function POST(
       )
     }
 
-    // 检查会话是否已过期（6小时）
-    if (isSessionExpired(session.sessionTime)) {
+    // 检查会话是否已过期（时限由后台配置，默认 6 小时）
+    if (await isSessionExpired(session.sessionTime)) {
       return NextResponse.json(
-        { error: "该会话已过期（超过6小时），无法添加记录" },
+        { error: "该会话已过期，无法添加记录" },
         { status: 403 }
       )
     }

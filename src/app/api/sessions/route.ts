@@ -1,4 +1,4 @@
-﻿// @version v1.5.16
+// @version v1.5.17
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, userManager } from "@/storage/database"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
@@ -13,8 +13,13 @@ export async function GET(request: NextRequest) {
       controllerId,
     })
 
-    // 过滤掉已过期的会话（超过6小时）
-    const activeSessions = sessions.filter(session => !isSessionExpired(session.sessionTime))
+    // 过滤掉已过期的会话（时限由后台配置，默认 6 小时）
+    const activeSessions = []
+    for (const session of sessions) {
+      if (!(await isSessionExpired(session.sessionTime))) {
+        activeSessions.push(session)
+      }
+    }
 
     return NextResponse.json({ sessions: activeSessions })
   } catch (error) {
