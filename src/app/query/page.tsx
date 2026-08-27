@@ -15,6 +15,56 @@ interface ParticipationRecord {
   controllerCallsign: string
 }
 
+// [新增] 证书绘制为图片的 canvas 辅助函数（不依赖第三方库，规避 Tailwind v4 oklch 与 html2canvas 的兼容问题）
+function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerR: number, innerR: number, color: string) {
+  let rot = (Math.PI / 2) * 3
+  const step = Math.PI / spikes
+  ctx.beginPath()
+  ctx.moveTo(cx, cy - outerR)
+  for (let i = 0; i < spikes; i++) {
+    let x = cx + Math.cos(rot) * outerR
+    let y = cy + Math.sin(rot) * outerR
+    ctx.lineTo(x, y); rot += step
+    x = cx + Math.cos(rot) * innerR
+    y = cy + Math.sin(rot) * innerR
+    ctx.lineTo(x, y); rot += step
+  }
+  ctx.lineTo(cx, cy - outerR)
+  ctx.closePath()
+  ctx.fillStyle = color
+  ctx.fill()
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arcTo(x + w, y, x + w, y + h, r)
+  ctx.arcTo(x + w, y + h, x, y + h, r)
+  ctx.arcTo(x, y + h, x, y, r)
+  ctx.arcTo(x, y, x + w, y, r)
+  ctx.closePath()
+}
+
+function drawDivider(ctx: CanvasRenderingContext2D, x1: number, y: number, x2: number, color: string) {
+  ctx.strokeStyle = color
+  ctx.lineWidth = 2
+  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke()
+}
+
+function drawField(ctx: CanvasRenderingContext2D, centerX: number, label: string, value: string, cjk: string) {
+  ctx.textAlign = "center"
+  ctx.fillStyle = "#374151"
+  ctx.font = `bold 20px ${cjk}`
+  ctx.fillText(label, centerX, 1060)
+  const bw = 240, bh = 64, bx = centerX - bw / 2, by = 1080
+  roundRect(ctx, bx, by, bw, bh, 12)
+  ctx.fillStyle = "#fffbeb"; ctx.fill()
+  ctx.strokeStyle = "#fde68a"; ctx.lineWidth = 2; ctx.stroke()
+  ctx.fillStyle = "#78350f"; ctx.font = `bold 18px ${cjk}`
+  const v = value.length > 16 ? value.slice(0, 15) + "…" : value
+  ctx.fillText(v, centerX, by + 40)
+}
+
 export default function QueryPage() {
   const router = useRouter()
   const serverCert = useCertConfig()
@@ -121,6 +171,132 @@ export default function QueryPage() {
     document.title = `参与证书_${callsign}`
     window.print()
     document.title = originalTitle
+  }
+
+  // [新增] 将证书绘制为 PNG 图片并下载（纯 canvas，无需第三方库）
+  const saveCertificateAsImage = () => {
+    if (!result) return
+    const callsignText = result.callsign.toUpperCase()
+    const W = 1000
+    const H = 1414
+    const scale = 2
+    const canvas = document.createElement("canvas")
+    canvas.width = W * scale
+    canvas.height = H * scale
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    ctx.scale(scale, scale)
+
+    const cjk = '"Microsoft YaHei", "SimHei", "SimSun", sans-serif'
+    const serifCJK = 'Georgia, "Microsoft YaHei", "SimSun", serif'
+
+    // 背景渐变
+    const grad = ctx.createLinearGradient(0, 0, W, H)
+    grad.addColorStop(0, "#fffbeb")
+    grad.addColorStop(0.5, "#fefce8")
+    grad.addColorStop(1, "#ffedd5")
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, W, H)
+
+    // 背景装饰圆圈
+    ctx.save()
+    ctx.globalAlpha = 0.06
+    ctx.strokeStyle = "#92400e"
+    ctx.lineWidth = 4
+    ctx.beginPath(); ctx.arc(W * 0.25, H * 0.25, 160, 0, Math.PI * 2); ctx.stroke()
+    ctx.beginPath(); ctx.arc(W * 0.75, H * 0.75, 120, 0, Math.PI * 2); ctx.stroke()
+    ctx.restore()
+
+    // 外双线边框
+    ctx.strokeStyle = "#b45309"
+    ctx.lineWidth = 10
+    ctx.strokeRect(10, 10, W - 20, H - 20)
+    ctx.lineWidth = 2
+    ctx.strokeRect(24, 24, W - 48, H - 48)
+
+    // 四角装饰 L 形
+    ctx.strokeStyle = "#b45309"
+    ctx.lineWidth = 4
+    const m = 30, L = 90
+    ctx.beginPath(); ctx.moveTo(m, m + L); ctx.lineTo(m, m); ctx.lineTo(m + L, m); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(W - m - L, m); ctx.lineTo(W - m, m); ctx.lineTo(W - m, m + L); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(m, H - m - L); ctx.lineTo(m, H - m); ctx.lineTo(m + L, H - m); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(W - m - L, H - m); ctx.lineTo(W - m, H - m); ctx.lineTo(W - m, H - m - L); ctx.stroke()
+
+    ctx.textAlign = "center"
+
+    // 星星图标
+    drawStar(ctx, W / 2, 150, 5, 34, 16, "#b45309")
+
+    // 标题
+    ctx.fillStyle = "#78350f"
+    ctx.font = `bold 64px ${serifCJK}`
+    ctx.fillText("参与证书", W / 2, 262)
+
+    // 分隔线 + 圆点
+    drawDivider(ctx, W / 2 - 130, 302, W / 2 + 130, "#b45309")
+    ctx.fillStyle = "#b45309"
+    ctx.beginPath(); ctx.arc(W / 2, 302, 6, 0, Math.PI * 2); ctx.fill()
+
+    // 英文副标题
+    ctx.fillStyle = "#b45309"
+    ctx.font = `24px ${cjk}`
+    ctx.fillText("CERTIFICATE OF PARTICIPATION", W / 2, 342)
+
+    // 正文
+    ctx.fillStyle = "#374151"
+    ctx.font = `24px ${cjk}`
+    ctx.fillText("特此证明", W / 2, 422)
+
+    // 呼号框
+    const boxW = 520, boxH = 120, boxX = (W - boxW) / 2, boxY = 452
+    roundRect(ctx, boxX, boxY, boxW, boxH, 16)
+    ctx.fillStyle = "#ffffff"; ctx.fill()
+    ctx.strokeStyle = "#fde68a"; ctx.lineWidth = 3; ctx.stroke()
+    ctx.fillStyle = "#78350f"
+    ctx.font = `bold 58px ${serifCJK}`
+    ctx.fillText(callsignText, W / 2, boxY + 78)
+
+    // 参与单位
+    ctx.fillStyle = "#374151"; ctx.font = `22px ${cjk}`
+    ctx.fillText("在过去一年中积极参与", W / 2, 642)
+    ctx.fillStyle = "#78350f"; ctx.font = `bold 30px ${cjk}`
+    ctx.fillText(certSignUnit, W / 2, 690)
+
+    // 大次数
+    ctx.strokeStyle = "#b45309"
+    ctx.lineWidth = 2
+    ctx.fillRect(W / 2 - 130, 732, 2, 86)
+    ctx.fillRect(W / 2 + 128, 732, 2, 86)
+    ctx.fillStyle = "#78350f"
+    ctx.font = `bold 100px ${serifCJK}`
+    const numStr = String(result.totalParticipations)
+    const numW = ctx.measureText(numStr).width
+    ctx.fillText(numStr, W / 2, 820)
+    ctx.fillStyle = "#374151"; ctx.font = `bold 34px ${cjk}`
+    ctx.fillText("次", W / 2 + numW / 2 + 45, 820)
+
+    // 底部分隔
+    drawDivider(ctx, W / 2 - 130, 982, W / 2 + 130, "#b45309")
+    ctx.fillStyle = "#b45309"
+    ctx.beginPath(); ctx.arc(W / 2, 982, 6, 0, Math.PI * 2); ctx.fill()
+
+    // 页脚两栏
+    drawField(ctx, W / 2 - 200, "签发机构", certSignOrg, cjk)
+    drawField(ctx, W / 2 + 200, "签发日期", formatDateTime(new Date().toISOString()), cjk)
+
+    // 导出下载
+    canvas.toBlob((blob) => {
+      if (!blob) return
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `参与证书_${callsignText}.png`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }, "image/png")
   }
 
   return (
@@ -402,6 +578,12 @@ export default function QueryPage() {
 
                 {/* Actions */}
                 <div className="mt-6 flex gap-4 justify-center">
+                  <button
+                    onClick={saveCertificateAsImage}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    保存证书
+                  </button>
                   <button
                     onClick={downloadCertificate}
                     className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"

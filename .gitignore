@@ -45,6 +45,9 @@ bin/
 .idea/
 *.iml
 
+# WorkBuddy 本地记忆与配置（不入库）
+.workbuddy/
+
 # OS / misc
 Thumbs.db
 ehthumbs.db
