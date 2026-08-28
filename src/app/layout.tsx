@@ -1,4 +1,4 @@
-// @version v1.5.17
+// @version v1.5.18
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";

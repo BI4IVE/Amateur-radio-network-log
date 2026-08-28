@@ -1,4 +1,4 @@
-// @version v1.5.17
+// @version v1.5.18
 import { NextRequest, NextResponse } from "next/server"
 import { equipmentManager } from "@/storage/database"
 import { getAuthUser, requireLogin } from "@/lib/auth"

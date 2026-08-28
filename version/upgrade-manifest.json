@@ -1,16 +1,24 @@
 {
-  "latest": "1.5.17",
+  "latest": "1.5.18",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-08-27",
-  "title": "v1.5.17 版本更新（台网可编辑时限后台可配置）",
-  "summary": "台网结束后的可编辑时限由后台配置（默认 6 小时），管理员修改后全员生效；修复默认配置项自愈补齐失效的问题。",
+  "releaseDate": "2026-08-28",
+  "title": "v1.5.18 版本更新（呼号参与证书支持保存为图片）",
+  "summary": "呼号查询页新增「保存证书」按钮，可将参与证书绘制为 PNG 图片下载（纯 canvas 绘制）；忽略 .workbuddy/ 本地目录。",
   "changelog": [
-    "台网结束后的可编辑时限改为后台可配置（页面配置 → 会话详情页配置 → 台网结束后可编辑时限，单位小时，0 表示不限制），管理员修改后全员生效",
-    "修复默认配置项自愈补齐失效：新增配置项在已有数据库上无法自动出现"
+    "呼号查询页新增「保存证书」按钮：将参与证书绘制为 PNG 图片下载，采用纯 canvas 绘制，规避第三方库与样式的兼容问题",
+    "新增 .gitignore 忽略 .workbuddy/ 本地记忆与配置目录，避免误入库"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.18",
+      "releaseDate": "2026-08-28",
+      "title": "呼号参与证书支持保存为图片",
+      "summary": "呼号查询页新增「保存证书」按钮，可将参与证书绘制为 PNG 图片下载（纯 canvas 绘制）；忽略 .workbuddy/ 本地目录。",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.18",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.18.tar.gz"
+    },
     {
       "version": "1.5.17",
       "releaseDate": "2026-08-27",
