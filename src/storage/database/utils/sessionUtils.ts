@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 // Session utility functions
 import { pageConfigManager } from "../pageConfigManager"
 

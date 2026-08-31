@@ -1,11 +1,11 @@
-// @version v1.5.18
+// @version v1.5.19
 "use client"
 
 // [v1.5.10] 强制动态渲染，避免静态预渲染被 CDN/浏览器强缓存导致后台配置修改后证书不更新
 export const dynamic = "force-dynamic"
 
 import { useState, useRef, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { formatDateTime } from "@/utils/dateFormat"
 import { useCertConfig } from "./certConfig"
 
@@ -67,6 +67,7 @@ function drawField(ctx: CanvasRenderingContext2D, centerX: number, label: string
 
 export default function QueryPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const serverCert = useCertConfig()
 
   // [v1.5.10] 优先用服务端直读的配置初始化，再用客户端 fetch 兜底覆盖，避免客户端 JS 缓存导致配置不生效
@@ -105,15 +106,18 @@ export default function QueryPage() {
 
   const certificateRef = useRef<HTMLDivElement>(null)
 
-  const handleQuery = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // 显式传入呼号，供表单提交与外部跳转（数据看板排行点击）复用，
+  // 避免依赖 setState 后的 state（异步更新会读到旧值）
+  const runQuery = async (cs: string) => {
+    const target = (cs || "").trim().toUpperCase()
+    if (!target) return
     setError("")
     setResult(null)
     setCurrentPage(1)
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/records/callsign-stats?callsign=${encodeURIComponent(callsign)}`)
+      const response = await fetch(`/api/records/callsign-stats?callsign=${encodeURIComponent(target)}`)
       const data = await response.json()
 
       if (!response.ok) {
@@ -137,6 +141,21 @@ export default function QueryPage() {
       setLoading(false)
     }
   }
+
+  const handleQuery = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await runQuery(callsign)
+  }
+
+  // 支持 /query?callsign=XXX 直达（数据看板「呼号活跃排行」点击跳转），进入即自动查询
+  useEffect(() => {
+    const cs = searchParams.get("callsign")
+    if (!cs) return
+    const target = cs.trim().toUpperCase()
+    setCallsign(target)
+    runQuery(target)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleBack = () => {
     router.push("/")

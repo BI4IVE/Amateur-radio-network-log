@@ -1,6 +1,6 @@
 "use client";
 
-// @version v1.5.18
+// @version v1.5.19
 // 实况大屏共享数据 hook 与信号解析工具
 
 import { useCallback, useEffect, useState } from "react";
@@ -42,6 +42,8 @@ export interface ScreenConfig {
   rxFreq: string;
   txFreq: string;
   tone: string;
+  // 是否对外开放（true=任何人可看，false=仅登录用户可看）
+  public: boolean;
 }
 
 // 拉取后台大屏配置，失败时使用硬编码兜底，确保大屏始终可渲染
@@ -51,6 +53,7 @@ export function useScreenConfig(): ScreenConfig {
     rxFreq: RX_FREQ,
     txFreq: TX_FREQ,
     tone: TX_TONE,
+    public: false,
   });
 
   useEffect(() => {
@@ -67,6 +70,7 @@ export function useScreenConfig(): ScreenConfig {
           rxFreq: map.screen_rx_freq || RX_FREQ,
           txFreq: map.screen_tx_freq || TX_FREQ,
           tone: map.screen_tone || TX_TONE,
+          public: map.screen_public === "true",
         });
       } catch {
         // 网络异常时保持兜底值

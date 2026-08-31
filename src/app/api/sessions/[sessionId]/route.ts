@@ -1,18 +1,18 @@
-// @version v1.5.18
+// @version v1.5.19
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
-import { getAuthUser, requireUser } from "@/lib/auth"
+import { screenReadAuth, maskQthValue } from "@/lib/screenAccess"
 
-// 获取单个会话详情（含记录），登录用户即可访问，供"主控加入进行中台网"使用
+// 获取单个会话详情（含记录），供"主控加入进行中台网"使用；开放模式或已登录方可读取
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-    const user = await getAuthUser(request)
-    const authError = requireUser(user)
-    if (authError.error) {
-      return NextResponse.json({ error: authError.error }, { status: 401 })
+    // 大屏数据公开控制：开放模式或已登录方可读取
+    const access = await screenReadAuth(request)
+    if (!access.ok) {
+      return NextResponse.json({ error: "需要登录" }, { status: 401 })
     }
 
     const { sessionId } = await params
@@ -30,9 +30,16 @@ export async function GET(
     // 获取会话的所有记录
     const records = await logManager.getLogRecordsBySessionId(sessionId)
 
+    // 「匿名 + 公开」组合下对 QTH 做服务端脱敏
+    const maskedSession = access.maskQth
+      ? { ...session, controllerQth: maskQthValue(session.controllerQth) }
+      : session
+    const maskedRecords = access.maskQth
+      ? records.map((r) => ({ ...r, qth: maskQthValue(r.qth) }))
+      : records
     return NextResponse.json({
-      session,
-      records,
+      session: maskedSession,
+      records: maskedRecords,
     })
   } catch (error) {
     console.error("Get session details error:", error)

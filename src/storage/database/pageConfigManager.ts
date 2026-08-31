@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 import { eq, and, SQL, sql } from "drizzle-orm"
 import { getDb } from "./db"
 import { pageConfigs, insertPageConfigSchema, updatePageConfigSchema } from "./shared/schema"
@@ -165,6 +165,12 @@ export class PageConfigManager {
       value: "88.5",
       category: "screen",
       description: "亚音",
+    },
+    {
+      key: "screen_public",
+      value: "false",
+      category: "screen",
+      description: "大屏是否对外开放（true=任何人可看，false=仅登录用户可看）",
     },
   ]
 

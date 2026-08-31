@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 import { NextRequest, NextResponse } from "next/server"
 import { userManager } from "@/storage/database/userManager"
 import { hashPassword } from "@/lib/password"

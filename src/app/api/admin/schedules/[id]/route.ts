@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import { getAuthUser, requireAdmin } from "@/lib/auth"
@@ -32,7 +32,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ success: true, schedule: updated })
   } catch (error: any) {
     console.error("更新预告失败:", error)
-    return NextResponse.json({ success: false, error: "更新预告失败" }, { status: 500 })
+    const msg = error?.message || "更新预告失败"
+    const conflict = msg.includes("已存在")
+    return NextResponse.json(
+      { success: false, error: conflict ? msg : "更新预告失败: " + msg },
+      { status: conflict ? 409 : 500 }
+    )
   }
 }
 

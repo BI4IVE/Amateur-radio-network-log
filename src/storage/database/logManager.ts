@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 import { eq, and, SQL, like, desc, gte, sql, isNull } from "drizzle-orm"
 import { getDb } from "./db"
 import {
@@ -274,22 +274,44 @@ export class LogManager {
     return row || null
   }
 
+  // 将数据库唯一约束冲突（一天一场台网）翻译为友好提示
+  private scheduleConflictError(e: any): Error | null {
+    const msg = (e?.message || e?.cause?.message || "") as string
+    const code = e?.code || e?.cause?.code
+    if (code === "23505" || msg.includes("log_sessions_one_per_day_idx")) {
+      return new Error("该日期（北京时间）已存在台网或预告，一天仅允许一场，请更换日期或先删除已有记录")
+    }
+    return null
+  }
+
   async createSchedule(data: InsertLogSession): Promise<LogSession> {
     const db = await getDb()
-    const payload = insertLogSessionSchema.parse({ ...data, status: "scheduled" })
-    const [session] = await db.insert(logSessions).values(payload).returning()
-    return session
+    const payload = insertLogSessionSchema.parse(data)
+    try {
+      const [session] = await db.insert(logSessions).values({ ...payload, status: "scheduled" }).returning()
+      return session
+    } catch (e: any) {
+      const friendly = this.scheduleConflictError(e)
+      if (friendly) throw friendly
+      throw e
+    }
   }
 
   async updateSchedule(id: string, data: UpdateLogSession): Promise<LogSession | null> {
     const db = await getDb()
     const validated = updateLogSessionSchema.parse(data)
-    const [session] = await db
-      .update(logSessions)
-      .set(validated)
-      .where(and(eq(logSessions.id, id), eq(logSessions.status, "scheduled")))
-      .returning()
-    return session || null
+    try {
+      const [session] = await db
+        .update(logSessions)
+        .set(validated)
+        .where(and(eq(logSessions.id, id), eq(logSessions.status, "scheduled")))
+        .returning()
+      return session || null
+    } catch (e: any) {
+      const friendly = this.scheduleConflictError(e)
+      if (friendly) throw friendly
+      throw e
+    }
   }
 
   async deleteSchedule(id: string): Promise<boolean> {

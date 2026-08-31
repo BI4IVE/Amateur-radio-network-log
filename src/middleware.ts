@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 import { NextResponse } from "next/server"
 
 
@@ -24,10 +24,6 @@ const protectedPaths = [
 
 
   "/api/users",
-
-
-
-  "/api/sessions",
 
 
 

@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 "use client"
 
 import { useState, useEffect } from "react"
@@ -20,7 +20,7 @@ export default function PageConfigsPage() {
   const [configs, setConfigs] = useState<PageConfig[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [expandedCategory, setExpandedCategory] = useState<string>("general")
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(["general", "screen"]))
 
   // 编辑状态
   const [editingKey, setEditingKey] = useState<string | null>(null)
@@ -101,6 +101,21 @@ export default function PageConfigsPage() {
     setEditValue("")
   }
 
+  // 布尔型配置（值恰好为 "true"/"false"）识别为开关
+  const isBoolean = (config: PageConfig): boolean =>
+    config.value === "true" || config.value === "false"
+
+  // 切换布尔配置值（仅更新本地状态，需点「保存所有配置」才落库）
+  const handleBooleanToggle = (key: string) => {
+    setConfigs((prev) =>
+      prev.map((c) =>
+        c.key === key
+          ? { ...c, value: c.value === "true" ? "false" : "true" }
+          : c
+      )
+    )
+  }
+
   const categories = Array.from(new Set(configs.map(c => c.category)))
 
   if (loading) {
@@ -155,9 +170,12 @@ export default function PageConfigsPage() {
         {categories.map(category => (
           <div key={category} className="bg-white rounded-lg shadow">
             <button
-              onClick={() => setExpandedCategory(
-                expandedCategory === category ? "" : category
-              )}
+              onClick={() => setExpandedCategories(prev => {
+                const next = new Set(prev)
+                if (next.has(category)) next.delete(category)
+                else next.add(category)
+                return next
+              })}
               className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-3">
@@ -178,7 +196,7 @@ export default function PageConfigsPage() {
                 strokeWidth={2}
                 stroke="currentColor"
                 className={`w-5 h-5 text-gray-500 transition-transform ${
-                  expandedCategory === category ? "rotate-180" : ""
+                  expandedCategories.has(category) ? "rotate-180" : ""
                 }`}
               >
                 <path
@@ -189,7 +207,7 @@ export default function PageConfigsPage() {
               </svg>
             </button>
 
-            {expandedCategory === category && (
+            {expandedCategories.has(category) && (
               <div className="px-6 pb-6 pt-4 space-y-4 border-t border-gray-100">
                 {configs
                   .filter(config => config.category === category)
@@ -204,10 +222,16 @@ export default function PageConfigsPage() {
                           <p className="text-xs text-gray-500 mt-1">配置键: {config.key}</p>
                         </div>
                         {/* version 为系统版本号，后台只读展示，不可手动修改 */}
+                        {/* 布尔型配置（值为 true/false）渲染为开/关切换，不显示「编辑」按钮 */}
                         {config.key === "version" ? (
                           <span className="px-3 py-1.5 text-xs bg-gray-100 text-gray-500 rounded-lg font-medium">
                             系统版本（只读）
                           </span>
+                        ) : isBoolean(config) ? (
+                          <ToggleSwitch
+                            on={config.value === "true"}
+                            onToggle={() => handleBooleanToggle(config.key)}
+                          />
                         ) : editingKey !== config.key && (
                           <button
                             onClick={() => handleEdit(config)}
@@ -241,6 +265,16 @@ export default function PageConfigsPage() {
                             </button>
                           </div>
                         </div>
+                      ) : isBoolean(config) ? (
+                        <div className="flex items-center gap-3">
+                          <ToggleSwitch
+                            on={config.value === "true"}
+                            onToggle={() => handleBooleanToggle(config.key)}
+                          />
+                          <span className="text-sm font-medium text-gray-700">
+                            {config.value === "true" ? "开放（任何人可看）" : "关闭（仅登录用户可看）"}
+                          </span>
+                        </div>
                       ) : (
                         <div className="bg-gray-50 rounded-lg p-3 text-gray-700 text-sm whitespace-pre-line">
                           {config.value ? config.value.replace(/<br\s*\/?>/gi, "\n") : <span className="text-gray-400">（未设置）</span>}
@@ -258,6 +292,26 @@ export default function PageConfigsPage() {
         ))}
       </div>
     </AdminLayout>
+  )
+}
+
+function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={onToggle}
+      className={`relative inline-flex h-7 w-14 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+        on ? "bg-green-600" : "bg-gray-300"
+      }`}
+    >
+      <span
+        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+          on ? "translate-x-8" : "translate-x-1"
+        }`}
+      />
+    </button>
   )
 }
 

@@ -1,11 +1,18 @@
-// @version v1.5.18
+// @version v1.5.19
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, userManager } from "@/storage/database"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireAuth } from "@/lib/auth"
+import { screenReadAuth, maskQthValue } from "@/lib/screenAccess"
 
 export async function GET(request: NextRequest) {
   try {
+    // 大屏数据公开控制：开放模式或已登录方可读取
+    const access = await screenReadAuth(request)
+    if (!access.ok) {
+      return NextResponse.json({ error: "需要登录" }, { status: 401 })
+    }
+
     const searchParams = request.nextUrl.searchParams
     const controllerId = searchParams.get("controllerId") || undefined
 
@@ -21,7 +28,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ sessions: activeSessions })
+    // 「匿名 + 公开」组合下对 QTH 做服务端脱敏，防止直接调用 API 泄露完整位置
+    const result = access.maskQth
+      ? activeSessions.map((s) => ({ ...s, controllerQth: maskQthValue(s.controllerQth) }))
+      : activeSessions
+    return NextResponse.json({ sessions: result })
   } catch (error) {
     console.error("Get sessions error:", error)
     return NextResponse.json(

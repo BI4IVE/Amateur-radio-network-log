@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import { getAuthUser, requireAdmin } from "@/lib/auth"
@@ -47,6 +47,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, schedule: session }, { status: 201 })
   } catch (error: any) {
     console.error("创建预告失败:", error)
-    return NextResponse.json({ success: false, error: "创建预告失败: " + (error?.message || "") }, { status: 500 })
+    const msg = error?.message || "创建预告失败"
+    const conflict = msg.includes("已存在")
+    return NextResponse.json(
+      { success: false, error: conflict ? msg : "创建预告失败: " + msg },
+      { status: conflict ? 409 : 500 }
+    )
   }
 }

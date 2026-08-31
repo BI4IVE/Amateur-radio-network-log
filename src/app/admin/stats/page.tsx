@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 "use client"
 
 
@@ -344,6 +344,26 @@ export default function AdminStatsPage() {
 
           </div>
 
+          <div className="flex items-center gap-3">
+
+          <button
+
+            onClick={() => router.push("/admin/analytics")}
+
+            className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2"
+
+          >
+
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18M7 15l4-4 3 3 5-6" />
+
+            </svg>
+
+            数据看板
+
+          </button>
+
           <button
 
             onClick={handleExport}
@@ -363,6 +383,8 @@ export default function AdminStatsPage() {
             导出CSV
 
           </button>
+
+          </div>
 
         </div>
 

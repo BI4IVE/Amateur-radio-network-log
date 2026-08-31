@@ -1,6 +1,6 @@
-// @version v1.5.18
+// @version v1.5.19
 import { NextRequest, NextResponse } from "next/server"
-import { userManager } from "@/storage/database"
+import { userManager, loginLogManager } from "@/storage/database"
 import { signToken } from "@/lib/auth"
 import { verifyPassword, isPasswordHashed, hashPassword } from "@/lib/password"
 import { RateLimiterMemory } from "rate-limiter-flexible"
@@ -38,8 +38,9 @@ const accountLimiter = new RateLimiterMemory({
 
 export async function POST(request: NextRequest) {
   try {
-    // 获取客户端真实 IP
+    // 获取客户端真实 IP 与设备标识（用于登录日志）
     const ip = getClientIp(request)
+    const userAgent = request.headers.get("user-agent") || ""
 
     // 检查速率限制
     try {
@@ -68,6 +69,15 @@ export async function POST(request: NextRequest) {
     if (!user) {
       // 账号不存在：仍按账号名消耗锁定额度，避免攻击者探测哪些账号存在
       try { await accountLimiter.consume(String(username).toLowerCase()) } catch { /* 锁定中 */ }
+      // 记录"账号不存在"的尝试：连续探测不同账号是必须能看见的攻击信号
+      await loginLogManager.write({
+        userId: undefined,
+        username: String(username),
+        success: false,
+        reason: "NO_SUCH_USER",
+        ip,
+        userAgent,
+      })
       return NextResponse.json(
         { error: "用户名或密码错误" },
         { status: 401 }
@@ -81,11 +91,27 @@ export async function POST(request: NextRequest) {
       try {
         await accountLimiter.consume(String(username).toLowerCase())
       } catch {
+        await loginLogManager.write({
+          userId: user.id,
+          username: user.username,
+          success: false,
+          reason: "LOCKED",
+          ip,
+          userAgent,
+        })
         return NextResponse.json(
           { error: "该账号已被临时锁定，请 15 分钟后再试" },
           { status: 429 }
         )
       }
+      await loginLogManager.write({
+        userId: user.id,
+        username: user.username,
+        success: false,
+        reason: "WRONG_PASSWORD",
+        ip,
+        userAgent,
+      })
       return NextResponse.json(
         { error: "用户名或密码错误" },
         { status: 401 }
@@ -100,6 +126,15 @@ export async function POST(request: NextRequest) {
       const hashedPassword = await hashPassword(password)
       await userManager.updateUser(user.id, { password: hashedPassword })
     }
+
+    // 记录登录成功
+    await loginLogManager.write({
+      userId: user.id,
+      username: user.username,
+      success: true,
+      ip,
+      userAgent,
+    })
 
     // 生成 JWT Token
     const token = await signToken({

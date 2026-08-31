@@ -1,4 +1,4 @@
-// @version v1.5.18
+// @version v1.5.19
 import { pgTable, varchar, text, timestamp, boolean } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { createSchemaFactory } from "drizzle-zod"
@@ -90,6 +90,24 @@ export const auditLogs = pgTable("audit_logs", {
 
 // 审计日志类型（显式导出，供 logManager / 页面复用）
 export type AuditLog = typeof auditLogs.$inferSelect
+
+// 登录日志表 - 记录登录成功/失败（IP、设备），用于账号安全追溯
+// 说明：独立于 audit_logs，避免高频登录流水把真正的删改审计挤出查询窗口
+// （getAuditLogs 固定 limit 200）。建表由 loginLogManager.ensureTable() 幂等完成，
+// 因为测试站走 tar 覆盖部署、没有 db:push 迁移步骤。
+export const loginLogs = pgTable("login_logs", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 36 }), // 账号不存在时为空
+  username: varchar("username", { length: 50 }), // 记录用户输入值（该账号可能并不存在）
+  success: boolean("success").notNull().default(false),
+  reason: varchar("reason", { length: 100 }), // NO_SUCH_USER / WRONG_PASSWORD / LOCKED
+  ip: varchar("ip", { length: 64 }),
+  userAgent: varchar("user_agent", { length: 500 }),
+  location: varchar("location", { length: 100 }), // 二期：IP 归属地，需引入离线 IP 库
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+})
 
 // 参与人员信息表
 export const participants = pgTable("participants", {
@@ -202,6 +220,17 @@ export const updateLogRecordSchema = createCoercedInsertSchema(logRecords)
   })
   .partial()
 
+// LoginLog schemas
+export const insertLoginLogSchema = createCoercedInsertSchema(loginLogs).pick({
+  userId: true,
+  username: true,
+  success: true,
+  reason: true,
+  ip: true,
+  userAgent: true,
+  location: true,
+})
+
 // Participant schemas
 export const insertParticipantSchema = createCoercedInsertSchema(participants)
 export const updateParticipantSchema = createCoercedInsertSchema(participants)
@@ -256,6 +285,9 @@ export type UpdateLogSession = z.infer<typeof updateLogSessionSchema>
 export type LogRecord = typeof logRecords.$inferSelect
 export type InsertLogRecord = z.infer<typeof insertLogRecordSchema>
 export type UpdateLogRecord = z.infer<typeof updateLogRecordSchema>
+
+export type LoginLog = typeof loginLogs.$inferSelect
+export type InsertLoginLog = z.infer<typeof insertLoginLogSchema>
 
 export type Participant = typeof participants.$inferSelect
 export type InsertParticipant = z.infer<typeof insertParticipantSchema>
