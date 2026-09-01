@@ -1,18 +1,23 @@
 {
-  "latest": "1.5.19",
+  "latest": "1.5.20",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-08-31",
-  "title": "v1.5.19 版本更新（登录日志、数据看板、大屏开放开关、台网预告修复）",
-  "summary": "新增登录日志与数据看板；大屏支持公开/私有开关，公开版 QTH 脱敏；修复台网预告创建相关问题。",
+  "releaseDate": "2026-09-01",
+  "title": "v1.5.20 版本更新（后台菜单分组重构）",
+  "summary": "后台管理菜单重构为分组结构（运营中心 / 数据与日志 / 系统管理），层级更清晰、导航更高效。",
   "changelog": [
-    "新增登录日志，记录登录 IP、时间、设备及成败原因（密码错误 / 账号不存在 / 账号锁定），便于识别异常登录与爆破",
-    "新增数据看板（/admin/analytics），零依赖可视化呈现场次趋势、呼号活跃排行与按周分布",
-    "新增大屏开放开关（screen_public），支持私有（仅登录可见）/ 公开（任何人可见）两种模式；公开模式 QTH 脱敏显示前 4 字，私有未登录显示美化遮罩",
-    "修复台网预告创建相关问题：唯一索引冲突返回 409 友好提示（原笼统报 Failed query）；修复创建后列表因状态字段被剥离而不显示的问题"
+    "后台管理菜单重构为分组结构（运营中心 / 数据与日志 / 系统管理），层级更清晰、导航更高效"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.20",
+      "releaseDate": "2026-09-01",
+      "title": "后台菜单分组重构",
+      "summary": "后台管理菜单重构为分组结构（运营中心 / 数据与日志 / 系统管理），层级更清晰、导航更高效。",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.20",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.20.tar.gz"
+    },
     {
       "version": "1.5.19",
       "releaseDate": "2026-08-31",

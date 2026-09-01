@@ -1,4 +1,4 @@
-// @version v1.5.19
+// @version v1.5.20
 import { NextRequest, NextResponse } from "next/server"
 import { userManager } from "@/storage/database/userManager"
 import { verifyPassword } from "@/lib/password"

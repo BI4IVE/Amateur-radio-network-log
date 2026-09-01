@@ -1,4 +1,4 @@
-// @version v1.5.19
+// @version v1.5.20
 // 极简 User-Agent 解析（不引入任何依赖）：只提取「系统 · 浏览器」，
 // 用途是让管理员能一眼认出"这台设备是不是我的"，不追求精确。
 export function describeUserAgent(ua: string | null | undefined): string {

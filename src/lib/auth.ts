@@ -1,4 +1,4 @@
-// @version v1.5.19
+// @version v1.5.20
 // 简单的 token 认证工具（兼容 Edge runtime）
 // 使用 Base64 编码的 JSON 作为 token，配合 HMAC 签名
 
