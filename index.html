@@ -7,369 +7,748 @@
 <meta name="description" content="业余无线电台网主控日志系统：SSE 实时协作、呼号联想录入、Excel 导出、实况大屏、参与证书与后台统计，开源、可自部署。" />
 <style>
   :root{
-    --bg:#f7f8fc; --panel:#ffffff; --panel-2:#fbfbfe; --text:#161b2c; --text-2:#5b6478; --text-3:#8a93a6;
-    --border:#e6e9f1; --brand:#ff9d3f; --brand-dark:#e8791f; --brand-soft:#fff3e4;
-    --navy:#141a2e; --indigo:#4f46e5; --green:#16a34a; --green-soft:#eafbf0;
-    --shadow:0 1px 2px rgba(20,26,46,.05),0 12px 32px rgba(20,26,46,.07);
-    --shadow-lg:0 2px 4px rgba(20,26,46,.06),0 24px 60px rgba(20,26,46,.12);
-    --radius:16px;
+    --bg:#f4f6fb; --panel:#ffffff; --panel-2:#eef1f8; --text:#0e1526; --text-2:#525e78; --text-3:#8792ab;
+    --border:#e3e7f2; --brand:#ff8a1f; --brand-2:#ff6a3d; --brand-dark:#e9740e; --brand-soft:#fff1e0;
+    --navy:#0b1226; --indigo:#5b5bf0; --indigo-2:#8b5cf6; --teal:#0ea5b7; --green:#12a150;
+    --ink:#0b1226;
+    --shadow:0 1px 2px rgba(11,18,38,.05),0 16px 40px rgba(11,18,38,.08);
+    --shadow-lg:0 2px 6px rgba(11,18,38,.07),0 32px 70px rgba(11,18,38,.16);
+    --radius:16px; --radius-lg:22px;
   }
   html[data-theme="dark"]{
-    --bg:#0d1120; --panel:#141a2b; --panel-2:#1a2136; --text:#e9ecf3; --text-2:#a9b2c6; --text-3:#78819a;
-    --border:#262e46; --brand:#ffab55; --brand-dark:#ff9d3f; --brand-soft:#2b2113;
-    --navy:#0a0e1c; --indigo:#9aa0ff; --green:#4ade80; --green-soft:#12251a;
-    --shadow:0 1px 2px rgba(0,0,0,.35),0 12px 32px rgba(0,0,0,.3);
-    --shadow-lg:0 2px 4px rgba(0,0,0,.4),0 24px 60px rgba(0,0,0,.45);
+    --bg:#080c19; --panel:#0f1526; --panel-2:#141b30; --text:#eef1f9; --text-2:#a6b0c9; --text-3:#6f7b99;
+    --border:#232b45; --brand:#ffab4a; --brand-2:#ff7a45; --brand-dark:#ff9d3f; --brand-soft:#2b2010;
+    --navy:#05080f; --indigo:#8b8cf7; --indigo-2:#a78bfa; --teal:#2dd4e8; --green:#34d379;
+    --ink:#0b1226;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 16px 40px rgba(0,0,0,.4);
+    --shadow-lg:0 2px 6px rgba(0,0,0,.5),0 32px 70px rgba(0,0,0,.55);
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth;scroll-padding-top:76px}
+  html{scroll-behavior:smooth;scroll-padding-top:84px}
   body{margin:0;background:var(--bg);color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
-    font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+    font-size:15.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
   a{color:inherit;text-decoration:none}
-  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+  .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-  /* ===== 顶部导航 ===== */
-  .navbar{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--panel) 86%,transparent);
-    backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
-  .nav-inner{display:flex;align-items:center;gap:18px;height:64px}
-  .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.2px}
-  .brand .logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
-    background:linear-gradient(135deg,var(--brand),#ff7a45);color:#141a2e;box-shadow:0 4px 14px rgba(255,157,63,.35)}
-  .brand small{display:block;font-weight:600;font-size:11px;color:var(--text-3);letter-spacing:0}
-  .nav-links{display:flex;gap:2px;margin-left:8px}
-  .nav-links a{padding:7px 13px;border-radius:9px;color:var(--text-2);font-size:14.5px;font-weight:600}
-  .nav-links a:hover{background:var(--panel-2);color:var(--text)}
+  /* ================= 顶部导航 ================= */
+  .navbar{position:sticky;top:0;z-index:80;transition:box-shadow .2s ease,background .2s ease;
+    background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+  .navbar.scrolled{border-bottom:1px solid var(--border);box-shadow:0 6px 24px rgba(11,18,38,.06)}
+  html[data-theme="dark"] .navbar.scrolled{box-shadow:0 6px 24px rgba(0,0,0,.35)}
+  .nav-inner{display:flex;align-items:center;gap:20px;height:70px}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:16.5px;letter-spacing:.2px}
+  .brand .logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;flex:none;
+    background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);box-shadow:0 6px 16px rgba(255,120,50,.38)}
+  .brand .logo svg{width:21px;height:21px}
+  .brand small{display:block;font-weight:600;font-size:10.5px;color:var(--text-3);letter-spacing:.4px;margin-top:1px}
+  .nav-links{display:flex;gap:4px;margin-left:6px}
+  .nav-links a{padding:8px 14px;border-radius:10px;color:var(--text-2);font-size:14.5px;font-weight:600;transition:color .12s,background .12s}
+  .nav-links a:hover{color:var(--text);background:var(--panel-2)}
   .nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
-  .btn-ghost{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 13px;border-radius:10px;
-    border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;font-size:14px;font-weight:600}
-  .btn-ghost:hover{border-color:var(--brand);color:var(--brand-dark)}
+  .icon-btn{width:40px;height:40px;display:grid;place-items:center;border-radius:11px;border:1px solid var(--border);
+    background:var(--panel);color:var(--text);cursor:pointer;transition:border-color .12s,color .12s}
+  .icon-btn:hover{border-color:var(--brand);color:var(--brand-dark)}
+  .icon-btn svg{width:18px;height:18px}
+  html[data-theme="dark"] .icon-btn:hover{color:var(--brand)}
+  .btn-ghost{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:11px;
+    border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:14px;font-weight:700;
+    transition:border-color .12s,color .12s,transform .12s}
+  .btn-ghost:hover{border-color:var(--brand);color:var(--brand-dark);transform:translateY(-1px)}
   .btn-ghost svg{width:17px;height:17px}
+  html[data-theme="dark"] .btn-ghost:hover{color:var(--brand)}
 
-  /* ===== Hero ===== */
-  .hero{position:relative;overflow:hidden;padding:64px 0 52px;
-    background:radial-gradient(900px 420px at 18% -10%,var(--brand-soft),transparent 60%),
-               radial-gradient(800px 400px at 95% 0%,rgba(79,70,229,.10),transparent 55%)}
-  html[data-theme="dark"] .hero{background:radial-gradient(900px 420px at 18% -10%,#2b2113,transparent 60%),
-    radial-gradient(800px 400px at 95% 0%,rgba(154,160,255,.09),transparent 55%)}
-  .hero .wrap{display:grid;grid-template-columns:240px 1fr;gap:38px;align-items:center}
-  .hero-logo{width:228px;height:228px;margin:0 auto;display:grid;place-items:center;border-radius:34px;
-    background:linear-gradient(145deg,var(--panel),var(--panel-2));border:1px solid var(--border);
-    box-shadow:var(--shadow-lg);position:relative}
-  .hero-logo::after{content:"";position:absolute;inset:-14px;border-radius:44px;
-    background:radial-gradient(circle,color-mix(in srgb,var(--brand) 20%,transparent),transparent 68%)}
-  .hero-logo svg{width:132px;height:132px;color:var(--brand-dark)}
-  html[data-theme="dark"] .hero-logo svg{color:var(--brand)}
-  .hero-tag{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:999px;font-size:12.5px;
-    font-weight:800;letter-spacing:.4px;background:var(--brand-soft);color:var(--brand-dark);
-    border:1px solid color-mix(in srgb,var(--brand) 35%,transparent);margin-bottom:16px}
-  .hero h1{font-size:42px;line-height:1.15;margin:0 0 6px;letter-spacing:.5px}
-  .hero h1 .accent{background:linear-gradient(90deg,var(--brand-dark),#ff7a45);
-    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  html[data-theme="dark"] .hero h1 .accent{-webkit-text-fill-color:transparent}
-  .hero .sub{font-size:17px;color:var(--text-2);max-width:640px;margin:12px 0 22px}
-  .hero-actions{display:flex;flex-wrap:wrap;gap:12px}
-  .btn-primary{display:inline-flex;align-items:center;gap:9px;height:48px;padding:0 24px;border-radius:13px;
-    background:linear-gradient(135deg,var(--brand),#ff7a45);color:#141a2e;font-weight:800;font-size:15.5px;
-    box-shadow:0 8px 22px rgba(255,140,45,.35);transition:transform .12s ease}
-  .btn-primary:hover{transform:translateY(-1px)}
-  .btn-primary svg,.btn-ghost-lg svg{width:18px;height:18px}
-  .btn-ghost-lg{display:inline-flex;align-items:center;gap:9px;height:48px;padding:0 22px;border-radius:13px;
-    border:1px solid var(--border);background:var(--panel);color:var(--text);font-weight:700;font-size:15px}
-  .btn-ghost-lg:hover{border-color:var(--text-3)}
-  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
-  .badges span{font-size:12px;padding:4px 12px;border-radius:999px;background:var(--panel);
-    border:1px solid var(--border);color:var(--text-2);font-weight:600}
-  .badges b{color:var(--brand-dark)}
-  html[data-theme="dark"] .badges b{color:var(--brand)}
+  /* ================= Hero ================= */
+  .hero{position:relative;overflow:hidden;padding:84px 0 90px}
+  .hero .wrap{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
+  /* 背景网格 + 光斑 */
+  .hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;
+    background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+    background-size:44px 44px;
+    -webkit-mask-image:radial-gradient(ellipse 90% 72% at 50% 0%,#000 20%,transparent 74%);
+            mask-image:radial-gradient(ellipse 90% 72% at 50% 0%,#000 20%,transparent 74%)}
+  .hero::after{content:"";position:absolute;inset:-12% -8% auto -8%;height:520px;pointer-events:none;
+    background:
+      radial-gradient(560px 300px at 16% 4%,var(--brand-soft),transparent 62%),
+      radial-gradient(620px 320px at 88% 10%,color-mix(in srgb,var(--indigo) 12%,transparent),transparent 60%),
+      radial-gradient(420px 260px at 52% -6%,color-mix(in srgb,var(--teal) 10%,transparent),transparent 65%)}
+  .hero-tag{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:12.8px;
+    font-weight:700;background:var(--panel);border:1px solid var(--border);box-shadow:var(--shadow);margin-bottom:22px}
+  .hero-tag .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 color-mix(in srgb,var(--green) 55%,transparent);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--green) 50%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .hero-tag b{color:var(--brand-dark);font-weight:800}
+  html[data-theme="dark"] .hero-tag b{color:var(--brand)}
+  .hero h1{font-size:clamp(34px,4.6vw,56px);line-height:1.13;margin:0 0 10px;font-weight:900;letter-spacing:.2px}
+  .hero h1 .accent{background:linear-gradient(100deg,var(--brand-dark),var(--brand-2));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+  html[data-theme="dark"] .hero h1 .accent{background:linear-gradient(100deg,#ffd9a8,#ff7a45);-webkit-background-clip:text;background-clip:text}
+  .hero .sub{font-size:17px;color:var(--text-2);max-width:600px;margin:14px 0 26px}
+  .hero .sub b{color:var(--text)}
+  .hero-actions{display:flex;flex-wrap:wrap;gap:13px}
+  .btn-primary{display:inline-flex;align-items:center;gap:9px;height:50px;padding:0 25px;border-radius:13px;
+    background:linear-gradient(135deg,var(--brand) 0%,var(--brand-2) 100%);color:#fff;font-weight:800;font-size:15.5px;
+    box-shadow:0 10px 26px rgba(255,120,50,.38);transition:transform .13s ease,box-shadow .13s ease}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(255,120,50,.46)}
+  .btn-primary svg{width:18px;height:18px}
+  .btn-outline{display:inline-flex;align-items:center;gap:9px;height:50px;padding:0 22px;border-radius:13px;
+    border:1px solid var(--border);background:var(--panel);color:var(--text);font-weight:700;font-size:15px;
+    transition:border-color .13s,transform .13s,color .13s}
+  .btn-outline:hover{border-color:var(--text-3);transform:translateY(-2px)}
+  .btn-outline svg{width:17px;height:17px;color:var(--text-3)}
+  .hero-badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+  .hero-badges span{display:inline-flex;align-items:center;gap:6px;font-size:12.3px;padding:5px 12px;border-radius:999px;
+    background:var(--panel);border:1px solid var(--border);color:var(--text-2);font-weight:600}
+  .hero-badges svg{width:12px;height:12px;color:var(--green)}
 
-  /* ===== Section 通用 ===== */
-  section.block{padding:56px 0}
-  .sec-head{text-align:center;max-width:680px;margin:0 auto 40px}
-  .sec-head .kicker{display:inline-block;font-size:12.5px;font-weight:800;letter-spacing:2px;
-    color:var(--brand-dark);text-transform:uppercase;margin-bottom:10px}
+  /* ===== Hero 右侧：主控台界面示意 ===== */
+  .stage{position:relative}
+  .stage .glow{position:absolute;inset:8% 4% -4% 8%;z-index:0;filter:blur(46px);opacity:.5;
+    background:linear-gradient(130deg,color-mix(in srgb,var(--brand) 62%,transparent),color-mix(in srgb,var(--indigo) 52%,transparent))}
+  .shot{position:relative;z-index:1;border-radius:var(--radius-lg);overflow:hidden;background:#0c1122;color:#e7ecf8;
+    box-shadow:var(--shadow-lg);border:1px solid color-mix(in srgb,var(--border) 55%,#3a4568)}
+  .shot .bar{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;background:#101731;border-bottom:1px solid #1e2744}
+  .shot .bar i{width:11px;height:11px;border-radius:50%}
+  .shot .bar i:nth-child(1){background:#ff5f57}.shot .bar i:nth-child(2){background:#febc2e}.shot .bar i:nth-child(3){background:#28c840}
+  .shot .bar .addr{margin-left:12px;flex:1;max-width:300px;height:24px;border-radius:7px;background:#0a0f22;
+    border:1px solid #1e2744;display:flex;align-items:center;padding:0 12px;font-size:12px;color:#7d88ad;font-family:ui-monospace,Consolas,monospace}
+  .shot .body{padding:18px 20px 20px}
+  .shot .top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .shot .top .live{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#ffb066;
+    padding:4px 11px;border-radius:7px;background:rgba(255,138,31,.13);border:1px solid rgba(255,138,31,.32)}
+  .shot .top .live i{width:7px;height:7px;border-radius:50%;background:#ffb066;animation:pulse 1.6s infinite}
+  .shot .top .freq{margin-left:auto;font-size:12.5px;color:#8c98bd;font-family:ui-monospace,Consolas,monospace}
+  .shot .net{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .shot .net div{background:#0a0f22;border:1px solid #1c2440;border-radius:12px;padding:10px 13px}
+  .shot .net small{display:block;font-size:10.5px;color:#6c77a0;letter-spacing:1px;margin-bottom:3px}
+  .shot .net b{font-size:14px;color:#f1f4ff}
+  .shot .net em{display:block;font-style:normal;font-size:12px;color:#9aa5c9;margin-top:2px}
+  .shot .feed-head{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#6c77a0;
+    letter-spacing:1.2px;margin-bottom:9px;text-transform:uppercase}
+  .shot .feed-head .n{color:#28c840;font-weight:800;letter-spacing:0}
+  .shot .rows{display:flex;flex-direction:column;gap:8px}
+  .shot .row{display:flex;align-items:center;gap:11px;background:#0a0f22;border:1px solid #1c2440;border-radius:11px;padding:9px 13px}
+  .shot .row .cs{font-weight:800;font-size:13.5px;color:#fff;font-family:ui-monospace,Consolas,monospace}
+  .shot .row .sig{margin-left:auto;display:flex;align-items:center;gap:5px}
+  .shot .row .sig i{width:3px;border-radius:2px;background:var(--green);animation:eq 1s ease-in-out infinite}
+  .shot .row .sig i:nth-child(1){height:6px;animation-delay:0s}
+  .shot .row .sig i:nth-child(2){height:11px;animation-delay:.16s}
+  .shot .row .sig i:nth-child(3){height:8px;animation-delay:.32s}
+  .shot .row .sig i:nth-child(4){height:13px;animation-delay:.1s}
+  .shot .row .sig i:nth-child(5){height:10px;animation-delay:.24s}
+  .shot .row .tag{font-size:11px;font-weight:800;padding:3px 9px;border-radius:6px;background:rgba(94,92,255,.16);color:#b6b4ff;border:1px solid rgba(94,92,255,.3)}
+  .shot .row.r2 .tag{background:rgba(20,180,140,.14);color:#5fd6b6;border-color:rgba(20,180,140,.3)}
+  .shot .row.r3 .tag{background:rgba(255,176,102,.12);color:#ffc98d;border-color:rgba(255,176,102,.28)}
+  @keyframes eq{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1.15)}}
+  .float-badge{position:absolute;z-index:2;display:flex;align-items:center;gap:11px;padding:12px 16px;border-radius:15px;
+    background:var(--panel);border:1px solid var(--border);box-shadow:var(--shadow-lg);animation:floaty 5s ease-in-out infinite}
+  .float-badge svg{width:21px;height:21px;color:var(--brand-dark)}
+  html[data-theme="dark"] .float-badge svg{color:var(--brand)}
+  .float-badge b{display:block;font-size:13.5px;line-height:1.2}
+  .float-badge small{color:var(--text-3);font-size:11.5px}
+  .float-a{top:24px;right:-12px}
+  .float-b{bottom:26px;left:-18px;animation-delay:1.2s}
+  .float-b svg{color:var(--indigo)}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+
+  /* ================= 统计条 ================= */
+  .stats{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--panel)}
+  .stats .grid{display:grid;grid-template-columns:repeat(4,1fr)}
+  .stats .cell{padding:26px 18px;text-align:center}
+  .stats .cell+.cell{border-left:1px solid var(--border)}
+  .stats .num{font-size:30px;font-weight:900;letter-spacing:.3px;line-height:1.1;
+    background:linear-gradient(120deg,var(--brand-dark),var(--brand-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  html[data-theme="dark"] .stats .num{background:linear-gradient(120deg,#ffd9a8,#ff9d3f);-webkit-background-clip:text;background-clip:text}
+  .stats .lbl{font-size:13px;color:var(--text-3);font-weight:600;margin-top:5px}
+
+  /* ================= Section 通用 ================= */
+  section.block{padding:74px 0}
+  .sec-head{max-width:760px;margin:0 auto 46px;text-align:center}
+  .sec-head .kicker{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:2.4px;
+    color:var(--brand-dark);text-transform:uppercase;padding:5px 13px;border-radius:999px;background:var(--brand-soft);
+    border:1px solid color-mix(in srgb,var(--brand) 30%,transparent);margin-bottom:14px}
   html[data-theme="dark"] .sec-head .kicker{color:var(--brand)}
-  .sec-head h2{font-size:30px;margin:0 0 10px;letter-spacing:.3px}
-  .sec-head p{color:var(--text-2);margin:0}
+  .sec-head h2{font-size:clamp(26px,3.4vw,36px);margin:0 0 12px;font-weight:900;letter-spacing:.2px}
+  .sec-head p{color:var(--text-2);margin:0;font-size:16px}
+  .sec-body{position:relative}
 
-  /* ===== 特性网格 ===== */
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
-    padding:24px 22px;box-shadow:var(--shadow);display:flex;gap:16px;transition:transform .12s ease,border-color .12s ease}
-  .card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--brand) 45%,var(--border))}
-  .card .ico{flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;
-    background:var(--brand-soft);color:var(--brand-dark)}
-  html[data-theme="dark"] .card .ico{color:var(--brand)}
-  .card .ico svg{width:22px;height:22px}
-  .card h3{margin:0 0 6px;font-size:16.5px}
-  .card p{margin:0;color:var(--text-2);font-size:13.8px}
-  .card .ver{display:inline-block;margin-top:9px;font-size:11.5px;font-weight:800;padding:2px 9px;border-radius:999px;
-    background:var(--panel-2);border:1px solid var(--border);color:var(--text-3)}
+  /* ================= 特性网格 ================= */
+  .feat{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .fcard{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:24px 22px;overflow:hidden;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+  .fcard::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--fc,#ff8a1f),transparent 80%);opacity:.85}
+  .fcard:hover{transform:translateY(-4px);border-color:var(--border);box-shadow:var(--shadow-lg)}
+  .fcard .ico{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;margin-bottom:16px;
+    color:#fff;background:linear-gradient(135deg,var(--fc,#ff8a1f),var(--fc2,#ff6a3d));
+    box-shadow:0 8px 18px color-mix(in srgb,var(--fc,#ff8a1f) 32%,transparent)}
+  .fcard .ico svg{width:23px;height:23px}
+  .fcard h3{margin:0 0 7px;font-size:16.5px;font-weight:800}
+  .fcard p{margin:0;color:var(--text-2);font-size:13.8px;line-height:1.66}
+  .fcard .no{position:absolute;top:20px;right:18px;font-size:13px;font-weight:900;color:var(--text-3);opacity:.32;
+    font-family:ui-monospace,Consolas,monospace;letter-spacing:.5px}
+  .fcard:hover .no{opacity:.7}
+  .fcard:nth-child(1){--fc:#ff8a1f;--fc2:#ff6a3d}
+  .fcard:nth-child(2){--fc:#5b5bf0;--fc2:#8b5cf6}
+  .fcard:nth-child(3){--fc:#0ea5b7;--fc2:#22d3ee}
+  .fcard:nth-child(4){--fc:#12a150;--fc2:#34d379}
+  .fcard:nth-child(5){--fc:#e11d66;--fc2:#f472b6}
+  .fcard:nth-child(6){--fc:#2563eb;--fc2:#60a5fa}
+  .fcard:nth-child(7){--fc:#d97706;--fc2:#fbbf24}
+  .fcard:nth-child(8){--fc:#0891b2;--fc2:#2dd4bf}
+  .fcard:nth-child(9){--fc:#9333ea;--fc2:#c084fc}
+  .fcard:nth-child(10){--fc:#ea580c;--fc2:#fb923c}
+  .fcard:nth-child(11){--fc:#16a34a;--fc2:#4ade80}
+  .fcard:nth-child(12){--fc:#64748b;--fc2:#94a3b8}
 
-  /* ===== 快速开始 ===== */
-  .start-panel{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center;background:var(--panel);
-    border:1px solid var(--border);border-radius:20px;padding:38px 40px;box-shadow:var(--shadow)}
-  .start-panel h2{margin:0 0 12px;font-size:26px}
-  .start-panel .desc{color:var(--text-2);margin:0 0 18px}
-  .start-list{list-style:none;margin:0 0 20px;padding:0}
-  .start-list li{display:flex;gap:10px;align-items:baseline;padding:5px 0;color:var(--text-2);font-size:14px}
-  .start-list li::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:var(--brand);
-    transform:translateY(-1px)}
-  pre.code{background:#101527;color:#dbe2f5;border-radius:14px;padding:22px 24px;font-size:13.3px;line-height:1.75;
-    overflow-x:auto;margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
-  html[data-theme="dark"] pre.code{background:#0b0f1e;border:1px solid var(--border)}
-  pre.code .cm{color:#6b7ab0}
-  pre.code .p{color:#ff9d3f}
-  pre.code .ok{color:#5ee08b}
+  /* ================= 实况大屏 spotlight ================= */
+  .spot{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--border);border-radius:24px;
+    display:grid;grid-template-columns:1fr 1fr;gap:0;box-shadow:var(--shadow)}
+  .spot .side{padding:44px 40px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+  .spot .side h2{font-size:clamp(23px,2.6vw,31px);margin:0 0 12px;font-weight:900}
+  .spot .side>p{color:var(--text-2);margin:0 0 18px;font-size:15px}
+  .spot .side ul{list-style:none;margin:0 0 24px;padding:0;display:flex;flex-direction:column;gap:10px}
+  .spot .side li{display:flex;gap:11px;align-items:flex-start;font-size:14.3px;color:var(--text-2)}
+  .spot .side li svg{flex:none;width:18px;height:18px;margin-top:2px;color:var(--brand-dark)}
+  html[data-theme="dark"] .spot .side li svg{color:var(--brand)}
+  .spot .side li b{color:var(--text)}
+  .side-actions{display:flex;gap:12px;flex-wrap:wrap}
+  .mock-side{position:relative;display:flex;align-items:center;justify-content:center;padding:44px 34px;overflow:hidden;
+    background:radial-gradient(600px 320px at 30% 10%,color-mix(in srgb,var(--indigo) 10%,transparent),transparent 60%),
+               radial-gradient(500px 300px at 90% 90%,var(--brand-soft),transparent 60%)}
+  .screen{width:330px;border-radius:22px;overflow:hidden;background:#0c1122;color:#e7ecf8;border:1px solid color-mix(in srgb,var(--border) 60%,#3a4568);
+    box-shadow:var(--shadow-lg);transform:rotate(2.5deg);transition:transform .2s ease}
+  .mock-side:hover .screen{transform:rotate(0deg)}
+  .screen .head{display:flex;align-items:center;gap:7px;padding:13px 16px;background:#101731;border-bottom:1px solid #1e2744}
+  .screen .head i{width:9px;height:9px;border-radius:50%}
+  .screen .head i:nth-child(1){background:#ff5f57}.screen .head i:nth-child(2){background:#febc2e}.screen .head i:nth-child(3){background:#28c840}
+  .screen .head .t{margin-left:8px;font-size:12px;color:#8c98bd;font-weight:800;letter-spacing:.6px}
+  .screen .sc{display:flex;flex-direction:column;gap:9px;padding:15px 15px 17px}
+  .screen .sc .big{text-align:center;font-size:23px;font-weight:900;letter-spacing:4px;padding:13px 0 9px;
+    background:linear-gradient(120deg,#fff,#ffd9a8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .screen .sc .count{display:flex;align-items:center;justify-content:center;gap:7px;font-size:11.5px;color:#7d88ad;padding-bottom:4px}
+  .screen .sc .count i{width:7px;height:7px;border-radius:50%;background:#28c840;animation:pulse 1.8s infinite}
+  .screen .tile{display:flex;justify-content:space-between;align-items:center;background:#0a0f22;border:1px solid #1c2440;border-radius:10px;padding:8px 12px;font-size:12.5px}
+  .screen .tile b{font-weight:800;font-family:ui-monospace,Consolas,monospace}
+  .screen .tile span{color:#8c98bd}
+  .screen .tile .green{color:#5ee0a0;font-weight:800}
+  .screen .eq{display:flex;gap:4px;align-items:flex-end;justify-content:center;height:30px;margin-top:3px}
+  .screen .eq i{width:7px;border-radius:3px;background:linear-gradient(180deg,#ffb066,#ff6a3d);animation:eq 1.1s ease-in-out infinite}
+  .screen .eq i:nth-child(1){height:10px}.screen .eq i:nth-child(2){height:22px;animation-delay:.12s}
+  .screen .eq i:nth-child(3){height:15px;animation-delay:.3s}.screen .eq i:nth-child(4){height:26px;animation-delay:.2s}
+  .screen .eq i:nth-child(5){height:12px;animation-delay:.4s}.screen .eq i:nth-child(6){height:20px;animation-delay:.08s}
+  .screen .eq i:nth-child(7){height:17px;animation-delay:.26s}.screen .eq i:nth-child(8){height:9px;animation-delay:.34s}
 
-  /* ===== 说明手册 / 链接卡片 ===== */
-  .link-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
-  .link-card{display:flex;flex-direction:column;gap:8px;padding:22px;background:var(--panel);
-    border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);transition:transform .12s ease}
-  .link-card:hover{transform:translateY(-2px)}
-  .link-card .t{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px}
-  .link-card .t .pill{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-dark);flex:none}
-  html[data-theme="dark"] .link-card .t .pill{color:var(--brand)}
-  .link-card .t .pill svg{width:17px;height:17px}
-  .link-card .d{color:var(--text-2);font-size:13.5px;flex:1}
-  .link-card .go{color:var(--brand-dark);font-size:13px;font-weight:700}
-  html[data-theme="dark"] .link-card .go{color:var(--brand)}
+  /* ================= 快速开始 ================= */
+  .start-panel{display:grid;grid-template-columns:.95fr 1.05fr;gap:40px;align-items:center;background:var(--panel);
+    border:1px solid var(--border);border-radius:24px;padding:42px 42px;box-shadow:var(--shadow)}
+  .start-panel h2{margin:0 0 12px;font-size:clamp(23px,2.4vw,29px);font-weight:900}
+  .start-panel .desc{color:var(--text-2);margin:0 0 22px;font-size:14.8px}
+  .steps{counter-reset:st;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+  .steps li{counter-increment:st;display:flex;gap:14px;padding:9px 0}
+  .steps li::before{content:counter(st,decimal-leading-zero);flex:none;width:34px;height:34px;border-radius:11px;
+    display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-dark);font-weight:900;font-size:13px;
+    font-family:ui-monospace,Consolas,monospace}
+  html[data-theme="dark"] .steps li::before{color:var(--brand)}
+  .steps .t b{display:block;font-size:15px;margin-top:2px}
+  .steps .t span{color:var(--text-3);font-size:12.8px}
+  .codebox{border-radius:18px;overflow:hidden;background:#0a0f22;border:1px solid #1e2744;box-shadow:var(--shadow-lg);margin:0}
+  .codebox .cbar{display:flex;align-items:center;gap:8px;height:42px;padding:0 16px;background:#101731;border-bottom:1px solid #1e2744}
+  .codebox .cbar i{width:10px;height:10px;border-radius:50%}
+  .codebox .cbar i:nth-child(1){background:#ff5f57}.codebox .cbar i:nth-child(2){background:#febc2e}.codebox .cbar i:nth-child(3){background:#28c840}
+  .codebox .cbar .t{margin-left:8px;font-size:11.5px;color:#6c77a0;font-family:ui-monospace,Consolas,monospace}
+  .codebox pre{margin:0;padding:20px 22px 22px;color:#d7def5;font-size:13.3px;line-height:1.85;overflow-x:auto;
+    font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+  .codebox .cm{color:#6b7ab0}.codebox .p{color:#ffab4a}.codebox .ok{color:#5ee0a0}
 
-  /* ===== 页脚 ===== */
-  footer{border-top:1px solid var(--border);padding:36px 0 46px;margin-top:30px}
-  .foot{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
-  .foot .left{display:flex;align-items:center;gap:10px;font-weight:700}
-  .foot .left .dot{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--brand),#ff7a45);
-    display:grid;place-items:center;color:#141a2e}
-  .foot .mid{color:var(--text-3);font-size:13px;text-align:center}
-  .foot .right{display:flex;gap:14px;color:var(--text-3);font-size:13px}
-  .foot .right a:hover{color:var(--brand-dark)}
-  html[data-theme="dark"] .foot .right a:hover{color:var(--brand)}
-  .ham{display:none}
+  /* ================= FAQ ================= */
+  .faq{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+  .faq details{border:1px solid var(--border);border-radius:15px;background:var(--panel);overflow:hidden;transition:box-shadow .15s}
+  .faq details[open]{box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--brand) 40%,var(--border))}
+  .faq summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:14px;padding:17px 22px;font-weight:700;font-size:15.5px}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary .pm{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;background:var(--brand-soft);
+    color:var(--brand-dark);transition:transform .18s ease}
+  html[data-theme="dark"] .faq summary .pm{color:var(--brand)}
+  .faq details[open] summary .pm{transform:rotate(45deg)}
+  .faq summary .pm svg{width:15px;height:15px}
+  .faq .ans{padding:2px 22px 20px 66px;color:var(--text-2);font-size:14.5px}
+  .faq .ans code{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:1px 7px;font-size:12.8px;
+    color:var(--text);font-family:ui-monospace,Consolas,monospace}
 
-  /* ===== 响应式 ===== */
-  @media (max-width:920px){
-    .hero .wrap{grid-template-columns:1fr;text-align:center;gap:26px}
-    .hero-logo{width:150px;height:150px;border-radius:26px}
-    .hero-logo svg{width:86px;height:86px}
-    .hero h1{font-size:31px}
-    .hero .sub{margin-left:auto;margin-right:auto}
-    .hero-actions,.badges{justify-content:center}
-    .start-panel{grid-template-columns:1fr;padding:28px 24px}
-    .nav-links{display:none;position:absolute;top:64px;left:0;right:0;flex-direction:column;background:var(--panel);
-      border-bottom:1px solid var(--border);padding:10px 16px 16px;gap:4px}
+  /* ================= 文档资源 ================= */
+  .docgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .dlink{position:relative;display:flex;flex-direction:column;gap:9px;padding:24px 22px;background:var(--panel);
+    border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;transition:transform .15s,border-color .15s}
+  .dlink:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--brand) 55%,var(--border))}
+  .dlink .t{display:flex;align-items:center;gap:11px;font-weight:800;font-size:15.8px}
+  .dlink .ic{width:40px;height:40px;border-radius:12px;flex:none;display:grid;place-items:center;background:var(--brand-soft);color:var(--brand-dark)}
+  html[data-theme="dark"] .dlink .ic{color:var(--brand)}
+  .dlink .ic svg{width:19px;height:19px}
+  .dlink .d{color:var(--text-2);font-size:13.4px;flex:1;line-height:1.62}
+  .dlink .go{display:inline-flex;align-items:center;gap:6px;color:var(--brand-dark);font-size:13px;font-weight:800}
+  html[data-theme="dark"] .dlink .go{color:var(--brand)}
+  .dlink:hover .go svg{transform:translateX(3px)}
+  .dlink .go svg{width:14px;height:14px;transition:transform .15s}
+  .dlink:nth-child(2) .ic{background:color-mix(in srgb,var(--indigo) 12%,transparent);color:var(--indigo)}
+  .dlink:nth-child(3) .ic{background:color-mix(in srgb,var(--teal) 12%,transparent);color:var(--teal)}
+  .dlink:nth-child(4) .ic{background:color-mix(in srgb,var(--green) 13%,transparent);color:var(--green)}
+
+  /* ================= CTA / 页脚 ================= */
+  .cta{background:linear-gradient(135deg,#0b1226 0%,#1b2440 55%,#2a1f22 100%);border-radius:26px;padding:52px 46px;
+    text-align:center;color:#fff;position:relative;overflow:hidden}
+  .cta::before{content:"";position:absolute;inset:0;
+    background:radial-gradient(460px 220px at 14% 0%,rgba(255,138,31,.34),transparent 62%),
+               radial-gradient(500px 260px at 88% 100%,rgba(91,91,240,.35),transparent 60%)}
+  .cta>*{position:relative}
+  .cta h2{margin:0 0 10px;font-size:clamp(24px,3vw,34px);font-weight:900}
+  .cta p{color:#c3cbdf;margin:0 auto 28px;max-width:560px;font-size:15.5px}
+  .cta .actions{display:flex;gap:13px;justify-content:center;flex-wrap:wrap}
+  .cta .btn-ghost-w{display:inline-flex;align-items:center;gap:9px;height:50px;padding:0 24px;border-radius:13px;
+    border:1px solid rgba(255,255,255,.28);color:#fff;font-weight:800;font-size:15px;transition:background .13s,border-color .13s}
+  .cta .btn-ghost-w:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.5)}
+  footer{padding:52px 0 0}
+  .foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px;padding-bottom:38px}
+  .foot-col .fb{display:flex;align-items:center;gap:11px;font-weight:800;font-size:16px}
+  .foot-col .fb .logo{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;color:#fff;
+    background:linear-gradient(135deg,var(--brand),var(--brand-2))}
+  .foot-col .fb .logo svg{width:18px;height:18px}
+  .foot-col .about{color:var(--text-3);font-size:13.5px;margin:14px 0 0;line-height:1.7}
+  .foot-col h4{font-size:13px;letter-spacing:1.4px;text-transform:uppercase;color:var(--text-3);margin:0 0 14px}
+  .foot-col ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .foot-col ul a{color:var(--text-2);font-size:14px;transition:color .12s}
+  .foot-col ul a:hover{color:var(--brand-dark)}
+  html[data-theme="dark"] .foot-col ul a:hover{color:var(--brand)}
+  .foot-bottom{border-top:1px solid var(--border);padding:20px 0;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;
+    color:var(--text-3);font-size:13px}
+  .foot-bottom .calls{font-family:ui-monospace,Consolas,monospace;font-weight:700}
+
+  /* ================= 滚动渐显 ================= */
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.on{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+  .sec{scroll-margin-top:80px}
+
+  /* ================= 响应式 ================= */
+  @media (max-width:1020px){
+    .feat{grid-template-columns:repeat(2,1fr)}
+    .docgrid{grid-template-columns:repeat(2,1fr)}
+    .hero .wrap{grid-template-columns:1fr;gap:52px}
+    .hero{padding:60px 0 70px}
+    .stage{max-width:560px;margin:0 auto;width:100%}
+    .float-a{right:6px}.float-b{left:6px}
+    .spot{grid-template-columns:1fr}
+    .start-panel{grid-template-columns:1fr;padding:32px 28px}
+    .foot-grid{grid-template-columns:1fr 1fr}
+    .stats .grid{grid-template-columns:repeat(2,1fr)}
+    .stats .cell:nth-child(3){border-left:0}
+    .stats .cell{border-bottom:1px solid var(--border)}
+    .stats .cell:nth-child(n+3){border-bottom:0}
+  }
+  @media (max-width:640px){
+    .nav-links{position:absolute;top:70px;left:0;right:0;flex-direction:column;background:var(--panel);
+      border-bottom:1px solid var(--border);padding:8px 12px 14px;display:none;box-shadow:var(--shadow-lg)}
     .nav-links.open{display:flex}
-    .nav-links a{padding:11px 12px}
-    .ham{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;border:1px solid var(--border);
-      background:var(--panel);color:var(--text);cursor:pointer;font-size:18px}
+    .nav-links a{padding:12px 14px;border-radius:10px}
+    #hamBtn{display:grid !important}
+    .feat{grid-template-columns:1fr}
+    .docgrid{grid-template-columns:1fr}
+    .stats .grid{grid-template-columns:1fr 1fr}
+    .hero h1{font-size:33px}
+    .hero .sub{font-size:15.5px}
+    .float-a{top:-14px;right:-4px;padding:10px 13px;font-size:12px}
+    .float-b{bottom:-16px;left:-4px;padding:10px 13px;font-size:12px}
+    .hero-actions .btn-primary,.hero-actions .btn-outline{flex:1;justify-content:center}
+    .foot-grid{grid-template-columns:1fr}
+    .cta{padding:40px 24px}
   }
 </style>
+
 </head>
 <body>
 
 <!-- ================= 导航 ================= -->
-<header class="navbar">
+<header class="navbar" id="navbar">
   <div class="wrap nav-inner">
-    <button class="ham" id="hamBtn" aria-label="菜单">☰</button>
-    <a class="brand" href="#top" style="display:flex;align-items:center;gap:11px">
-      <span class="logo"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+    <a class="brand" href="#top" style="display:flex;align-items:center;gap:12px">
+      <span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a2 2 0 1 0 0 .01"/><path d="M16.5 7.5a6.36 6.36 0 0 1 0 9"/><path d="M7.5 7.5a6.36 6.36 0 0 0 0 9"/></svg></span>
       <span>BR4INLOG<small>济南黄河业余无线电台网</small></span>
     </a>
+    <button class="icon-btn" id="hamBtn" style="display:none" aria-label="菜单">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <nav class="nav-links" id="navLinks">
       <a href="#features">功能特性</a>
+      <a href="#live">实况大屏</a>
       <a href="#start">快速开始</a>
       <a href="#docs">文档</a>
       <a href="manual.html">使用说明书</a>
       <a href="https://github.com/BI4IVE/Amateur-radio-network-log/releases" target="_blank" rel="noopener">更新日志</a>
     </nav>
     <div class="nav-right">
-      <button class="btn-ghost" id="themeBtn" title="切换深浅色">
+      <button class="icon-btn" id="themeBtn" title="切换深浅色" aria-label="切换深浅色">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic-moon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ic-sun" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       </button>
-      <a class="btn-ghost" href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener" title="GitHub">
+      <a class="btn-ghost" href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.17c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.34.96.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.66.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
-        <span style="display:inline-block;min-width:0">GitHub</span>
+        <span>GitHub</span>
       </a>
     </div>
   </div>
 </header>
 
+<main id="top">
 <!-- ================= Hero ================= -->
-<div class="hero" id="top">
+<div class="hero">
   <div class="wrap">
-    <div class="hero-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 12a2 2 0 1 0 0 .01"/><path d="M16.5 7.5a6.36 6.36 0 0 1 0 9"/><path d="M7.5 7.5a6.36 6.36 0 0 0 0 9"/>
-        <path d="M20.5 4.5a11.5 11.5 0 0 1 0 15"/><path d="M3.5 4.5a11.5 11.5 0 0 0 0 15"/><circle cx="12" cy="12" r="13" opacity=".25"/>
-      </svg>
-    </div>
     <div>
-      <span class="hero-tag"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> v1.5.20 已发布 · MIT 开源</span>
-      <h1>济南黄河业余无线电台网<br /><span class="accent">主控日志系统</span></h1>
-      <p class="sub">专为业余无线电台网场景设计的现代化日志系统：一键开台网、呼号联想快速录入、SSE 多主控实时协作、实况大屏与参与证书，部署即用。</p>
+      <span class="hero-tag"><span class="dot"></span> v1.5.20 已发布 · MIT 开源 · 全新后台菜单分组</span>
+      <h1>把每一次台网<br/>留在 <span class="accent">清晰的日志里</span></h1>
+      <p class="sub">面向业余无线电台网场景的现代化主控日志系统：一键开台网、<b>呼号联想快速录入</b>、SSE 多主控实时协作、实况大屏与参与证书。开源免费，<b>部署即用</b>。</p>
       <div class="hero-actions">
         <a class="btn-primary" href="manual.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-          开始使用（说明书）
+          开始使用
         </a>
-        <a class="btn-ghost-lg" href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener">
+        <a class="btn-outline" href="#features">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          了解功能
+        </a>
+        <a class="btn-outline" href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.17c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.34.96.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.66.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
           查看源码
         </a>
       </div>
-      <div class="badges">
-        <span>当前版本 <b>v1.5.20</b></span><span>Next.js 16</span><span>React 19</span><span>TypeScript</span>
-        <span>Node.js 24</span><span>PostgreSQL 14+</span><span>SSE 实时</span><span>Docker 可用</span>
+      <div class="hero-badges">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>当前版本 v1.5.20</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Next.js 16 · React 19</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>PostgreSQL 14+</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>SSE 实时协作</span>
+      </div>
+    </div>
+
+    <!-- 界面示意 -->
+    <div class="stage">
+      <div class="glow"></div>
+      <div class="shot">
+        <div class="bar"><i></i><i></i><i></i><span class="addr">https://www.439110.cn/</span></div>
+        <div class="body">
+          <div class="top"><span class="live"><i></i>LIVE · 实况中</span><span class="freq">439.650 MHz · FM</span></div>
+          <div class="net">
+            <div><small>本场会话</small><b>济南黄河 · 第 2046 期</b><em>开始于 20:30 · 已进行 42 分钟</em></div>
+            <div><small>主控</small><b>BI4IVE</b><em>设备 威诺N-7500 · 1.2米棒杆天线</em></div>
+          </div>
+          <div class="feed-head"><span>实时上联记录</span><span class="n">● 接入 18 位友台</span></div>
+          <div class="rows">
+            <div class="row"><span class="cs">BH4IQZ</span><span class="tag">泰安</span><span class="sig"><i></i><i></i><i></i><i></i><i></i></span></div>
+            <div class="row r2"><span class="cs">BG4NMT</span><span class="tag">泰安</span><span class="sig"><i></i><i></i><i></i><i></i><i></i></span></div>
+            <div class="row r3"><span class="cs">BD4JN</span><span class="tag">济南</span><span class="sig"><i></i><i></i><i></i><i></i><i></i></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="float-badge float-a">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span><b>Excel 一键导出</b><small>带样式 · 可直接归档</small></span>
+      </div>
+      <div class="float-badge float-b">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span><b>呼号参与证书</b><small>参与即自动沉淀</small></span>
       </div>
     </div>
   </div>
 </div>
 
+<!-- ================= 统计条 ================= -->
+<div class="stats">
+  <div class="wrap">
+    <div class="grid">
+      <div class="cell"><div class="num">v1.5.20</div><div class="lbl">持续迭代的当前版本</div></div>
+      <div class="cell"><div class="num">12+</div><div class="lbl">覆盖台网闭环的核心功能</div></div>
+      <div class="cell"><div class="num">15 章</div><div class="lbl">在线使用说明书 · 全文搜索</div></div>
+      <div class="cell"><div class="num">4 种</div><div class="lbl">部署路线 · 含 Docker</div></div>
+    </div>
+  </div>
+</div>
+
 <!-- ================= 功能特性 ================= -->
-<section class="block" id="features">
+<section class="block sec" id="features">
   <div class="wrap">
     <div class="sec-head">
       <span class="kicker">Features</span>
-      <h2>一个台网，全部搞定</h2>
-      <p>从开台网、录入、协作到大屏、统计、证书，覆盖台网日志的完整闭环。</p>
+      <h2>从开台到归档，覆盖台网完整闭环</h2>
+      <p>录入、协作、呈现、管理一个不少 —— 为“业余、但绝不业余”的每一次台网而生。</p>
     </div>
-    <div class="grid">
-      <div class="card">
+    <div class="feat">
+      <div class="fcard reveal">
+        <span class="no">01</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-        <div><h3>台网会话管理</h3><p>一键创建会话并登记主控呼号、设备、天线与 QTH；支持台网预告与开台倒计时，历史场次随时回看。</p></div>
+        <h3>台网会话管理</h3>
+        <p>一键创建会话并登记主控呼号、设备、天线与 QTH；支持台网预告与开台倒计时，历史场次随时回看。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">02</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
-        <div><h3>呼号联想快速录入</h3><p>输入呼号自动联想参与人员库与历史记录，设备、QTH 一键填充；Ctrl+Enter 快捷提交，录入飞快。</p></div>
+        <h3>呼号联想录入</h3>
+        <p>输入呼号自动联想参与人员库与历史记录，设备、QTH 一键填充；Ctrl+Enter 快捷提交，录入飞快。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">03</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>
-        <div><h3>SSE 多主控实时协作</h3><p>基于 Server-Sent Events，多主控同时录入即时互见，30 秒心跳保活，不怕断网丢记录。</p></div>
+        <h3>SSE 多主控协作</h3>
+        <p>基于 Server-Sent Events，多主控同时录入即时互见，30 秒心跳保活，不怕断网丢记录。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">04</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-        <div><h3>参与人员库</h3><p>集中维护呼号、姓名、设备与 QTH 资料，支持 Excel 批量导入；录入记录即自动沉淀，越用越聪明。</p></div>
+        <h3>参与人员库</h3>
+        <p>集中维护呼号、姓名、设备与 QTH 资料，支持 Excel 批量导入；录入记录自动沉淀，越用越聪明。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">05</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></span>
-        <div><h3>设备库管理</h3><p>独立设备库，支持增删改查与 Excel/CSV 批量导入导出，还可一键从历史记录收编设备，统一口径。</p></div>
+        <h3>设备库管理</h3>
+        <p>独立设备库，支持增删改查与 Excel/CSV 批量导入导出，还可一键从历史记录收编设备，统一口径。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">06</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
-        <div><h3>带样式 Excel 导出</h3><p>xlsx-js-style 生成排版规范的报表：标题加粗居中、表头蓝底白字、列宽行高自动适配，可直接归档交付。</p></div>
+        <h3>Excel 归档导出</h3>
+        <p>xlsx-js-style 生成排版规范的报表：标题加粗居中、表头蓝底白字、列宽行高自动适配，可直接归档交付。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">07</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-        <div><h3>呼号查询与参与证书</h3><p>按呼号查看近一年全部台网记录与参与次数，自动生成可打印的参与证书，呼号直达 URL 方便分享。</p></div>
+        <h3>呼号查询与证书</h3>
+        <p>按呼号查看近一年全部台网记录与参与次数，自动生成可打印的参与证书，呼号直达 URL 方便分享。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">08</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
-        <div><h3>台网统计与数据看板</h3><p>总会话数、参与人数、呼号排行、按周活跃分布一目了然；支持区间筛选与 CSV 导出，运营决策有据可依。</p></div>
+        <h3>统计与数据看板</h3>
+        <p>总会话数、参与人数、呼号排行、按周活跃分布一目了然；支持区间筛选与 CSV 导出，运营决策有据可依。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">09</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
-        <div><h3>实况大屏（横竖屏）</h3><p>/live 页面 SSE 实时滚动在网呼号与最新记录，支持电脑横屏与手机竖屏，直接投屏电视、会场大屏。</p></div>
+        <h3>实况大屏投放</h3>
+        <p>/live 页面 SSE 实时滚动在网呼号与最新记录，支持电脑横屏与手机竖屏，直接投屏电视、会场大屏。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">10</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-        <div><h3>角色权限与安全</h3><p>管理员 / 主控双角色分级，后台按角色自动过滤菜单；登录态加密 Cookie，操作均有审计留痕，回收站可恢复。</p></div>
+        <h3>权限与审计安全</h3>
+        <p>管理员 / 主控双角色分级，后台按角色自动过滤菜单；登录态加密 Cookie，操作均有审计留痕，回收站可恢复。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">11</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span>
-        <div><h3>页面配置实时生效</h3><p>站点文案、版本号、联系方式、可编辑时限等后台在线修改，保存即时生效无需重启，不用改代码即可运营。</p></div>
+        <h3>页面配置实时生效</h3>
+        <p>站点文案、版本号、联系方式、可编辑时限等后台在线修改，保存即时生效无需重启，不用改代码即可运营。</p>
       </div>
-      <div class="card">
+      <div class="fcard reveal">
+        <span class="no">12</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
-        <div><h3>台网历史管理</h3><p>管理员可补录与修正任意历史场次，支持指定日期整场新增、Excel/CSV 批量导入，历史数据一键迁移入库。</p></div>
+        <h3>台网历史管理</h3>
+        <p>管理员可补录与修正任意历史场次，支持指定日期整场新增、Excel/CSV 批量导入，历史数据一键迁移入库。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 实况大屏 ================= -->
+<section class="block sec" id="live" style="padding-top:8px">
+  <div class="wrap">
+    <div class="spot">
+      <div class="side reveal">
+        <span class="kicker" style="margin-bottom:14px">Live Screen</span>
+        <h2>会场氛围，交给实况大屏</h2>
+        <p>把当场上联滚动投到电视与会场，在场友台实时“上墙”，参与感直接拉满。</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>最新记录 <b>秒级 SSE 实时滚动</b>，不漏掉任何一位友台</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>电脑<b>横屏</b>、手机<b>竖屏</b>两套布局自动适配</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>QTH 匿名可开可关，<b>保护隐私</b>灵活可控</span></li>
+        </ul>
+        <div class="side-actions">
+          <a class="btn-primary" href="manual.html">查看使用说明</a>
+          <a class="btn-outline" href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener">了解原理</a>
+        </div>
+      </div>
+      <div class="mock-side reveal">
+        <div class="screen">
+          <div class="head"><i></i><i></i><i></i><span class="t">BR4IN · LIVE SCREEN</span></div>
+          <div class="sc">
+            <div class="big">BI4IVE</div>
+            <div class="count"><i></i> 正在呼号轮播 · 在网 48 位友台</div>
+            <div class="tile"><b>BH4IQZ</b><span>泰安</span><span class="green">已抄收</span></div>
+            <div class="tile"><b>BG4NMT</b><span>泰安</span><span class="green">已抄收</span></div>
+            <div class="tile"><b>BD4JN</b><span>济南</span><span class="green">已抄收</span></div>
+            <div class="eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ================= 快速开始 ================= -->
-<section class="block" id="start">
+<section class="block sec" id="start">
   <div class="wrap">
     <div class="start-panel">
-      <div>
+      <div class="reveal">
         <span class="kicker">Quick Start</span>
         <h2>5 分钟跑起来</h2>
         <p class="desc">环境要求：Node.js 24+、pnpm 9+、PostgreSQL 14+，内存 ≥ 2GB。支持宝塔面板、传统 Linux 与 Docker 多种部署方式。</p>
-        <ul class="start-list">
-          <li>克隆仓库并安装依赖</li>
-          <li>创建数据库并配置 .env（含 JWT_SECRET）</li>
-          <li>执行建表迁移，首次访问自动初始化管理员</li>
-          <li>启动后访问 http://localhost:5000</li>
+        <ul class="steps">
+          <li><span class="t"><b>克隆仓库并安装依赖</b><span>git clone + pnpm install</span></span></li>
+          <li><span class="t"><b>创建数据库并配置 .env</b><span>含 DATABASE_URL 与 JWT_SECRET</span></span></li>
+          <li><span class="t"><b>执行建表迁移</b><span>首次访问自动初始化管理员</span></span></li>
+          <li><span class="t"><b>启动并访问</b><span>http://localhost:5000 即可开台网</span></span></li>
         </ul>
-        <div class="hero-actions" style="margin-top:22px">
-          <a class="btn-primary" href="manual.html">完整使用说明书</a>
-          <a class="btn-ghost-lg" href="https://github.com/BI4IVE/Amateur-radio-network-log#readme" target="_blank" rel="noopener">README · 项目文档</a>
-        </div>
       </div>
-      <pre class="code"><code><span class="cm"># 1. 克隆</span>
+      <div class="reveal">
+        <div class="codebox">
+          <div class="cbar"><i></i><i></i><i></i><span class="t">terminal · zsh</span></div>
+          <pre><span class="cm"># 1. 克隆</span>
 git clone https://github.com/BI4IVE/Amateur-radio-network-log.git
 cd Amateur-radio-network-log
 
 <span class="cm"># 2. 依赖与数据库</span>
 pnpm install
 <span class="p">createdb</span> radio_network_log   <span class="cm"># PostgreSQL</span>
-cp .env.example .env             <span class="cm"># 填 DATABASE_URL/JWT_SECRET</span>
+cp .env.example .env             <span class="cm"># 填 DATABASE_URL / JWT_SECRET</span>
 
 <span class="cm"># 3. 建表并启动</span>
 pnpm db:push
 pnpm dev
-<span class="ok"># → http://localhost:5000</span></code></pre>
+<span class="ok"># → http://localhost:5000</span></pre>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ================= 文档与链接 ================= -->
-<section class="block" id="docs">
+<!-- ================= 文档资源 ================= -->
+<section class="block sec" id="docs" style="padding-top:8px">
   <div class="wrap">
     <div class="sec-head">
       <span class="kicker">Docs &amp; Resources</span>
       <h2>文档与资源</h2>
       <p>无论是第一次部署，还是日常开台网，都能在这里找到答案。</p>
     </div>
-    <div class="link-grid">
-      <a class="link-card" href="manual.html">
-        <span class="t"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>在线使用说明书</span>
+    <div class="docgrid">
+      <a class="dlink reveal" href="manual.html">
+        <span class="t"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>在线使用说明书</span>
         <span class="d">覆盖部署、主控台操作、实况大屏、呼号查询、后台 12 页、页面配置全表与 FAQ 的 15 章完整指南，支持全文搜索与深色模式。</span>
-        <span class="go">打开手册 →</span>
+        <span class="go">打开手册 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </a>
-      <a class="link-card" href="https://github.com/BI4IVE/Amateur-radio-network-log/blob/main/docs/05-deployment.md" target="_blank" rel="noopener">
-        <span class="t"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>部署指南</span>
+      <a class="dlink reveal" href="https://github.com/BI4IVE/Amateur-radio-network-log/blob/main/docs/05-deployment.md" target="_blank" rel="noopener">
+        <span class="t"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>部署指南</span>
         <span class="d">宝塔面板 / 传统 Linux / Docker 四种部署路线，含数据库授权、反向代理、PM2 托管与常见避坑记录。</span>
-        <span class="go">查看部署文档 →</span>
+        <span class="go">查看文档 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </a>
-      <a class="link-card" href="https://github.com/BI4IVE/Amateur-radio-network-log/issues" target="_blank" rel="noopener">
-        <span class="t"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>问题反馈</span>
+      <a class="dlink reveal" href="https://github.com/BI4IVE/Amateur-radio-network-log/issues" target="_blank" rel="noopener">
+        <span class="t"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>问题反馈</span>
         <span class="d">遇到 Bug 或想提需求？欢迎到 GitHub Issues 提交，也可以联系邮箱 bi4ive@br4in.cn。</span>
-        <span class="go">提交 Issue →</span>
+        <span class="go">提交 Issue <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </a>
-      <a class="link-card" href="https://github.com/BI4IVE/Amateur-radio-network-log/releases" target="_blank" rel="noopener">
-        <span class="t"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>版本与更新日志</span>
+      <a class="dlink reveal" href="https://github.com/BI4IVE/Amateur-radio-network-log/releases" target="_blank" rel="noopener">
+        <span class="t"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>版本与更新日志</span>
         <span class="d">从 v1.0.0 到 v1.5.20 的全部变更记录：后台菜单分组重构、实况大屏、设备库、台网历史管理等版本亮点。</span>
-        <span class="go">查看 Releases →</span>
+        <span class="go">查看 Releases <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </a>
     </div>
   </div>
 </section>
 
+<!-- ================= FAQ ================= -->
+<section class="block sec" id="faq" style="padding-top:8px">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="kicker">FAQ</span>
+      <h2>常见问题</h2>
+    </div>
+    <div class="faq">
+      <details class="reveal">
+        <summary><span class="pm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>系统需要什么样的运行环境？</summary>
+        <div class="ans">Node.js 24+、pnpm 9+、PostgreSQL 14+，内存建议 ≥ 2GB。既可跑在宝塔面板等传统主机，也可以用项目内置的 <code>docker-compose.yml</code> 一键拉起全套环境。</div>
+      </details>
+      <details class="reveal">
+        <summary><span class="pm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>开一场台网，主控要操作几步？</summary>
+        <div class="ans">三步：① 创建会话并登记主控呼号/设备/QTH；② 友台上联后录入呼号（联想自动带出资料），回车即提交；③ 结束时可一键导出带样式 Excel，或开启实况大屏现场展示。更多细节见使用说明书“主控台”章节。</div>
+      </details>
+      <details class="reveal">
+        <summary><span class="pm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>历史数据能批量迁入吗？怎么备份？</summary>
+        <div class="ans">可以。后台“台网历史管理”支持指定日期整场新增与 Excel/CSV 批量导入，旧站数据可一次性迁移入库。日常备份推荐使用数据库定时导出，配合系统自带的带样式 Excel 报表即可双保险。</div>
+      </details>
+      <details class="reveal">
+        <summary><span class="pm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>系统开源吗？可以商用或自部署吗？</summary>
+        <div class="ans">MIT License 完全开源，代码在 GitHub 全量可见。允许自由使用、修改、商用与自部署；部署与升级路径详见仓库 <code>docs/05-deployment.md</code> 与在线说明书“版本升级”章节。</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="block" style="padding-top:8px">
+  <div class="wrap">
+    <div class="cta reveal">
+      <h2>准备好开下一场台网了吗？</h2>
+      <p>开源免费，部署即用。查看完整使用说明书，或直接到 GitHub 提 Issue、点 Star 支持持续迭代。</p>
+      <div class="actions">
+        <a class="btn-primary" href="manual.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          开始使用
+        </a>
+        <a class="btn-ghost-w" href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.17c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.34.96.1-.75.4-1.25.72-1.54-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.66.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+          GitHub 主页
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
 <!-- ================= 页脚 ================= -->
 <footer>
   <div class="wrap">
-    <div class="foot">
-      <div class="left">
-        <span class="dot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>
-        BR4INLOG
+    <div class="foot-grid">
+      <div class="foot-col">
+        <div class="fb"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a2 2 0 1 0 0 .01"/><path d="M16.5 7.5a6.36 6.36 0 0 1 0 9"/><path d="M7.5 7.5a6.36 6.36 0 0 0 0 9"/></svg></span>BR4INLOG</div>
+        <p class="about">济南黄河业余无线电台网主控日志系统 —— 开源、免费、可自部署。把每一次空中相遇，都变成清晰可查的日志。</p>
       </div>
-      <div class="mid">济南黄河业余无线电台网主控日志系统 · MIT License<br />Callsign BI4IVE / BR4IN — 73! (Best Regards)</div>
-      <div class="right">
-        <a href="#top">回到顶部</a>
-        <a href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://github.com/BI4IVE/Amateur-radio-network-log/issues" target="_blank" rel="noopener">Issues</a>
+      <div class="foot-col">
+        <h4>指南</h4>
+        <ul>
+          <li><a href="manual.html">使用说明书</a></li>
+          <li><a href="#start">快速开始</a></li>
+          <li><a href="#faq">常见问题</a></li>
+          <li><a href="https://github.com/BI4IVE/Amateur-radio-network-log/blob/main/docs/05-deployment.md" target="_blank" rel="noopener">部署指南</a></li>
+        </ul>
       </div>
+      <div class="foot-col">
+        <h4>项目</h4>
+        <ul>
+          <li><a href="#features">功能特性</a></li>
+          <li><a href="#live">实况大屏</a></li>
+          <li><a href="https://github.com/BI4IVE/Amateur-radio-network-log/releases" target="_blank" rel="noopener">更新日志</a></li>
+          <li><a href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener">GitHub 仓库</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>交流</h4>
+        <ul>
+          <li><a href="https://github.com/BI4IVE/Amateur-radio-network-log/issues" target="_blank" rel="noopener">提交 Issue</a></li>
+          <li><a href="mailto:bi4ive@br4in.cn">bi4ive@br4in.cn</a></li>
+          <li><a href="#top">回到顶部</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="year">2026</span> BI4IVE · MIT License</span>
+      <span>73! (Best Regards)</span>
+      <span class="calls">BR4IN · JN0NET</span>
     </div>
   </div>
 </footer>
@@ -382,7 +761,7 @@ pnpm dev
   if(saved==='dark'||(!saved&&sysDark)) root.setAttribute('data-theme','dark');
   function paint(){
     var dark=root.getAttribute('data-theme')==='dark';
-    var m=themeBtn.querySelector('.ic-moon'),s=themeBtn.querySelector('.ic-sun');
+    var m=themeBtn.querySelector('.ic-moon'), s=themeBtn.querySelector('.ic-sun');
     if(m)m.style.display=dark?'none':'block';
     if(s)s.style.display=dark?'block':'none';
   }
@@ -393,9 +772,30 @@ pnpm dev
     paint();
   });
   paint();
+
+  // 移动端菜单
   var ham=document.getElementById('hamBtn'), nav=document.getElementById('navLinks');
   ham.addEventListener('click',function(){nav.classList.toggle('open');});
   nav.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){nav.classList.remove('open');});});
+
+  // 导航滚动阴影
+  var navbar=document.getElementById('navbar');
+  window.addEventListener('scroll',function(){
+    navbar.classList.toggle('scrolled', window.scrollY>6);
+  },{passive:true});
+
+  // 滚动渐显
+  var rvs=document.querySelectorAll('.reveal');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('on'); io.unobserve(en.target);} });
+    },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+    rvs.forEach(function(el){io.observe(el);});
+  }else{
+    rvs.forEach(function(el){el.classList.add('on');});
+  }
+
+  document.getElementById('year').textContent=new Date().getFullYear();
 })();
 </script>
 </body>
