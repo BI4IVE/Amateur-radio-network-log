@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>济南黄河业余无线电台网主控日志系统 · 使用说明书</title>
+<meta name="description" content="BR4INLOG 台网主控日志系统详细使用说明书：部署、主控台操作、实况大屏、呼号查询、管理后台、版本升级与故障排查。" />
+<style>
+  :root{
+    --bg:#f6f7fb; --panel:#ffffff; --panel-2:#f9fafb; --text:#1a1f2e; --text-2:#5b6478; --text-3:#8a93a6;
+    --border:#e5e8ef; --brand:#ff9d3f; --brand-dark:#f08a1f; --brand-soft:#fff4e6;
+    --navy:#141a2e; --indigo:#4f46e5; --indigo-soft:#eef2ff;
+    --green:#16a34a; --green-soft:#eafbf0; --red:#dc2626; --red-soft:#fdecec;
+    --amber:#b45309; --amber-soft:#fff7e6;
+    --code-bg:#f4f6fa; --shadow:0 1px 2px rgba(20,26,46,.06),0 8px 24px rgba(20,26,46,.06);
+    --radius:14px;
+  }
+  html[data-theme="dark"]{
+    --bg:#0e1220; --panel:#151a2b; --panel-2:#1b2135; --text:#e8ebf2; --text-2:#a8b1c4; --text-3:#7d8799;
+    --border:#262d42; --brand:#ffb066; --brand-dark:#ff9d3f; --brand-soft:#2a2115;
+    --navy:#0b0f1c; --indigo:#8b8cf7; --indigo-soft:#1e2140;
+    --green:#4ade80; --green-soft:#12251a; --red:#f87171; --red-soft:#2a1618;
+    --amber:#fbbf24; --amber-soft:#2a2011;
+    --code-bg:#10151f; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; scroll-padding-top:88px}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+  a{color:var(--indigo);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  .topbar{position:fixed;top:0;left:0;right:0;height:60px;z-index:60;display:flex;align-items:center;gap:12px;
+    padding:0 18px;background:var(--panel);border-bottom:1px solid var(--border);backdrop-filter:blur(8px)}
+  .menu-btn{display:none;background:none;border:1px solid var(--border);border-radius:10px;color:var(--text);
+    width:38px;height:38px;cursor:pointer;font-size:18px;line-height:1}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px;white-space:nowrap}
+  .brand .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--brand),#ff7a45);
+    display:grid;place-items:center;color:#1a1f2e;font-size:17px}
+  html[data-theme="dark"] .brand .logo{color:#0e1220}
+  .brand small{display:block;font-weight:500;font-size:11px;color:var(--text-3);letter-spacing:0}
+  .search{position:relative;flex:1;max-width:380px}
+  .search input{width:100%;height:38px;padding:0 36px 0 34px;border-radius:10px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text);font-size:14px;outline:none}
+  .search input:focus{border-color:var(--brand);background:var(--panel)}
+  .search .ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-3);font-size:14px}
+  .search .clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;
+    color:var(--text-3);cursor:pointer;font-size:16px;display:none}
+  .top-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .icon-btn{height:38px;min-width:38px;padding:0 12px;border-radius:10px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text);cursor:pointer;font-size:14px}
+  .icon-btn:hover{border-color:var(--brand)}
+  .ver-chip{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--brand-soft);color:var(--amber);
+    border:1px solid var(--border);font-weight:700}
+
+  .layout{display:flex;padding-top:60px}
+  .sidebar{position:fixed;top:60px;bottom:0;left:0;width:268px;overflow-y:auto;padding:18px 12px 60px;
+    background:var(--panel);border-right:1px solid var(--border);z-index:50}
+  .side-title{font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--text-3);text-transform:uppercase;
+    padding:6px 12px 8px}
+  .sidebar a{display:block;padding:7px 12px;border-radius:9px;color:var(--text-2);font-size:14px;
+    border-left:2px solid transparent}
+  .sidebar a:hover{background:var(--panel-2);color:var(--text);text-decoration:none}
+  .sidebar a.active{background:var(--brand-soft);color:var(--amber);font-weight:700;border-left-color:var(--brand)}
+  .sidebar a.hide{display:none}
+  .content{margin-left:268px;flex:1;min-width:0;padding:26px 34px 120px;max-width:1080px}
+
+  .doc-section{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px 28px;margin-bottom:22px;box-shadow:var(--shadow)}
+  .doc-section.hide{display:none}
+  h1.doc-title{font-size:26px;margin:0 0 6px;letter-spacing:.3px}
+  h2{font-size:22px;margin:0 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;
+    align-items:center;gap:10px}
+  h2 .num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:9px;background:var(--navy);
+    color:#fff;font-size:14px;flex:none}
+  html[data-theme="dark"] h2 .num{background:var(--indigo);color:#0e1220}
+  h3{font-size:17px;margin:26px 0 10px;padding-left:11px;border-left:4px solid var(--brand)}
+  h4{font-size:15px;margin:18px 0 8px;color:var(--text-2)}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:22px}
+  li{margin:5px 0}
+  code{background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:1px 6px;
+    font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--amber)}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:12px;padding:14px 16px;overflow-x:auto;
+    margin:12px 0;font-size:13px;line-height:1.7}
+  pre code{background:none;border:none;padding:0;color:var(--text)}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;display:block;overflow-x:auto}
+  th,td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel-2);font-weight:700;white-space:nowrap}
+  tbody tr:nth-child(even){background:var(--panel-2)}
+  .lead{font-size:16px;color:var(--text-2)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .card{border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--panel-2)}
+  .card b{display:block;margin-bottom:4px}
+  .card span{color:var(--text-2);font-size:14px}
+  .callout{border-radius:12px;padding:13px 16px;margin:14px 0;border:1px solid;font-size:14.5px}
+  .callout b{display:block;margin-bottom:3px}
+  .c-tip{background:var(--green-soft);border-color:rgba(22,163,74,.3);color:var(--green)}
+  .c-warn{background:var(--amber-soft);border-color:rgba(180,83,9,.3);color:var(--amber)}
+  .c-danger{background:var(--red-soft);border-color:rgba(220,38,38,.3);color:var(--red)}
+  .c-info{background:var(--indigo-soft);border-color:rgba(79,70,229,.25);color:var(--indigo)}
+  .callout p{margin:5px 0;color:var(--text)}
+  .callout code{color:inherit}
+  kbd{display:inline-block;padding:1px 7px;border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;
+    background:var(--panel-2);font-size:12px;font-family:inherit;color:var(--text)}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text-2);margin-right:6px}
+  .tag.admin{background:var(--red-soft);color:var(--red);border-color:rgba(220,38,38,.3)}
+  .tag.user{background:var(--indigo-soft);color:var(--indigo);border-color:rgba(79,70,229,.3)}
+  .steps{counter-reset:s;list-style:none;padding-left:0}
+  .steps>li{counter-increment:s;position:relative;padding-left:34px;margin:12px 0}
+  .steps>li::before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;
+    background:var(--brand);color:#1a1f2e;font-size:13px;font-weight:800;display:grid;place-items:center}
+  .path{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+  .yes{color:var(--green);font-weight:700}
+  .no{color:var(--red);font-weight:700}
+  .top-link{font-size:12px;color:var(--text-3);float:right;font-weight:400;margin-top:6px}
+  .hero{background:linear-gradient(135deg,var(--navy),#232c4d);color:#fff;border:none}
+  html[data-theme="dark"] .hero{background:linear-gradient(135deg,#1a2140,#0e1220)}
+  .hero h1{color:#fff;border:none;font-size:30px;margin-bottom:10px}
+  .hero p{color:#cbd3e6}
+  .hero .badges{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .hero .badges span{font-size:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
+    padding:4px 11px;border-radius:999px}
+  .hero code{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18);color:#ffd9a8}
+  #noResult{display:none;text-align:center;padding:60px 20px;color:var(--text-3)}
+  footer{color:var(--text-3);font-size:13px;text-align:center;padding:10px 0 0}
+  .totop{position:fixed;right:22px;bottom:24px;width:44px;height:44px;border-radius:50%;border:1px solid var(--border);
+    background:var(--panel);color:var(--text);cursor:pointer;box-shadow:var(--shadow);display:none;z-index:70;font-size:18px}
+  @media (max-width:900px){
+    .menu-btn{display:block}
+    .sidebar{transform:translateX(-100%);transition:transform .25s ease;width:80%;max-width:300px}
+    .sidebar.open{transform:translateX(0)}
+    .content{margin-left:0;padding:18px 16px 100px}
+    .search{max-width:none}
+    .brand small{display:none}
+    .doc-section{padding:20px 18px}
+  }
+  @media print{
+    .topbar,.sidebar,.totop{display:none}
+    .content{margin:0;max-width:none}
+    .doc-section{box-shadow:none;break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="menu-btn" id="menuBtn" aria-label="菜单">☰</button>
+  <div class="brand">
+    <div class="logo">📡</div>
+    <div>BR4INLOG<small>台网主控日志系统 · 使用说明书</small></div>
+  </div>
+  <div class="search">
+    <span class="ico">🔍</span>
+    <input id="searchInput" type="search" placeholder="搜索说明书内容…" autocomplete="off" />
+    <button class="clear" id="clearBtn" aria-label="清除">×</button>
+  </div>
+  <div class="top-actions">
+    <span class="ver-chip" id="verChip">v1.5.20</span>
+    <button class="icon-btn" id="themeBtn" title="切换深色/浅色">🌙</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="side-title">目录</div>
+    <a href="#overview">① 系统概览</a>
+    <a href="#roles">② 角色与权限</a>
+    <a href="#prepare">③ 环境准备</a>
+    <a href="#deploy">④ 部署安装</a>
+    <a href="#env">⑤ 环境变量</a>
+    <a href="#login">⑥ 登录与账号</a>
+    <a href="#console">⑦ 主控台：创建台网</a>
+    <a href="#record">⑧ 主控台：录入记录</a>
+    <a href="#coop">⑨ 协作 / 编辑 / 导出</a>
+    <a href="#live">⑩ 实况大屏</a>
+    <a href="#query">⑪ 呼号查询</a>
+    <a href="#admin">⑫ 管理后台</a>
+    <a href="#config">⑬ 页面配置项</a>
+    <a href="#upgrade">⑭ 版本升级与回滚</a>
+    <a href="#faq">⑮ 故障排查 FAQ</a>
+    <a href="#appendix">⑯ 附录速查</a>
+  </nav>
+
+  <main class="content" id="content">
+  <section class="doc-section hero" id="overview">
+    <h1 class="doc-title">济南黄河业余无线电台网主控日志系统 · 使用说明书</h1>
+    <p>本说明书面向<strong>台网主控、管理员与部署运维人员</strong>，覆盖从「零开始部署」到「日常开台网、录入、导出、大屏、统计、升级」的全部操作流程。</p>
+    <div class="badges">
+      <span>Next.js 16</span><span>React 19</span><span>Node.js 24</span><span>PostgreSQL 14+</span>
+      <span>MIT 协议</span><span>当前版本 v1.5.20</span>
+    </div>
+    <p style="margin-top:16px">
+      典型一天的使用路径：<code>预告倒计时</code> → <code>创建台网会话</code> → <code>呼号联想快速录入</code> →
+      <code>多人实时协作</code> → <code>实况大屏投屏</code> → <code>导出 Excel 归档</code>。
+    </p>
+  </section>
+
+  <section class="doc-section" id="roles">
+    <h2><span class="num">1</span>系统概览与角色权限<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <p class="lead">系统采用「管理员 + 主控」双角色模型。所有后台页面均受中间件保护，未登录会被重定向到 <span class="path">/login</span>；非管理员访问管理员页面会被重定向回首页。</p>
+
+    <div class="grid g3">
+      <div class="card"><b>🌐 主页 / 主控台 <span class="path">/</span></b><span>创建台网会话、录入记录、导出 Excel，是主控每天唯一需要停留的页面。</span></div>
+      <div class="card"><b>📡 实况大屏 <span class="path">/live</span></b><span>实时滚动在网呼号与最新记录，可投屏电视 / 拼接屏，支持电脑版与竖屏手机版。</span></div>
+      <div class="card"><b>🔍 呼号查询 <span class="path">/query</span></b><span>查询某呼号近一年的参与记录与参与次数，可生成参与证书。</span></div>
+      <div class="card"><b>⚙️ 管理后台 <span class="path">/admin</span></b><span>三大分组：运营中心 / 数据与日志 / 系统管理，共 12 个功能页面。</span></div>
+      <div class="card"><b>🔐 登录 <span class="path">/login</span></b><span>用户名不区分大小写，登录态保存在 httpOnly Cookie，有效期 7 天。</span></div>
+      <div class="card"><b>🔄 实时协作</b><span>基于 SSE（Server-Sent Events），多主控同时录入即时互见，30 秒心跳保活。</span></div>
+    </div>
+
+    <h3>角色权限矩阵</h3>
+    <table>
+      <thead><tr><th>能力</th><th>管理员 admin</th><th>主控 user</th></tr></thead>
+      <tbody>
+        <tr><td>进入管理后台</td><td class="yes">全部页面</td><td>仅「运营中心」分组</td></tr>
+        <tr><td>创建台网会话</td><td class="yes">可指定任意主控</td><td class="yes">仅能创建自己的</td></tr>
+        <tr><td>录入台网记录</td><td class="yes">✔</td><td class="yes">✔（限自己主控的会话）</td></tr>
+        <tr><td>编辑记录</td><td class="yes">✔（含已过期会话）</td><td class="yes">✔（自己主控 + 未过期）</td></tr>
+        <tr><td>删除记录 / 会话</td><td class="yes">✔（软删除，可恢复）</td><td class="no">✘</td></tr>
+        <tr><td>台网历史管理、回收站、登录日志</td><td class="yes">✔</td><td class="no">✘</td></tr>
+        <tr><td>用户管理、设备库、页面配置、版本更新</td><td class="yes">✔</td><td class="no">✘</td></tr>
+        <tr><td>呼号查询、实况大屏</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+      </tbody>
+    </table>
+    <div class="callout c-info"><b>说明</b><p>后台菜单会按角色自动过滤：主控登录后只会看到「运营中心」一组（台网统计、数据看板、主控轮值、台网预告）。</p></div>
+  </section>
+
+  <section class="doc-section" id="prepare">
+    <h2><span class="num">2</span>环境准备<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <table>
+      <thead><tr><th>项目</th><th>要求</th><th>备注</th></tr></thead>
+      <tbody>
+        <tr><td>Node.js</td><td>24.x 及以上</td><td>低于 24 可能构建失败</td></tr>
+        <tr><td>pnpm</td><td>9.x 及以上</td><td><code>npm install -g pnpm</code></td></tr>
+        <tr><td>PostgreSQL</td><td>14.x 及以上</td><td>需有建表权限（public schema）</td></tr>
+        <tr><td>内存</td><td>≥ 2 GB</td><td>构建期峰值较高</td></tr>
+        <tr><td>磁盘</td><td>≥ 1 GB</td><td>不含数据库数据</td></tr>
+        <tr><td>浏览器</td><td>Chrome / Edge / Firefox 最新版</td><td>需支持 SSE 与 ES2020</td></tr>
+      </tbody>
+    </table>
+
+    <h3>获取源码</h3>
+    <pre><code>git clone https://github.com/BI4IVE/Amateur-radio-network-log.git
+cd Amateur-radio-network-log
+pnpm install</code></pre>
+
+    <h3>创建数据库</h3>
+    <pre><code>CREATE DATABASE radio_network_log;</code></pre>
+    <div class="callout c-warn"><b>宝塔用户注意</b><p>若报 <code>permission denied for schema public (42501)</code>，用全路径 psql 授权：<br>
+      <code>/www/server/pgsql/bin/psql "postgresql://用户:密码@127.0.0.1:5432/库名" -c "GRANT ALL ON SCHEMA public TO 用户;"</code></p></div>
+  </section>
+
+  <section class="doc-section" id="deploy">
+    <h2><span class="num">3</span>部署安装（四种方式）<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <table>
+      <thead><tr><th>方式</th><th>适用场景</th><th>难度</th></tr></thead>
+      <tbody>
+        <tr><td>宝塔面板</td><td>国内服务器可视化运维（推荐）</td><td>⭐⭐</td></tr>
+        <tr><td>传统 Linux</td><td>纯命令行 VPS / 云主机</td><td>⭐⭐⭐</td></tr>
+        <tr><td>Docker</td><td>容器化 / 一键迁移</td><td>⭐⭐</td></tr>
+        <tr><td>Coze Coding</td><td>已弃用，仅历史参考</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <h3>方式一：宝塔面板（推荐）</h3>
+    <ol class="steps">
+      <li>安装 <b>Nginx</b>、<b>Node.js 24</b>、<b>PostgreSQL 14</b>、<b>PM2</b> 四件套。</li>
+      <li>「数据库」→ 添加数据库，名称如 <code>radio_network_log</code>，记下用户名密码。</li>
+      <li>「文件」→ 在 <span class="path">/www/wwwroot/</span> 建项目目录并上传 / 解压源码。</li>
+      <li>终端进入目录执行 <code>pnpm install</code>。</li>
+      <li>创建 <span class="path">.env</span>（见「环境变量」一节）。<b>注意：</b>不要用 <code>cp .env.example .env</code>，非交互终端会被覆盖确认打断，建议用 <code>cat &gt; .env</code> 强制写入。</li>
+      <li>执行 <code>pnpm db:push</code> 建表。</li>
+      <li>执行 <code>pnpm build</code> 构建产物。</li>
+      <li>PM2 启动：<code>pm2 start npm --name "radio-log" -- start</code>，然后 <code>pm2 save</code> 与 <code>pm2 startup</code>。</li>
+      <li>「网站」→ 添加站点 → 纯静态 → 配置文件改为下面的反向代理。</li>
+      <li>申请 Let's Encrypt SSL 并开启强制 HTTPS。</li>
+      <li>浏览器访问域名，用 <code>ADMIN</code> + <code>ADMIN_INIT_PASSWORD</code> 登录。</li>
+    </ol>
+
+    <div class="callout c-danger"><b>宝塔避坑：PM2 与宝塔「Node 项目」二选一</b>
+      <p>两者都会监听同一端口导致 <code>EADDRINUSE</code>。推荐只用 PM2（本项目）或只用宝塔 Node 项目托管，不要并存。宝塔 Node 项目底层不是全局 pm2，<code>pm2 list</code> 看不到它。</p></div>
+
+    <h4>Nginx 反向代理（务必带 SSE 与真实 IP 头）</h4>
+    <pre><code>server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+    }
+}</code></pre>
+    <div class="callout c-warn"><b>为什么必须加 X-Real-IP 与 proxy_buffering off</b><p>登录限流按 IP 统计，缺失会导致所有人被当成同一个 IP 而触发「登录尝试次数过多」；关闭缓冲才能保证 SSE 实时推送不被积压。</p></div>
+
+    <h3>方式二：传统 Linux</h3>
+    <pre><code>cd /var/www/radio-log
+pnpm install
+pnpm db:push
+pnpm build
+pm2 start npm --name "radio-log" -- start
+pm2 save &amp;&amp; pm2 startup
+ufw allow 80/tcp &amp;&amp; ufw allow 443/tcp</code></pre>
+
+    <h3>方式三：Docker（含 Postgres）</h3>
+    <pre><code>services:
+  app:
+    build: .
+    ports: ["5000:5000"]
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/radio_network_log
+      - NODE_ENV=production
+      - JWT_SECRET=请替换为随机生成的强密钥
+      - ADMIN_INIT_PASSWORD=你的初始管理员密码
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=radio_network_log
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes: ["postgres_data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d radio_network_log"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+volumes:
+  postgres_data:</code></pre>
+    <pre><code>docker-compose up -d
+docker-compose logs -f app</code></pre>
+    <div class="callout c-tip"><b>提示</b><p>务必先创建 <span class="path">.dockerignore</span> 排除 <code>.env</code>、<code>node_modules</code>、<code>.next</code>、<code>.git</code>，避免密钥被打进镜像。</p></div>
+
+    <h3>首次初始化管理员</h3>
+    <p>管理员账号由系统自动初始化：用户名固定为 <code>ADMIN</code>（大写），密码取自环境变量 <code>ADMIN_INIT_PASSWORD</code>。</p>
+    <div class="callout c-danger"><b>安全提醒</b><p>自 v1.5.1 起 <span class="path">/api/users</span> 创建接口要求管理员权限，<b>不能再用 curl 匿名创建管理员</b>；<span class="path">/api/reset-admin</span> 已永久删除。请配置好 <code>ADMIN_INIT_PASSWORD</code> 后访问首页完成初始化，并尽快在「用户管理」中修改密码。</p></div>
+  </section>
+  <section class="doc-section" id="env">
+    <h2><span class="num">4</span>环境变量（.env）<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <table>
+      <thead><tr><th>变量</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>DATABASE_URL</code></td><td class="yes">✔</td><td>如 <code>postgresql://user:pass@localhost:5432/radio_network_log</code></td></tr>
+        <tr><td><code>JWT_SECRET</code></td><td class="yes">✔</td><td>JWT 签名密钥。<b>v1.5.13 起缺失将直接拒绝启动</b>。生成：<code>openssl rand -base64 48</code></td></tr>
+        <tr><td><code>ADMIN_INIT_PASSWORD</code></td><td class="yes">✔</td><td>初始化 <code>ADMIN</code> 账号的初始密码，同时作为 <span class="path">/api/init</span> 的校验令牌</td></tr>
+        <tr><td><code>PORT</code></td><td>推荐</td><td>服务监听端口，默认 5000，需与 Nginx 反代一致</td></tr>
+        <tr><td><code>NODE_ENV</code></td><td>推荐</td><td>生产环境设为 <code>production</code></td></tr>
+        <tr><td><code>FORCE_SECURE_COOKIE</code></td><td>可选</td><td>站点为 HTTPS 时设为 <code>true</code>，Cookie 才会带 <code>Secure</code> 属性</td></tr>
+        <tr><td><code>UPGRADE_MANIFEST_URL</code></td><td>可选</td><td>在线版本检测清单地址，默认指向 GitHub raw 的 <span class="path">version/upgrade-manifest.json</span></td></tr>
+      </tbody>
+    </table>
+    <h4>完整示例</h4>
+    <pre><code>DATABASE_URL=postgresql://radio_user:your_password@localhost:5432/radio_network_log
+PORT=5000
+NODE_ENV=production
+JWT_SECRET=用 openssl rand -base64 48 生成的随机强密钥
+ADMIN_INIT_PASSWORD=你的初始管理员密码
+FORCE_SECURE_COOKIE=true
+UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-network-log/main/version/upgrade-manifest.json</code></pre>
+    <div class="callout c-warn"><b>服务器 .env 行尾带 CR</b><p>用脚本 <code>grep</code> / <code>cut</code> 取值时记得去除回车，否则密码会多出不可见字符导致连不上库。</p></div>
+  </section>
+
+  <section class="doc-section" id="login">
+    <h2><span class="num">5</span>登录与账号<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <ol class="steps">
+      <li>浏览器访问站点根路径，未登录会自动跳转到 <span class="path">/login</span>。</li>
+      <li>输入用户名与密码，点击「登录」。</li>
+      <li>登录成功写入本地用户信息并跳转首页 <span class="path">/</span>。</li>
+      <li>退出登录请点右上角「退出」，服务端清除 httpOnly Cookie 后回到登录页。</li>
+    </ol>
+
+    <div class="grid g2">
+      <div class="card"><b>用户名大小写</b><span>不敏感（服务端用 SQL <code>LOWER()</code> 匹配），<code>bi4ive</code> 与 <code>BI4IVE</code> 等价。呼号输入则自动转大写。</span></div>
+      <div class="card"><b>登录态有效期</b><span>Cookie 名 <code>token</code>，httpOnly + SameSite=Lax，有效期 7 天。</span></div>
+      <div class="card"><b>IP 限流</b><span>同一 IP 每分钟最多 10 次登录尝试，超出返回「登录尝试次数过多，请稍后再试」。</span></div>
+      <div class="card"><b>账号锁定</b><span>同一账号 15 分钟内连续失败 5 次，锁定 15 分钟：「该账号已被临时锁定，请 15 分钟后再试」。</span></div>
+    </div>
+
+    <h3>修改密码（管理员）</h3>
+    <p>「系统管理 → 用户管理」中找到目标用户 →「修改密码」，输入新密码保存即可。普通主控如需改密，请联系管理员。</p>
+    <div class="callout c-tip"><b>口令存储</b><p>系统使用 bcrypt 哈希存储。若库中存有早期明文密码，该用户下次登录成功时会自动升级为哈希。</p></div>
+  </section>
+
+  <section class="doc-section" id="console">
+    <h2><span class="num">6</span>主控台（一）：创建台网会话<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <p class="lead">首页 <span class="path">/</span> 自上而下分为：页头按钮区 → 台网预告倒计时 → 台网主控人员信息卡 → （创建会话后）左「记录录入」/ 右「记录列表」。</p>
+
+    <h3>页头按钮</h3>
+    <table>
+      <thead><tr><th>按钮</th><th>跳转 / 作用</th><th>可见性</th></tr></thead>
+      <tbody>
+        <tr><td>呼号查询</td><td><span class="path">/query</span></td><td>所有人</td></tr>
+        <tr><td>台网统计</td><td><span class="path">/admin/stats</span></td><td>仅管理员</td></tr>
+        <tr><td>管理工具</td><td><span class="path">/admin/tools</span></td><td>仅管理员</td></tr>
+        <tr><td>清理缓存</td><td>清除本地缓存 + 注销 Service Worker 后强刷</td><td>所有人（<b>不删服务器数据</b>）</td></tr>
+        <tr><td>退出</td><td>登出并回到 <span class="path">/login</span></td><td>所有人</td></tr>
+      </tbody>
+    </table>
+
+    <h3>台网预告倒计时</h3>
+    <p>卡片自动显示最近一条「未来台网预告」：主题、时间、主控、天 / 时 / 分 / 秒倒计时，每秒刷新、每 30 秒重新拉取。倒计时归零后显示「台网时间已到」，<b>管理员</b>会额外看到一个「开始台网」按钮，点击后自动跳转实况大屏。</p>
+    <p>预告由管理员在「运营中心 → 台网预告」创建（主题 + 时间 + 主控），新建后首页与大屏自动生效。</p>
+
+    <h3>创建台网会话</h3>
+    <ol class="steps">
+      <li>在「台网主控人员信息」卡填写：<b>主控人员</b>（管理员可从下拉选择任意主控；主控角色自动锁定为自己）、<b>台网时间</b>（默认当前北京时间）、<b>主呼号</b>、<b>设备</b>、<b>天线</b>、<b>QTH</b>。</li>
+      <li>「使用数据库中的信息」开关默认开启：选择主控后自动回填其设备 / 天线 / QTH。</li>
+      <li>点击「创建新会话」，弹出「新台网会话已创建」即成功，右侧出现「会话ID」。</li>
+      <li>会话创建后，页面下半部分才会出现录入表单与记录列表。</li>
+    </ol>
+
+    <div class="grid g2">
+      <div class="card"><b>🕐 时区</b><span>所有时间均为北京时间（UTC+8）：前端按北京时区显示，入库时转换为 UTC 存储。</span></div>
+      <div class="card"><b>📅 一天一场</b><span>同一北京日期只允许一场台网。重复创建会提示「今天已存在台网记录，无法重复录入」，请到「台网历史管理」修改已有记录。</span></div>
+    </div>
+
+    <h3>加入已有会话</h3>
+    <p>点击「查看当前台网」，弹出活跃会话列表（系统已自动过滤过期会话），显示主控、台网时间、QTH、设备、天线，点「加入会话」即可加入协作。列表为空时提示「当前没有活跃的台网会话」。</p>
+    <div class="callout c-info"><b>没有「结束会话」按钮</b><p>系统未提供手动结束入口。会话会随可编辑时限自动过期；如需切换，加入另一个会话或直接退出登录即可。</p></div>
+  </section>
+
+  <section class="doc-section" id="record">
+    <h2><span class="num">7</span>主控台（二）：录入台网记录<a class="top-link" href="#overview">↑ 顶部</a></h2>
+
+    <h3>字段与必填</h3>
+    <table>
+      <thead><tr><th>字段</th><th>必填</th><th>联想来源</th></tr></thead>
+      <tbody>
+        <tr><td>呼号</td><td class="yes">✔</td><td>参与人员库（输入 ≥ 2 个字符触发）</td></tr>
+        <tr><td>QTH</td><td class="yes">✔</td><td>历史记录（输入 ≥ 1 个字符触发）</td></tr>
+        <tr><td>设备</td><td>选填</td><td>历史记录 <b>+</b> 设备库（设备库结果优先）</td></tr>
+        <tr><td>天馈</td><td class="yes">✔</td><td>历史记录</td></tr>
+        <tr><td>功率</td><td class="yes">✔</td><td>历史记录</td></tr>
+        <tr><td>信号</td><td class="yes">✔</td><td>历史记录</td></tr>
+        <tr><td>报告</td><td>选填</td><td>历史记录</td></tr>
+        <tr><td>备注</td><td>选填</td><td>历史记录（多行文本框）</td></tr>
+      </tbody>
+    </table>
+    <div class="callout c-tip"><b>自动大写</b><p>呼号等输入自动转为大写，无需手动切换大小写。</p></div>
+
+    <h3>键盘快捷键</h3>
+    <table>
+      <thead><tr><th>按键</th><th>作用</th></tr></thead>
+      <tbody>
+        <tr><td><kbd>Ctrl</kbd> + <kbd>Enter</kbd></td><td>提交当前记录（页面任意位置生效）</td></tr>
+        <tr><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>在联想下拉中上下移动高亮项</td></tr>
+        <tr><td><kbd>Enter</kbd></td><td>选中当前高亮的联想项（不会误提交）</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>关闭联想下拉</td></tr>
+      </tbody>
+    </table>
+
+    <h3>标准录入流程</h3>
+    <ol class="steps">
+      <li>光标定位到呼号框（提交后系统会自动把焦点送回这里，方便连续录入）。</li>
+      <li>输入呼号前两位，出现联想列表，用 <kbd>↑</kbd><kbd>↓</kbd> 选择、<kbd>Enter</kbd> 确认。</li>
+      <li>选中历史参与者后，QTH / 设备 / 天馈 / 功率 / 信号 / 报告 / 备注会自动回填（受「使用数据库中的信息」开关控制）。</li>
+      <li>按需微调信号与报告，按 <kbd>Ctrl</kbd>+<kbd>Enter</kbd> 或点击「添加记录 (Ctrl+Enter)」。</li>
+      <li>提示「记录已添加并更新参与人员库」（或「记录已添加并创建新参与人员」），右侧列表立即出现新记录。</li>
+    </ol>
+    <div class="callout c-info"><b>参与人员库自动维护</b><p>每次录入都会 upsert 参与人员：已存在则更新设备 / QTH 等资料，不存在则新建。这就是呼号联想越用越好用的原因。</p></div>
+
+    <h3>必填校验提示原文</h3>
+    <p>缺少必填项时依次弹出：<code>请输入呼号</code>、<code>请输入QTH</code>、<code>请输入天馈</code>、<code>请输入功率</code>、<code>请输入信号</code>。未创建会话就录入会提示 <code>请先创建台网会话</code>。</p>
+  </section>
+  <section class="doc-section" id="coop">
+    <h2><span class="num">8</span>实时协作 · 编辑删除 · 导出<a class="top-link" href="#overview">↑ 顶部</a></h2>
+
+    <h3>多主控实时协作（SSE）</h3>
+    <p>进入会话后浏览器建立 <code>/api/sse/session/{会话ID}/subscribe</code> 长连接，服务端每 30 秒发送心跳保活。任一主控新增 / 修改 / 删除记录，其他主控页面<b>无需刷新</b>即时同步（事件类型：<code>record_added</code>、<code>record_updated</code>、<code>record_deleted</code>）。</p>
+    <div class="callout c-warn"><b>实时同步失效排查</b><p>多为反向代理缓冲了 SSE。请确认 Nginx 配置中含有 <code>proxy_buffering off;</code> 与 <code>proxy_http_version 1.1;</code>。</p></div>
+
+    <h3>可编辑时限</h3>
+    <p>后台「页面配置」中的 <code>session_edit_hours</code> 控制台网可编辑时长，<b>默认 6 小时，填 0 表示不限制</b>。前端每 60 秒复检一次，过期后记录列表顶部出现红色提示条：</p>
+    <pre><code>会话已超过可编辑时限，无法添加、更新或删除记录</code></pre>
+    <p>管理员不受时限限制，可随时在「数据与日志 → 台网历史管理」中补录或修改任意记录。</p>
+
+    <h3>编辑与删除</h3>
+    <table>
+      <thead><tr><th>操作</th><th>管理员</th><th>主控</th></tr></thead>
+      <tbody>
+        <tr><td>编辑按钮</td><td class="yes">显示</td><td class="yes">显示（限自己主控的会话 + 未过期）</td></tr>
+        <tr><td>删除按钮</td><td class="yes">显示</td><td class="no">不显示</td></tr>
+      </tbody>
+    </table>
+    <p>删除为<b>软删除</b>（写入 <code>deleted_at</code> 并记审计日志），确认框文案为「确定要删除这条记录吗？」，成功提示「记录已删除」。误删可到「数据与日志 → 回收站/审计」一键恢复。</p>
+    <p>越权操作提示：<code>您没有权限操作此台网记录</code>、<code>您没有权限编辑此记录</code>。</p>
+
+    <h3>导出 Excel</h3>
+    <p>记录列表右上角「导出Excel」，导出当前会话全部记录：</p>
+    <table>
+      <thead><tr><th>项目</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>文件名</td><td><code>台网日志_YYYY-MM-DD.xlsx</code></td></tr>
+        <tr><td>工作表</td><td>单 sheet「台网记录」</td></tr>
+        <tr><td>表头信息</td><td>「济南黄河业余无线电中继台」+「{日期}台网」+ 主控 / 时间 / QTH / 设备 / 天线 / 记录总数</td></tr>
+        <tr><td>数据列</td><td>序号、呼号、QTH、设备、天馈、功率、信号、报告、备注、时间</td></tr>
+        <tr><td>样式</td><td>标题加粗居中、表头蓝底白字加边框、自动列宽行高</td></tr>
+      </tbody>
+    </table>
+    <div class="callout c-info"><b>导出无反应？</b><p>先确认已创建 / 加入会话（无会话提示「没有可导出的会话」），并检查浏览器是否拦截了下载弹窗。</p></div>
+  </section>
+
+  <section class="doc-section" id="live">
+    <h2><span class="num">9</span>实况大屏 <span class="path">/live</span><a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <p class="lead">用于活动现场投屏，实时展示在网呼号、最新记录、当前主控参数与模拟频谱。</p>
+
+    <h3>五种显示模式</h3>
+    <table>
+      <thead><tr><th>模式</th><th>URL</th><th>适用</th></tr></thead>
+      <tbody>
+        <tr><td>电脑版</td><td><span class="path">/live</span> 或 <span class="path">/live?screen=default</span></td><td>横屏电视 / 拼接屏</td></tr>
+        <tr><td>简洁版</td><td><span class="path">/live?screen=minimal</span></td><td>低干扰投屏</td></tr>
+        <tr><td>街机版</td><td><span class="path">/live?screen=arcade</span></td><td>科技感展示</td></tr>
+        <tr><td>默认大屏 M</td><td><span class="path">/live?screen=defaultM</span></td><td>竖屏（手机 / 竖屏一体机）</td></tr>
+        <tr><td>手机版竖屏</td><td><span class="path">/live?screen=portrait</span></td><td>手机观看</td></tr>
+      </tbody>
+    </table>
+    <p>切换方式：电脑版三种模式用右上角下拉选择；竖屏模式在页面底部有「默认大屏M / 手机版 / 电脑版」切换条。切换只改 URL 参数，<b>不会刷新页面</b>，可直接把对应 URL 存为大屏书签。</p>
+
+    <h3>页面内容</h3>
+    <ul>
+      <li><b>顶栏</b>：大屏名称、接收 / 发射频率、亚音、本地时钟。</li>
+      <li><b>当前主控面板</b>：最新参与者呼号、QTH / 设备 / 天馈 / 功率、R·S·T 信号环与信号质量条。</li>
+      <li><b>台网总人数</b>：去重呼号数、记录数、进度条（按 60 满格）。</li>
+      <li><b>最近记录列表</b>：按时间倒序，超出高度自动滚动。</li>
+      <li><b>模拟频谱 + 日期 ticker</b>：动态装饰效果。</li>
+    </ul>
+    <p>数据每 <b>3 秒</b>轮询刷新一次（大屏不依赖 SSE，兼容性更好）。暂无记录时显示「等待主控录入记录…」；连接异常显示「连接服务器失败」。</p>
+
+    <h3>对外开放与 QTH 脱敏</h3>
+    <table>
+      <thead><tr><th><code>screen_public</code></th><th>未登录访客看到</th><th>已登录</th></tr></thead>
+      <tbody>
+        <tr><td><code>false</code>（默认）</td><td>玻璃拟态遮罩：「大屏未到公开时间 / 当前大屏仅为内部使用…」+「登录查看」「返回站点首页」</td><td>正常显示，QTH 完整</td></tr>
+        <tr><td><code>true</code></td><td>正常显示，但 <b>QTH 仅保留前 4 个字</b></td><td>正常显示，QTH 完整</td></tr>
+      </tbody>
+    </table>
+    <p>该开关在「系统管理 → 页面配置」中修改（<code>screen_public</code>），另有 <code>screen_title</code>、<code>screen_rx_freq</code>、<code>screen_tx_freq</code>、<code>screen_tone</code> 可自定义大屏抬头参数。</p>
+    <div class="callout c-warn"><b>登录态判定</b><p>大屏通过浏览器本地存储判断登录，请在用于投屏的浏览器上先登录一次；换浏览器 / 无痕模式会被视为未登录。</p></div>
+
+    <h3>投屏建议</h3>
+    <ul>
+      <li>电视 / 拼接屏（横屏）：<span class="path">/live?screen=default</span>，浏览器 F11 全屏。</li>
+      <li>立式广告机 / 手机上墙：<span class="path">/live?screen=portrait</span>。</li>
+      <li>长时间投屏建议关闭屏幕休眠，并可用浏览器自动刷新插件做兜底。</li>
+    </ul>
+  </section>
+
+  <section class="doc-section" id="query">
+    <h2><span class="num">10</span>呼号查询 <span class="path">/query</span><a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <ol class="steps">
+      <li>点击页头「呼号查询」，或直接访问 <span class="path">/query</span>。</li>
+      <li>输入呼号（自动转大写），点击查询。</li>
+      <li>结果展示：呼号、<b>1 年内参与总次数</b>、每次参与的台网时间与当值主控，按时间倒序，每页 20 条。</li>
+      <li>支持 URL 直达：<span class="path">/query?callsign=BI4IVE</span>，方便分享给台友。</li>
+    </ol>
+    <div class="callout c-warn"><b>统计口径</b><p>为<b>精确匹配</b>（不做模糊查询），统计区间为<b>最近 1 年</b>，以台网时间 <code>session_time</code> 为准并排除已删除记录。无结果时显示「暂无参与记录」。</p></div>
+    <p>查询页还支持生成 / 保存 / 打印<b>参与证书</b>，签发单位与机构由后台配置 <code>cert_sign_unit</code>、<code>cert_sign_org</code> 控制。</p>
+  </section>
+  <section class="doc-section" id="admin">
+    <h2><span class="num">11</span>管理后台<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <p class="lead">后台采用「顶部横向主分组 + 左侧二级菜单」两级导航。点击顶部切换分组，左侧显示该组下的功能页，可点「收缩菜单」折叠为图标模式。</p>
+
+    <h3>菜单结构</h3>
+    <table>
+      <thead><tr><th>分组</th><th>页面</th><th>路径</th><th>角色</th></tr></thead>
+      <tbody>
+        <tr><td rowspan="4">运营中心</td><td>台网统计</td><td><span class="path">/admin/stats</span></td><td><span class="tag user">主控+</span></td></tr>
+        <tr><td>数据看板</td><td><span class="path">/admin/analytics</span></td><td><span class="tag user">主控+</span></td></tr>
+        <tr><td>主控轮值</td><td><span class="path">/admin/rotation</span></td><td><span class="tag user">主控+</span></td></tr>
+        <tr><td>台网预告</td><td><span class="path">/admin/schedules</span></td><td><span class="tag user">主控+</span></td></tr>
+        <tr><td rowspan="3">数据与日志</td><td>台网历史管理</td><td><span class="path">/admin/logs</span></td><td><span class="tag admin">管理员</span></td></tr>
+        <tr><td>回收站 / 审计</td><td><span class="path">/admin/recycle</span></td><td><span class="tag admin">管理员</span></td></tr>
+        <tr><td>登录日志</td><td><span class="path">/admin/login-logs</span></td><td><span class="tag admin">管理员</span></td></tr>
+        <tr><td rowspan="5">系统管理</td><td>用户管理</td><td><span class="path">/admin</span></td><td><span class="tag admin">管理员</span></td></tr>
+        <tr><td>设备库</td><td><span class="path">/admin/equipments</span></td><td><span class="tag admin">管理员</span></td></tr>
+        <tr><td>页面配置</td><td><span class="path">/admin/page-configs</span></td><td><span class="tag admin">管理员</span></td></tr>
+        <tr><td>管理工具</td><td><span class="path">/admin/tools</span></td><td><span class="tag admin">管理员</span></td></tr>
+        <tr><td>版本更新</td><td><span class="path">/admin/upgrade</span></td><td><span class="tag admin">管理员</span></td></tr>
+      </tbody>
+    </table>
+    <p>另有参与人员库页面 <span class="path">/admin/participants</span>（未挂菜单，可直接访问）。</p>
+
+    <h3>台网统计 <span class="path">/admin/stats</span></h3>
+    <ul>
+      <li>顶部三张总览卡：<b>总会话数</b>、<b>总记录数</b>、<b>唯一呼号数</b>。</li>
+      <li>「最近会话」表：日期 / 主控 / 记录数 / 操作，点「查看」进入<b>会话详情</b>页，可查看、编辑、删除、新增该场记录。</li>
+      <li>「活跃呼号（前 10）」：呼号排行，支持搜索。</li>
+      <li>支持按主控名称或 QTH 搜索、按呼号搜索、一键<b>导出 CSV</b>（文件名 <code>台网统计_YYYY-MM-DD.csv</code>，带 BOM，Excel 打开不乱码）。</li>
+    </ul>
+
+    <h3>数据看板 <span class="path">/admin/analytics</span></h3>
+    <ul>
+      <li>支持按<b>开始 / 结束日期</b>筛选，「清除筛选」恢复全部历史。</li>
+      <li>KPI 卡片：台网场次、参与记录、参与呼号、场均参与。</li>
+      <li><b>每场台网参与人数趋势</b>：折线 + 面积图，点圆点查看该场详情。</li>
+      <li>排行榜：<b>呼号活跃 Top 10</b>（可点击查看详情）、<b>主控场次 Top 10</b>。</li>
+      <li><b>按周几活跃分布</b>：柱状图，显示每周各天的人次 / 场次。</li>
+      <li>注意：<b>台网预告（未开台网）不计入统计</b>。</li>
+    </ul>
+
+    <h3>主控轮值 <span class="path">/admin/rotation</span></h3>
+    <p>按主控聚合台网场次，鼓励轮值。展示台网总场次、主控人数、孤儿场次，以及排行榜（排名 / 主控 / 场次 / 最近主持 / 分布）。标记 <b>⚠</b> 表示该主控账号已不存在（历史数据孤儿）。</p>
+
+    <h3>台网预告 <span class="path">/admin/schedules</span></h3>
+    <ol class="steps">
+      <li>填写主题（如「周五晚间台网」）、预告时间、主控（留空默认「待定」）。</li>
+      <li>点「添加预告」；已有预告可「编辑」「删除」（删除有确认框）。</li>
+      <li>保存后首页与大屏自动显示倒计时。校验提示：<code>标题不能为空</code>、<code>请选择预告时间</code>。</li>
+    </ol>
+
+    <h3>台网历史管理 <span class="path">/admin/logs</span></h3>
+    <ul>
+      <li>左侧选择历史会话，右侧展示该场全部记录，支持<b>新增、编辑、删除</b>记录。</li>
+      <li>管理员<b>不受 6 小时可编辑时限限制</b>，可补录任意历史台网，也支持<b>指定日期新增</b>整场会话。</li>
+      <li>「导入记录」：上传 <code>.xlsx / .xls / .csv</code> 批量导入，完成后提示「导入完成: 总计 N 条, 成功 M 条, 失败 K 条」。</li>
+      <li>「导出 Excel」：导出当前选中会话，格式与主控台一致。</li>
+      <li>删除会话提示「会话将移入回收站，可恢复，其记录暂不清除」；删除记录提示「删除后可到「回收站/审计」恢复」。</li>
+    </ul>
+
+    <h3>回收站 / 审计 <span class="path">/admin/recycle</span></h3>
+    <ul>
+      <li>左侧「回收站」列出被软删除的会话与记录，点「恢复」即可还原。</li>
+      <li>右侧「审计日志」记录所有软删除等关键操作（操作人、动作、对象、详情、时间），用于追溯。</li>
+    </ul>
+
+    <h3>登录日志 <span class="path">/admin/login-logs</span></h3>
+    <p>记录登录时间、用户、IP、结果等，支持按条件筛选查询，并提供<b>清理 90 天前日志</b>的入口。清理不可恢复，请谨慎操作。</p>
+
+    <h3>用户管理 <span class="path">/admin</span></h3>
+    <ul>
+      <li>列表支持按<b>角色筛选</b>（所有角色 / 管理员 / 主控）与关键字搜索。</li>
+      <li>「添加新用户」：用户名、姓名、密码、角色（主控人员 / 管理员）、设备、天线、QTH。</li>
+      <li>「编辑用户」「修改密码」「用户详情」（含用户名、姓名、设备、天线、QTH、注册时间、用户ID）。</li>
+      <li>删除用户请谨慎；历史台网中该主控仍会显示，在「主控轮值」页会被标记为 ⚠ 孤儿。</li>
+    </ul>
+
+    <h3>设备库 <span class="path">/admin/equipments</span></h3>
+    <ul>
+      <li>设备增删改查 + 关键字搜索；录入记录时「设备」字段会优先从设备库联想。</li>
+      <li>「下载导入模板」获取标准 <code>设备导入模板.xlsx</code>；「导入设备」上传 <code>.xlsx / .xls / .csv</code>，完成后提示新增 / 更新条数。</li>
+      <li>「从历史记录导入」：一键把历史记录中出现过的设备批量收编进设备库（提示发现 / 新增 / 跳过数量）。</li>
+      <li>「导出全部数据」备份设备清单。</li>
+    </ul>
+
+    <h3>参与人员库 <span class="path">/admin/participants</span></h3>
+    <p>管理呼号 / 姓名 / 设备 / QTH 等资料，支持编辑、删除、<b>Excel 批量导入</b>。该库直接决定主控台呼号联想的质量，建议定期维护。</p>
+
+    <h3>页面配置 <span class="path">/admin/page-configs</span></h3>
+    <p>按分类（通用 / 登录 / 首页 / 会话 / 证书 / 大屏）在线修改站点文案与运行参数，<b>保存后实时生效，无需重启</b>。完整配置项见下一节。</p>
+
+    <h3>管理工具 <span class="path">/admin/tools</span></h3>
+    <p>功能快速入口导航页（用户管理、台网统计、页面配置等），并附带导航与功能说明提示卡。</p>
+
+    <h3>版本更新 <span class="path">/admin/upgrade</span></h3>
+    <ul>
+      <li>展示<b>当前版本</b>与<b>最新版本</b>，点「立即检测」拉取远程清单比对。</li>
+      <li>显示本次「更新内容」、当前版本更新日志与历史版本列表，并提供下载 / 详情链接。</li>
+      <li>检测接口会把数据库 <code>page_configs.version</code> 自动回写为最新版本，无需手工改库。</li>
+      <li>若一直提示有新版本，说明代码版本与远程清单不一致，请核对三处版本源（见「版本升级」）。</li>
+    </ul>
+    <div class="callout c-warn"><b>全新库显示 v1.1.0 兜底值？</b><p>用管理员身份依次调用 <code>POST /api/admin/migrate/page-configs</code> 与 <code>POST /api/admin/upgrade/check</code> 即可同步为真实版本。</p></div>
+  </section>
+  <section class="doc-section" id="config">
+    <h2><span class="num">12</span>页面配置项全表<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <p>「系统管理 → 页面配置」可在线修改，保存即生效。</p>
+    <table>
+      <thead><tr><th>Key</th><th>默认值</th><th>分类</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td><code>site_title</code></td><td>济南黄河业余无线电台网</td><td>通用</td><td>网站标题</td></tr>
+        <tr><td><code>version</code></td><td>随版本</td><td>通用</td><td>系统版本号（由版本检测自动回写，一般不用手改）</td></tr>
+        <tr><td><code>contact_email</code></td><td>contact@bi4ive.org</td><td>通用</td><td>联系邮箱</td></tr>
+        <tr><td><code>contact_phone</code></td><td>（空）</td><td>通用</td><td>联系电话</td></tr>
+        <tr><td><code>login_title</code></td><td>济南黄河业余无线电台（换行）台网主控日志</td><td>登录</td><td>登录页标题，支持 br 标签换行</td></tr>
+        <tr><td><code>login_subtitle</code></td><td>登录系统</td><td>登录</td><td>登录页副标题</td></tr>
+        <tr><td><code>home_header_title</code></td><td>济南黄河业余无线电台网主控日志</td><td>首页</td><td>首页页头标题</td></tr>
+        <tr><td><code>home_footer_text</code></td><td>v1.0.2 By BR4IN</td><td>首页</td><td>首页页脚文字</td></tr>
+        <tr><td><code>session_detail_title</code></td><td>台网会话详情</td><td>会话</td><td>会话详情页标题</td></tr>
+        <tr><td><code>session_edit_hours</code></td><td><b>6</b></td><td>会话</td><td>台网结束后可编辑时限（小时），<b>0 = 不限制</b></td></tr>
+        <tr><td><code>cert_sign_unit</code></td><td>济南黄河业余无线电台网活动</td><td>证书</td><td>参与证书 - 签发单位（标题处）</td></tr>
+        <tr><td><code>cert_sign_org</code></td><td>济南黄河业余无线电中继台</td><td>证书</td><td>参与证书 - 底部签发机构</td></tr>
+        <tr><td><code>screen_title</code></td><td>济南黄河业余无线电中继台BR4IN台网大屏</td><td>大屏</td><td>大屏顶部名称</td></tr>
+        <tr><td><code>screen_rx_freq</code></td><td>439.110</td><td>大屏</td><td>接收频率</td></tr>
+        <tr><td><code>screen_tx_freq</code></td><td>434.110</td><td>大屏</td><td>发射频率</td></tr>
+        <tr><td><code>screen_tone</code></td><td>88.5</td><td>大屏</td><td>亚音</td></tr>
+        <tr><td><code>screen_public</code></td><td><b>false</b></td><td>大屏</td><td>大屏是否对外开放。true = 任何人可看（QTH 脱敏），false = 仅登录用户</td></tr>
+      </tbody>
+    </table>
+    <div class="callout c-tip"><b>缺失自愈</b><p>系统会检测默认配置项，缺失的会自动补齐，不必担心升级后少配置。</p></div>
+  </section>
+
+  <section class="doc-section" id="upgrade">
+    <h2><span class="num">13</span>版本升级与回滚<a class="top-link" href="#overview">↑ 顶部</a></h2>
+
+    <h3>一、纯代码更新（最常见）</h3>
+    <pre><code>cd /项目目录
+git pull origin main
+pnpm install
+pnpm build
+pm2 restart radio-log</code></pre>
+    <p>Docker 环境用 <code>docker-compose up -d --build</code>。完成后登录后台 →「系统管理 → 版本更新」→「立即检测」，系统会自动把数据库版本号回写为最新版。</p>
+    <div class="callout c-info"><b>提示</b><p>纯代码更新<b>不需要</b>执行 <code>pnpm db:push</code>。</p></div>
+
+    <h3>二、含数据库表结构变更</h3>
+    <ol class="steps">
+      <li><b>先备份</b>：<code>pg_dump -U 用户 -h localhost -d radio_network_log -F c -f radio_log_$(date +%Y%m%d).dump</code></li>
+      <li>拉代码、装依赖、构建（同上）。</li>
+      <li>执行迁移：<code>pnpm db:push</code>（Drizzle 按 schema 自动增量建表 / 加列，不删数据）。</li>
+      <li>重启服务，后台点一次版本检测同步版本号。</li>
+    </ol>
+    <div class="callout c-warn"><b>如何判断是否需要迁移</b><p>查看该版本更新日志是否标注「涉及表结构变更」，或对比 <span class="path">src/storage/database/shared/schema.ts</span> 是否有新增表 / 字段。历史案例：v1.5.12（新增 <code>audit_logs</code> 表 + <code>deleted_at</code> 字段）、v1.5.13（一天一场唯一索引）。</p></div>
+
+    <h3>三、三处版本源必须一致</h3>
+    <table>
+      <thead><tr><th>#</th><th>位置</th><th>字段</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><span class="path">version/upgrade-manifest.json</span></td><td><code>latest</code></td><td>远程最新版（检测基准）</td></tr>
+        <tr><td>2</td><td><span class="path">src/lib/version.ts</span></td><td><code>CODE_VERSION</code></td><td>当前部署代码版本</td></tr>
+        <tr><td>3</td><td>数据库 <code>page_configs</code>（key=<code>version</code>）</td><td><code>value</code></td><td>线上运行版本，部署后由检测自动同步</td></tr>
+      </tbody>
+    </table>
+
+    <h3>四、回滚</h3>
+    <pre><code>git log --oneline -5
+git checkout &lt;旧提交哈希&gt;
+pnpm install &amp;&amp; pnpm build &amp;&amp; pm2 restart radio-log</code></pre>
+    <div class="callout c-danger"><b>回滚不回退表结构</b><p>若之前执行过 <code>db:push</code>，回滚代码后表结构<b>不会自动回退</b>，需用升级前的 <code>pg_dump</code> 备份用 <code>pg_restore</code> 恢复。所以表变更前备份极其重要。</p></div>
+  </section>
+  <section class="doc-section" id="faq">
+    <h2><span class="num">14</span>故障排查 FAQ<a class="top-link" href="#overview">↑ 顶部</a></h2>
+
+    <h3>数据库连接失败</h3>
+    <ul>
+      <li>检查 PostgreSQL 是否启动、库是否已创建、用户名密码是否正确。</li>
+      <li>检查 <code>.env</code> 的 <code>DATABASE_URL</code>；若值由脚本 <code>grep</code> 取得，注意去除行尾回车。</li>
+      <li>宝塔环境注意 <code>permission denied for schema public (42501)</code>，需 <code>GRANT ALL ON SCHEMA public</code>。</li>
+    </ul>
+
+    <h3>服务启动即退出，提示 JWT_SECRET 相关</h3>
+    <p>v1.5.13 起 <code>JWT_SECRET</code> 为强制项，缺失会拒绝启动（有意设计，避免弱密钥）。执行 <code>echo "JWT_SECRET=$(openssl rand -base64 48)" &gt;&gt; .env</code> 后重启。</p>
+
+    <h3>端口 5000 被占用</h3>
+    <pre><code>lsof -i:5000
+kill -9 &lt;PID&gt;</code></pre>
+    <p>或用 <code>pm2 delete</code> 释放端口后再启动，避免与宝塔 Node 项目抢端口。</p>
+
+    <h3>多主控录入不同步</h3>
+    <ul>
+      <li>确认 Nginx 含 <code>proxy_buffering off;</code> 与 <code>proxy_http_version 1.1;</code>。</li>
+      <li>确认中间 CDN / WAF 没有缓冲 <code>text/event-stream</code>。</li>
+      <li>SSE 端点为 <span class="path">/api/sse/session/{id}/subscribe</span>，30 秒心跳，需登录。</li>
+    </ul>
+
+    <h3>会话无法编辑 / 提示已过期</h3>
+    <p>默认 6 小时可编辑时限。管理员可在「页面配置」把 <code>session_edit_hours</code> 调大或设为 <code>0</code>（不限制）；主控请改用管理员账号在「台网历史管理」中补录。</p>
+
+    <h3>创建会话提示「今天已存在台网记录」</h3>
+    <p>同一北京日期只允许一场台网。请到「数据与日志 → 台网历史管理」修改当天已有记录，或先删除（回收站可恢复）再重建。</p>
+
+    <h3>后台显示「v1.1.0 兜底默认值（数据库读取失败）」</h3>
+    <p>全新库 <code>page_configs</code> 为空所致。用管理员 token 依次调用 <code>POST /api/admin/migrate/page-configs</code> 与 <code>POST /api/admin/upgrade/check</code> 即可同步为真实版本。</p>
+
+    <h3>登录提示「尝试次数过多」/「账号已被锁定」</h3>
+    <p>IP 限流 10 次 / 分钟；账号连续失败 5 次锁定 15 分钟。请确认 Nginx 传递了 <code>X-Real-IP</code>，避免所有人被算作同一 IP。</p>
+
+    <h3>Excel 导入无反应或全部失败</h3>
+    <ul>
+      <li>仅支持 <code>.xlsx / .xls / .csv</code>。</li>
+      <li>设备库导入请先「下载导入模板」，按模板列名填写。</li>
+      <li>导入结果以「总计 N 条，成功 M 条，失败 K 条」形式提示，失败条数不为 0 时请核对必填列。</li>
+    </ul>
+
+    <h3>实况大屏显示遮罩「大屏未到公开时间」</h3>
+    <p>说明 <code>screen_public=false</code> 且当前浏览器未登录。在该浏览器登录一次即可；或由管理员在「页面配置」把 <code>screen_public</code> 改为 <code>true</code> 对外开放（此时未登录访客看到的 QTH 仅显示前 4 个字）。</p>
+
+    <h3>页面改了没生效</h3>
+    <p>点页头「清理缓存」（清除本地存储 + 注销 Service Worker + 强制刷新）。该操作<b>不会删除任何服务器数据</b>。</p>
+  </section>
+
+  <section class="doc-section" id="appendix">
+    <h2><span class="num">15</span>附录速查<a class="top-link" href="#overview">↑ 顶部</a></h2>
+
+    <h3>A. 常用命令</h3>
+    <table>
+      <thead><tr><th>场景</th><th>命令</th></tr></thead>
+      <tbody>
+        <tr><td>安装依赖</td><td><code>pnpm install</code></td></tr>
+        <tr><td>本地开发</td><td><code>pnpm dev</code>（端口 5000）</td></tr>
+        <tr><td>构建</td><td><code>pnpm build</code></td></tr>
+        <tr><td>生产启动</td><td><code>pnpm start</code>（或 PM2 托管）</td></tr>
+        <tr><td>建表 / 迁移</td><td><code>pnpm db:push</code></td></tr>
+        <tr><td>原生模块重编</td><td><code>pnpm rebuild bcrypt sharp</code></td></tr>
+        <tr><td>生成 JWT 密钥</td><td><code>openssl rand -base64 48</code></td></tr>
+        <tr><td>重启（PM2）</td><td><code>pm2 restart radio-log</code></td></tr>
+        <tr><td>数据库备份</td><td><code>pg_dump -U 用户 -d radio_network_log -F c -f backup.dump</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>B. 关键页面路径</h3>
+    <table>
+      <thead><tr><th>路径</th><th>说明</th><th>登录要求</th></tr></thead>
+      <tbody>
+        <tr><td><span class="path">/</span></td><td>主页 / 主控台</td><td>需登录</td></tr>
+        <tr><td><span class="path">/login</span></td><td>登录页</td><td>—</td></tr>
+        <tr><td><span class="path">/query</span></td><td>呼号查询</td><td>公开</td></tr>
+        <tr><td><span class="path">/live</span></td><td>实况大屏</td><td>取决于 <code>screen_public</code></td></tr>
+        <tr><td><span class="path">/admin</span></td><td>后台（默认用户管理）</td><td>管理员</td></tr>
+      </tbody>
+    </table>
+
+    <h3>C. 提示语对照表</h3>
+    <table>
+      <thead><tr><th>提示原文</th><th>含义 / 处理</th></tr></thead>
+      <tbody>
+        <tr><td><code>请先创建台网会话</code></td><td>尚无会话，先创建或加入</td></tr>
+        <tr><td><code>请输入呼号 / QTH / 天馈 / 功率 / 信号</code></td><td>必填项缺失</td></tr>
+        <tr><td><code>会话已超过可编辑时限，无法添加、更新或删除记录</code></td><td>超过 <code>session_edit_hours</code>，请管理员补录</td></tr>
+        <tr><td><code>今天已存在台网记录，无法重复录入</code></td><td>一天一场约束</td></tr>
+        <tr><td><code>该日期（北京时间）已存在台网或预告</code></td><td>数据库唯一索引拦截</td></tr>
+        <tr><td><code>您没有权限操作此台网记录</code></td><td>主控试图改他人会话，或会话已过期</td></tr>
+        <tr><td><code>记录已添加并更新参与人员库</code></td><td>录入成功</td></tr>
+        <tr><td><code>需要登录 / 登录已过期，请重新登录</code></td><td>Token 缺失或失效</td></tr>
+        <tr><td><code>需要管理员权限</code></td><td>角色不足</td></tr>
+        <tr><td><code>没有可导出的会话</code></td><td>未选中会话</td></tr>
+        <tr><td><code>当前没有活跃的台网会话</code></td><td>无未过期会话</td></tr>
+      </tbody>
+    </table>
+
+    <h3>D. 安全与运维建议</h3>
+    <ul>
+      <li><code>JWT_SECRET</code> 与 <code>ADMIN_INIT_PASSWORD</code> 必须使用随机强值，部署后立即修改默认管理员密码。</li>
+      <li>启用 HTTPS 后把 <code>FORCE_SECURE_COOKIE</code> 设为 <code>true</code>。</li>
+      <li>数据库定期 <code>pg_dump</code> 备份；执行表结构迁移前必备份。</li>
+      <li><code>.env</code> 不要提交进仓库；<code>.dockerignore</code> 排除 <code>.env</code>、<code>.git</code>、<code>node_modules</code>。</li>
+      <li>测试站与正式站应使用独立服务器、独立数据库与独立端口，避免误操作。</li>
+    </ul>
+
+    <footer>
+      <p>济南黄河业余无线电台网主控日志系统 · 使用说明书 · v1.5.20<br />
+      项目主页：<a href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener">github.com/BI4IVE/Amateur-radio-network-log</a> · 联系邮箱：bi4ive@br4in.cn · MIT 协议</p>
+      <p>73！73 是业余无线电界的祝福与告别，意为「Best Regards」。</p>
+    </footer>
+  </section>
+
+  <div id="noResult">没有匹配的内容，试试其他关键词（如「导出」「大屏」「登录」「导入」）。</div>
+  </main>
+</div>
+
+<button class="totop" id="totop" title="回到顶部">↑</button>
+
+<script>
+(function(){
+  var sidebar = document.getElementById('sidebar');
+  var menuBtn = document.getElementById('menuBtn');
+  var themeBtn = document.getElementById('themeBtn');
+  var searchInput = document.getElementById('searchInput');
+  var clearBtn = document.getElementById('clearBtn');
+  var sections = Array.prototype.slice.call(document.querySelectorAll('.doc-section'));
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.sidebar a'));
+  var noResult = document.getElementById('noResult');
+  var totop = document.getElementById('totop');
+
+  menuBtn.addEventListener('click', function(){ sidebar.classList.toggle('open'); });
+  document.addEventListener('click', function(e){
+    if (window.innerWidth <= 900 && e.target.closest && e.target.closest('.sidebar a')) {
+      sidebar.classList.remove('open');
+    }
+  });
+
+  var saved = null;
+  try { saved = localStorage.getItem('br4inlog-doc-theme'); } catch(e){}
+  if (saved) { document.documentElement.setAttribute('data-theme', saved); }
+  syncThemeIcon();
+  themeBtn.addEventListener('click', function(){
+    var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', cur);
+    try { localStorage.setItem('br4inlog-doc-theme', cur); } catch(e){}
+    syncThemeIcon();
+  });
+  function syncThemeIcon(){
+    themeBtn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀' : '☾';
+  }
+
+  function onScroll(){
+    var y = window.scrollY + 120, current = sections[0];
+    sections.forEach(function(s){ if (s.offsetTop <= y) current = s; });
+    navLinks.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href') === '#' + current.id); });
+    totop.style.display = window.scrollY > 500 ? 'block' : 'none';
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+  totop.addEventListener('click', function(){ window.scrollTo({top:0, behavior:'smooth'}); });
+
+  function resetSearch(){
+    sections.forEach(function(s){ s.classList.remove('hide'); });
+    navLinks.forEach(function(a){ a.classList.remove('hide'); });
+    noResult.style.display = 'none';
+    clearBtn.style.display = 'none';
+  }
+
+  searchInput.addEventListener('input', function(){
+    var q = (searchInput.value || '').trim().toLowerCase();
+    if (!q) { resetSearch(); return; }
+    clearBtn.style.display = 'block';
+    var hits = 0;
+    sections.forEach(function(sec){
+      var text = (sec.textContent || '').toLowerCase();
+      var heading = (sec.querySelector('h1,h2') || {}).textContent || '';
+      var hit = text.indexOf(q) !== -1;
+      sec.classList.toggle('hide', !hit);
+      if (hit) hits++;
+      navLinks.forEach(function(a){
+        if (a.getAttribute('href') === '#' + sec.id) { a.classList.toggle('hide', !hit); }
+      });
+    });
+    noResult.style.display = hits ? 'none' : 'block';
+  });
+
+  clearBtn.addEventListener('click', function(){ searchInput.value = ''; resetSearch(); searchInput.focus(); });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === '/' && document.activeElement !== searchInput) { e.preventDefault(); searchInput.focus(); }
+    if (e.key === 'Escape' && document.activeElement === searchInput) { searchInput.value=''; resetSearch(); }
+  });
+})();
+</script>
+</body>
+</html>
