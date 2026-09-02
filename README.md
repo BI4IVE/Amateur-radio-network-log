@@ -29,7 +29,8 @@
 
 ## 📖 文档目录
 
-> 📘 **在线使用说明书（GitHub Pages）**：<https://bi4ive.github.io/Amateur-radio-network-log/>
+> 🏠 **项目主页（GitHub Pages）**：<https://bi4ive.github.io/Amateur-radio-network-log/> — 项目介绍与功能特性
+> 📘 **在线使用说明书（GitHub Pages）**：<https://bi4ive.github.io/Amateur-radio-network-log/manual.html>
 > 覆盖部署、主控台操作、实况大屏、呼号查询、管理后台、版本升级与故障排查，支持全文搜索与深色模式。
 
 | 章节 | 说明 |
