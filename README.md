@@ -10,6 +10,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16.x-black?style=flat-square&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.x-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-24.x-brightgreen?style=flat-square&logo=nodedotjs&logoColor=white)
+[![赞助支持](https://img.shields.io/badge/赞助支持-济南黄河中继台-orange?style=flat-square)](https://www1.439110.cn/jz/)
 
 <sub>前期由 扣子 AI（Coze Coding）编程完成，1.5.0 版本后由 CodeBuddy CN 接手开发</sub>
 
@@ -57,6 +58,17 @@
 - **项目地址**：[GitHub](https://github.com/BI4IVE/Amateur-radio-network-log)
 - **问题反馈**：[Issues](https://github.com/BI4IVE/Amateur-radio-network-log/issues)
 - **联系邮箱**：bi4ive@br4in.cn
+
+## 💝 赞助支持
+
+如果这个项目对你有帮助，欢迎通过以下方式支持**济南黄河业余无线电中继台**的持续运营：
+
+- 📊 **收支公示**：<https://www1.439110.cn/jz/>（捐助明细与运营成本公开，接受爱好者监督）
+- 🅰️ **支付宝转账**：`ydlmnh@foxmail.com`（转账请备注呼号 / 编号）
+- 💬 **微信扫码捐助**：见上方公示页
+- 🏦 **银行转账 / 物品转赠**：详见公示页，或联系 `br4in@br4in.com`
+
+所有赞助均用于中继台与 HAM 之家的运营维护，收支定期公示、公开透明。
 
 <div align="center">
 
