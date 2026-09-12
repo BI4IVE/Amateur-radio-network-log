@@ -1,4 +1,4 @@
-// @version v1.5.20
+// @version v1.5.21
 import { NextResponse } from "next/server"
 
 
@@ -140,6 +140,10 @@ const publicPaths = [
 
 
   "/api/sessions/*/export",
+
+
+
+  "/api/wechat",
 
 
 

@@ -1,15 +1,28 @@
 {
-  "latest": "1.5.20",
+  "latest": "1.5.21",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-09-01",
-  "title": "v1.5.20 版本更新（后台菜单分组重构）",
-  "summary": "后台管理菜单重构为分组结构（运营中心 / 数据与日志 / 系统管理），层级更清晰、导航更高效。",
+  "releaseDate": "2026-09-12",
+  "title": "v1.5.21 版本更新（微信模板消息推送）",
+  "summary": "新增微信模板消息推送：用户绑定呼号后，主控台提交其参与记录自动收到微信回执；后台可配置推送与绑定方式，含绑定管理/成员审核/绑定码/推送日志。",
   "changelog": [
-    "后台管理菜单重构为分组结构（运营中心 / 数据与日志 / 系统管理），层级更清晰、导航更高效"
+    "新增微信模板消息推送：用户绑定呼号后，主控台提交其参与记录自动收到微信回执",
+    "绑定方式支持身份证后六位 / 一次性绑定码 / 人工审核三种，后台可切换",
+    "后台「微信推送」可配置：总开关、模板ID、绑定方式、绑定码规则、推送范围、去重、站点名称、keyword 映射",
+    "新增绑定管理、成员审核、绑定码管理、推送日志四大后台模块",
+    "后台管理界面灰色字体统一改为黑色（含输入框/下拉/文本域），暗色模式输入框不再发灰",
+    "推送「设备名」改为「设备 / 信号」组合展示；「会议名称」改用站点/组织名称"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.21",
+      "releaseDate": "2026-09-12",
+      "title": "微信模板消息推送",
+      "summary": "新增微信模板消息推送：用户绑定呼号后，主控台提交其参与记录自动收到微信回执；后台可配置推送与绑定方式，含绑定管理/成员审核/绑定码/推送日志。无需数据库迁移（新表按需自愈创建）。",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.21",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.21.tar.gz"
+    },
     {
       "version": "1.5.20",
       "releaseDate": "2026-09-01",

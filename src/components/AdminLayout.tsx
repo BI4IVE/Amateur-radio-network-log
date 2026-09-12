@@ -1,4 +1,4 @@
-// @version v1.5.20
+// @version v1.5.21
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -196,6 +196,75 @@ const menuGroups: MenuGroup[] = [
       },
     ],
   },
+  {
+    // [v1.5.21 微信推送]
+    id: "wechat",
+    label: "微信推送",
+    requiredRole: "admin",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+    ),
+    items: [
+      {
+        id: "wechat-config",
+        label: "配置与测试推送",
+        path: "/admin/wechat/config",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+        requiredRole: "admin",
+      },
+      {
+        id: "wechat-bindings",
+        label: "绑定管理",
+        path: "/admin/wechat/bindings",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+        requiredRole: "admin",
+      },
+      {
+        id: "wechat-bind-codes",
+        label: "绑定码",
+        path: "/admin/wechat/bind-codes",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+          </svg>
+        ),
+        requiredRole: "admin",
+      },
+      {
+        id: "wechat-members",
+        label: "会员对照表",
+        path: "/admin/wechat/members",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        ),
+        requiredRole: "admin",
+      },
+      {
+        id: "wechat-push-logs",
+        label: "推送日志",
+        path: "/admin/wechat/push-logs",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        ),
+        requiredRole: "admin",
+      },
+    ],
+  },
 ]
 
 // 把当前路径映射到"是否激活某个菜单项"
@@ -298,12 +367,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-gray-900">管理后台</h1>
+              <h1 className="text-xl font-bold text-black">管理后台</h1>
             </button>
             {currentUser && (
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">当前用户:</span>
-                <span className="font-medium text-gray-900">{currentUser.name}</span>
+                <span className="text-black">当前用户:</span>
+                <span className="font-medium text-black">{currentUser.name}</span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                   currentUser.role === "admin" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"
                 }`}>
@@ -324,7 +393,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             )}
             <button
               onClick={() => router.push("/")}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-black bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
               返回主页
             </button>
@@ -349,10 +418,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               className={`flex items-center gap-2 px-4 h-9 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                 isActive
                   ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-100"
+                  : "text-black hover:bg-gray-100"
               }`}
             >
-              <span className={isActive ? "text-indigo-600" : "text-gray-400"}>
+              <span className={isActive ? "text-indigo-600" : "text-black"}>
                 {group.icon}
               </span>
               {group.label}
@@ -372,7 +441,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="p-4 space-y-2">
               {/* 当前分组标题 */}
               {!collapsed && (
-                <div className="px-3 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <div className="px-3 pb-2 text-xs font-semibold text-black uppercase tracking-wider">
                   {activeGroup.label}
                 </div>
               )}
@@ -380,7 +449,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               {/* 收缩按钮 */}
               <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-100 transition-colors mb-2"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-black rounded-lg hover:bg-gray-100 transition-colors mb-2"
                 title={collapsed ? "展开菜单" : "收缩菜单"}
               >
                 <svg
@@ -404,7 +473,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     className={`w-full flex items-center justify-center gap-3 px-3 py-3 text-sm font-medium rounded-lg transition-all duration-300 ${
                       isActive
                         ? "bg-indigo-50 text-indigo-700"
-                        : "text-gray-700 hover:bg-gray-50"
+                        : "text-black hover:bg-gray-50"
                     }`}
                     title={item.label}
                   >
@@ -421,7 +490,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* 主内容区 */}
         <main
-          className={`flex-1 p-6 transition-all duration-300 ${
+          className={`flex-1 p-6 transition-all duration-300 text-black ${
             activeGroup ? (collapsed ? "ml-16" : "ml-64") : "ml-0"
           }`}
         >

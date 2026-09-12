@@ -1,4 +1,4 @@
-// @version v1.5.20
+// @version v1.5.21
 import { NextRequest, NextResponse } from "next/server"
 import { userManager, loginLogManager } from "@/storage/database"
 import { signToken } from "@/lib/auth"

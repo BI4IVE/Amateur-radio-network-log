@@ -1,9 +1,10 @@
-// @version v1.5.20
+// @version v1.5.21
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, participantManager } from "@/storage/database"
 import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireLogin } from "@/lib/auth"
+import { pushRecordNotification } from "@/lib/wechat/pushService"
 
 export async function POST(
   request: NextRequest,
@@ -56,6 +57,22 @@ export async function POST(
       signal: body.signal || null,
       report: body.report || null,
       remarks: body.remarks || null,
+    })
+
+    // [v1.5.21 微信推送] 记录落库后异步推送参与回执（不 await，失败不影响主流程）
+    pushRecordNotification({
+      sessionId,
+      recordId: record.id,
+      callsign: record.callsign,
+      qth: record.qth,
+      equipment: record.equipment,
+      antenna: record.antenna,
+      signal: record.signal,
+      report: record.report,
+      sessionTime: session.sessionTime,
+      title: session.title,
+    }).catch((error) => {
+      console.error("[records.with-participant] 微信推送触发异常:", error)
     })
 
     // Update or create participant in database

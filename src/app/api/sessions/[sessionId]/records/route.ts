@@ -1,9 +1,10 @@
-// @version v1.5.20
+// @version v1.5.21
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, equipmentManager } from "@/storage/database"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireUser } from "@/lib/auth"
 import { screenReadAuth, maskQthValue } from "@/lib/screenAccess"
+import { pushRecordNotification } from "@/lib/wechat/pushService"
 
 export async function GET(
   request: NextRequest,
@@ -67,6 +68,22 @@ export async function POST(
     const record = await logManager.createLogRecord({
       ...body,
       sessionId,
+    })
+
+    // [v1.5.21 微信推送] 记录落库后异步推送参与回执（不 await，失败不影响主流程）
+    pushRecordNotification({
+      sessionId,
+      recordId: record.id,
+      callsign: record.callsign,
+      qth: record.qth,
+      equipment: record.equipment,
+      antenna: record.antenna,
+      signal: record.signal,
+      report: record.report,
+      sessionTime: session.sessionTime,
+      title: session.title,
+    }).catch((error) => {
+      console.error("[records] 微信推送触发异常:", error)
     })
 
     // 自动同步设备到设备库

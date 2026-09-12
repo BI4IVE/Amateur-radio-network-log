@@ -1,5 +1,5 @@
-// @version v1.5.20
-import { pgTable, varchar, text, timestamp, boolean } from "drizzle-orm/pg-core"
+// @version v1.5.21
+import { pgTable, varchar, text, timestamp, boolean, integer } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { createSchemaFactory } from "drizzle-zod"
 import { z } from "zod"
@@ -106,6 +106,66 @@ export const loginLogs = pgTable("login_logs", {
   ip: varchar("ip", { length: 64 }),
   userAgent: varchar("user_agent", { length: 500 }),
   location: varchar("location", { length: 100 }), // 二期：IP 归属地，需引入离线 IP 库
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
+// [v1.5.21 微信推送] 微信绑定关系表 - OpenID ↔ 呼号
+// 建表由 wechatBindingsManager.ensureTable() 幂等完成（tar 部署无 db:push 步骤）
+export const wechatBindings = pgTable("wechat_bindings", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  openid: varchar("openid", { length: 64 }).notNull(), // 唯一：1 个微信只绑 1 个呼号
+  callsign: varchar("callsign", { length: 20 }).notNull(),
+  unionid: varchar("unionid", { length: 64 }), // 同主体多公众号时可选
+  status: varchar("status", { length: 20 }).notNull().default("active"), // active / inactive
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
+// [v1.5.21 微信推送] 会员对照表 - 呼号 ↔ 身份证后六位哈希
+// 只存 sha256(后六位 + SALT)，SALT 在 .env，原始值绝不入库
+export const wechatMemberAuth = pgTable("wechat_member_auth", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  callsign: varchar("callsign", { length: 20 }).notNull(), // 唯一，兼作会员编号
+  idHash: varchar("id_hash", { length: 64 }).notNull(),
+  name: varchar("name", { length: 50 }),
+  importedBy: varchar("imported_by", { length: 36 }),
+  importedAt: timestamp("imported_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
+// [v1.5.21 微信推送] 推送留痕表 - 记录每次推送结果与失败原因
+export const wechatPushLog = pgTable("wechat_push_log", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  callsign: varchar("callsign", { length: 20 }),
+  openid: varchar("openid", { length: 64 }),
+  sessionId: varchar("session_id", { length: 36 }),
+  recordId: varchar("record_id", { length: 36 }),
+  status: varchar("status", { length: 20 }).notNull(), // success / failed / skipped
+  errcode: integer("errcode"),
+  errmsg: varchar("errmsg", { length: 200 }),
+  msgid: varchar("msgid", { length: 64 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+})
+
+// [v1.5.21 微信推送] 一次性绑定码表（绑定方式 = bindcode 时使用）
+// 说明：码以明文存储，因为管理员需要查看与导出后再发给用户；
+// 风险可控——码与呼号一一对应，且还需呼号匹配才能绑定，并支持有效期与作废。
+export const wechatBindCodes = pgTable("wechat_bind_codes", {
+  id: varchar("id", { length: 36 })
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  callsign: varchar("callsign", { length: 20 }).notNull(), // 该码对应的呼号
+  code: varchar("code", { length: 32 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("active"), // active / used / disabled
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  usedBy: varchar("used_by", { length: 64 }), // 使用者的 openid
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdBy: varchar("created_by", { length: 36 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 })
 
@@ -231,6 +291,50 @@ export const insertLoginLogSchema = createCoercedInsertSchema(loginLogs).pick({
   location: true,
 })
 
+// Wechat schemas（[v1.5.21 微信推送]）
+export const insertWechatBindingSchema = createCoercedInsertSchema(
+  wechatBindings
+).pick({
+  openid: true,
+  callsign: true,
+  unionid: true,
+  status: true,
+})
+
+export const insertWechatMemberAuthSchema = createCoercedInsertSchema(
+  wechatMemberAuth
+).pick({
+  callsign: true,
+  idHash: true,
+  name: true,
+  importedBy: true,
+})
+
+export const insertWechatPushLogSchema = createCoercedInsertSchema(
+  wechatPushLog
+).pick({
+  callsign: true,
+  openid: true,
+  sessionId: true,
+  recordId: true,
+  status: true,
+  errcode: true,
+  errmsg: true,
+  msgid: true,
+})
+
+export const insertWechatBindCodeSchema = createCoercedInsertSchema(
+  wechatBindCodes
+).pick({
+  callsign: true,
+  code: true,
+  status: true,
+  expiresAt: true,
+  createdBy: true,
+  usedBy: true,
+  usedAt: true,
+})
+
 // Participant schemas
 export const insertParticipantSchema = createCoercedInsertSchema(participants)
 export const updateParticipantSchema = createCoercedInsertSchema(participants)
@@ -300,6 +404,19 @@ export type UpdateEquipment = z.infer<typeof updateEquipmentSchema>
 export type PageConfig = typeof pageConfigs.$inferSelect
 export type InsertPageConfig = z.infer<typeof insertPageConfigSchema>
 export type UpdatePageConfig = z.infer<typeof updatePageConfigSchema>
+
+// [v1.5.21 微信推送] Wechat types
+export type WechatBinding = typeof wechatBindings.$inferSelect
+export type InsertWechatBinding = z.infer<typeof insertWechatBindingSchema>
+
+export type WechatMemberAuth = typeof wechatMemberAuth.$inferSelect
+export type InsertWechatMemberAuth = z.infer<typeof insertWechatMemberAuthSchema>
+
+export type WechatPushLog = typeof wechatPushLog.$inferSelect
+export type InsertWechatPushLog = z.infer<typeof insertWechatPushLogSchema>
+
+export type WechatBindCode = typeof wechatBindCodes.$inferSelect
+export type InsertWechatBindCode = z.infer<typeof insertWechatBindCodeSchema>
 
 
 
