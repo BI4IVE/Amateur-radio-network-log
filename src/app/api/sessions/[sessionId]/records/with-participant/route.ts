@@ -70,6 +70,7 @@ export async function POST(
       signal: record.signal,
       report: record.report,
       sessionTime: session.sessionTime,
+      recordTime: record.createdAt,
       title: session.title,
     }).catch((error) => {
       console.error("[records.with-participant] 微信推送触发异常:", error)

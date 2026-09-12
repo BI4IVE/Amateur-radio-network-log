@@ -27,6 +27,8 @@ export type PushRecordParams = {
   signal?: string | null
   report?: string | null
   sessionTime: Date | string
+  /** 记录实际提交时间（log_records.createdAt），用于模板的「时间」字段，体现实时性 */
+  recordTime?: Date | string | null
   /** 台网名称（log_sessions.title），用于模板的「会议名称/活动名称」字段 */
   title?: string | null
 }
@@ -87,7 +89,9 @@ export async function pushRecordNotification(
       return
     }
 
-    const time = formatBeijingDateTime(params.sessionTime)
+    // 时间字段取「记录实际提交时间」(recordTime)，体现实时性；
+    // 缺失时回退到台网开网时间(sessionTime)，避免显示空白。
+    const time = formatBeijingDateTime(params.recordTime ?? params.sessionTime)
 
     // 模板「会议名称」字段改为取后台「站点/组织名称」(wechat_site_name)，
     // 取不到时回退到本场台网名（session.title）。
