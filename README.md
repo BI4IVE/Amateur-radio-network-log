@@ -29,12 +29,6 @@
 
 > 完整变更见 [更新日志](docs/09-changelog.md)。
 
-## ✨ v1.5.20 更新亮点
-
-- **后台菜单分组重构**：管理菜单重组为「运营中心 / 数据与日志 / 系统管理」三个分组，层级更清晰、导航更高效。
-
-> 完整变更见 [更新日志](docs/09-changelog.md)。
-
 ## 📖 文档目录
 
 > 🏠 **项目主页（GitHub Pages）**：<https://bi4ive.github.io/Amateur-radio-network-log/> — 项目介绍与功能特性
