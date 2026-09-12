@@ -45,7 +45,7 @@ export default function RotationPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">主控轮值表</h1>
           <p className="mt-1 text-sm text-gray-500">
-            按主控聚合台网场次，鼓励轮值。标 <span className="text-amber-600">⚠</span> 表示主控账号已不存在（历史数据孤儿）。
+            按主控呼号聚合台网场次，鼓励轮值。同一呼号无论由哪个账号添加，都归到该呼号名下。
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export default function RotationPage() {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               <StatCard label="台网总场次" value={data.totalSessions} />
               <StatCard label="主控人数" value={data.ranking.length} />
-              <StatCard label="孤儿场次" value={data.orphanCount} highlight={data.orphanCount > 0} />
+              <StatCard label="未知主控场次" value={data.orphanCount} highlight={data.orphanCount > 0} />
             </div>
 
             <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow">

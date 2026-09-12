@@ -8,7 +8,6 @@ import {
   logRecords,
   insertLogRecordSchema,
   updateLogRecordSchema,
-  users,
   auditLogs,
 } from "./shared/schema"
 import type {
@@ -145,7 +144,8 @@ export class LogManager {
     return !!updated
   }
 
-  // 主控轮值统计：按 controllerId 聚合台网场次，并检测孤儿主控（controllerId 不在 users 表）
+  // 主控轮值统计：按「主控呼号」(controllerName) 聚合台网场次，不区分是谁添加的账号。
+  // 同一呼号无论由哪个账号创建，都归到该呼号名下（如 BI4IVE 的台网无论谁添加都计入 BI4IVE）。
   async getControllerRotation(): Promise<{
     ranking: {
       controllerId: string | null
@@ -160,89 +160,59 @@ export class LogManager {
   }> {
     const db = await getDb()
 
-    // [v1.5.13 安全] 统计仅基于未软删的会话；排除 deletedAt 非空的记录。
+    // [轮值表] 仅基于未软删的会话；排除 deletedAt 非空的记录。
+    // 直接按 controllerName 分组（呼号即主控身份），不再按 controllerId 分组。
     const rows = await db
       .select({
-        controllerId: logSessions.controllerId,
         controllerName: logSessions.controllerName,
         sessionCount: sql<number>`count(*)::int`,
         lastSessionAt: sql<Date>`max(${logSessions.sessionTime})`,
       })
       .from(logSessions)
       .where(isNull(logSessions.deletedAt))
-      .groupBy(logSessions.controllerId, logSessions.controllerName)
+      .groupBy(logSessions.controllerName)
 
-    // [v1.5.13 修复] 归并分组键：优先用 controllerId（强制身份后必存在且稳定），
-    // 同名不同 id 的历史脏数据不再被错误合并；name 仅作为展示名兜底。
+    // 归并键：去空格 + 小写，避免 "BI4IVE" / "bi4ive" / " BI4IVE " 被算成不同人；
+    // 展示名取原样（首个非空值），与数据库分组一致。
     type Agg = {
-      controllerId: string | null
       controllerName: string
       sessionCount: number
       lastSessionAt: Date | null
-      idSet: Set<string | null>
     }
     const merged = new Map<string, Agg>()
     for (const r of rows) {
-      const idKey = (r.controllerId || "").trim()
-      const key = idKey.length > 0 ? `id:${idKey}` : `name:${r.controllerName || "未知主控"}`
+      const raw = (r.controllerName || "").trim()
+      const name = raw.length > 0 ? raw : "未知主控"
+      const key = name.toLowerCase()
       const exist = merged.get(key)
       if (exist) {
         exist.sessionCount += Number(r.sessionCount)
-        exist.idSet.add(r.controllerId)
         const t = r.lastSessionAt ? new Date(r.lastSessionAt).getTime() : 0
         const ct = exist.lastSessionAt ? new Date(exist.lastSessionAt).getTime() : 0
         if (t > ct) exist.lastSessionAt = r.lastSessionAt
-        if (r.controllerName && !exist.controllerName) exist.controllerName = r.controllerName
       } else {
         merged.set(key, {
-          controllerId:
-            typeof r.controllerId === "string" && r.controllerId.length > 0
-              ? r.controllerId
-              : null,
-          controllerName: r.controllerName || "未知主控",
+          controllerName: name,
           sessionCount: Number(r.sessionCount),
           lastSessionAt: r.lastSessionAt,
-          idSet: new Set<string | null>([r.controllerId]),
         })
       }
     }
 
-    // 收集所有 controllerId，批量取 users 真实用户名（无 FK，历史数据可能不规范）
-    const controllerIds = Array.from(merged.values())
-      .map((a) => a.controllerId)
-      .filter((id): id is string => typeof id === "string" && id.length > 0)
-
-    const userMap = new Map<string, string>()
-    if (controllerIds.length > 0) {
-      const matched = await db
-        .select({ id: users.id, username: users.username })
-        .from(users)
-        .where(sql`${users.id} in ${controllerIds}`)
-      for (const m of matched) userMap.set(m.id, m.username)
-    }
-
-    const ranking = Array.from(merged.values()).map((a) => {
-      const id = a.controllerId
-      // 孤儿判定：若分组含有效 id 且全部都不在 users 表，则视为孤儿
-      const hasValidId = a.idSet.has(id) && typeof id === "string" && id.length > 0
-      const orphan = hasValidId && !userMap.has(id)
-      // 名称兜底优先级：会话自带 controllerName > users.username > 未知主控
-      const name =
-        a.controllerName ||
-        (typeof id === "string" && userMap.get(id)) ||
-        (id ? id : "未知主控")
-      return {
-        controllerId: id,
-        controllerName: name,
-        sessionCount: a.sessionCount,
-        lastSessionAt: a.lastSessionAt,
-        orphan,
-      }
-    })
+    // 按呼号聚合后不再区分添加账号，故不再有「账号孤儿」；统一不标记 orphan。
+    const ranking = Array.from(merged.values()).map((a) => ({
+      controllerId: null,
+      controllerName: a.controllerName,
+      sessionCount: a.sessionCount,
+      lastSessionAt: a.lastSessionAt,
+      orphan: false,
+    }))
     ranking.sort((a, b) => b.sessionCount - a.sessionCount)
 
     const totalSessions = ranking.reduce((s, r) => s + r.sessionCount, 0)
-    const orphanCount = ranking.filter((r) => r.orphan).reduce((s, r) => s + r.sessionCount, 0)
+    const orphanCount = ranking
+      .filter((r) => r.controllerName === "未知主控")
+      .reduce((s, r) => s + r.sessionCount, 0)
 
     return { ranking, totalSessions, controllers: ranking.length, orphanCount }
   }
