@@ -58,6 +58,15 @@ export default function SessionDetailPage() {
     remarks: "",
   })
 
+  // 编辑主控信息（管理员专用）
+  const [editingSessionInfo, setEditingSessionInfo] = useState(false)
+  const [sessionForm, setSessionForm] = useState({
+    controllerName: "",
+    controllerEquipment: "",
+    controllerAntenna: "",
+    controllerQth: "",
+  })
+
   useEffect(() => {
     // 获取当前用户
     const userStr = localStorage.getItem("user")
@@ -502,6 +511,57 @@ export default function SessionDetailPage() {
     }
   }
 
+  const openSessionEdit = () => {
+    if (!session) return
+    if (currentUser?.role !== "admin") {
+      alert("仅管理员可修改主控信息")
+      return
+    }
+    setSessionForm({
+      controllerName: session.controllerName || "",
+      controllerEquipment: session.controllerEquipment || "",
+      controllerAntenna: session.controllerAntenna || "",
+      controllerQth: session.controllerQth || "",
+    })
+    setEditingSessionInfo(true)
+  }
+
+  const handleUpdateSessionInfo = async () => {
+    if (!session) return
+    if (currentUser?.role !== "admin") {
+      alert("仅管理员可修改主控信息")
+      setEditingSessionInfo(false)
+      return
+    }
+    const name = sessionForm.controllerName.trim()
+    if (!name) {
+      alert("主控呼号不能为空")
+      return
+    }
+    try {
+      const response = await fetch(`/api/admin/sessions/${session.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          controllerName: name,
+          controllerEquipment: sessionForm.controllerEquipment.trim() || null,
+          controllerAntenna: sessionForm.controllerAntenna.trim() || null,
+          controllerQth: sessionForm.controllerQth.trim() || null,
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "更新失败")
+      }
+      setSession({ ...session, ...data.session })
+      setEditingSessionInfo(false)
+      alert("主控信息已更新")
+    } catch (error: any) {
+      console.error("Update session info error:", error)
+      alert("更新主控信息失败: " + (error?.message || "未知错误"))
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 p-6 flex items-center justify-center">
@@ -536,7 +596,31 @@ export default function SessionDetailPage() {
           <>
             {/* Session Info */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4 text-black">会话信息</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-black">会话信息</h2>
+                {currentUser?.role === "admin" && (
+                  <button
+                    onClick={openSessionEdit}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+                      />
+                    </svg>
+                    编辑主控信息
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-black mb-1">
@@ -1144,6 +1228,105 @@ export default function SessionDetailPage() {
             </div>
           </div>
         )}
+
+        {/* 编辑主控信息 Modal（管理员专用） */}
+        {editingSessionInfo && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold mb-1 text-black">编辑主控信息</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  修改「主控呼号」会同步影响主控轮值表的聚合归属（按呼号聚合）。
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      主控呼号 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={sessionForm.controllerName}
+                      onChange={(e) =>
+                        setSessionForm({
+                          ...sessionForm,
+                          controllerName: e.target.value.toUpperCase(),
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="如 BI4IVE"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      设备
+                    </label>
+                    <input
+                      type="text"
+                      value={sessionForm.controllerEquipment}
+                      onChange={(e) =>
+                        setSessionForm({
+                          ...sessionForm,
+                          controllerEquipment: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="设备型号"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      天馈
+                    </label>
+                    <input
+                      type="text"
+                      value={sessionForm.controllerAntenna}
+                      onChange={(e) =>
+                        setSessionForm({
+                          ...sessionForm,
+                          controllerAntenna: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="天线类型"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      QTH
+                    </label>
+                    <input
+                      type="text"
+                      value={sessionForm.controllerQth}
+                      onChange={(e) =>
+                        setSessionForm({
+                          ...sessionForm,
+                          controllerQth: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
+                      placeholder="主控位置"
+                    />
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    onClick={() => setEditingSessionInfo(false)}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleUpdateSessionInfo}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )
