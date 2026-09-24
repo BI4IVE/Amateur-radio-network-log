@@ -1,4 +1,4 @@
-// @version v1.5.21
+// @version v1.5.22
 import { pgTable, varchar, text, timestamp, boolean, integer } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { createSchemaFactory } from "drizzle-zod"

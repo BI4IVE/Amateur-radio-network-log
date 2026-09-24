@@ -1,4 +1,4 @@
-/* @version v1.5.17 */
+/* @version v1.5.22 */
 @import "tailwindcss";
 
 :root {
@@ -13,15 +13,26 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* [v1.5.21] 全站为浅色设计，不再跟随系统深色模式切换前景/背景色。
+   此前跟随系统深色时 --foreground 变为 #ededed（近白），
+   而页面背景仍是浅色（bg-gray-50 / 白卡片），导致未显式设色的
+   文字（如 wechat/bind 输入框）变成"白字白底"几乎不可见。 */
+@layer base {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]),
+  select,
+  textarea {
+    color: #000000;
+    background-color: #ffffff;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af;
+  }
 }

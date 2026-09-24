@@ -1,4 +1,4 @@
-// @version v1.5.21
+// @version v1.5.22
 import { desc, eq, and, sql, lt, type SQL } from "drizzle-orm"
 import { getDb } from "./db"
 import { loginLogs, insertLoginLogSchema } from "./shared/schema"

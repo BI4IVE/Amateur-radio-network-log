@@ -1,16 +1,25 @@
 {
-  "latest": "1.5.21",
+  "latest": "1.5.22",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-09-12",
-  "title": "v1.5.21 版本更新（微信模板消息推送 · 架构调整）",
-  "summary": "微信模板消息推送（新功能）版本架构修改。如非必要不建议更新。下版本将发布全新 2.0 版本，将更新微信功能，建议可等待 2.0 的发布。",
+  "releaseDate": "2026-09-24",
+  "title": "v1.5.22 版本更新（表单与浅色显示修复）",
+  "summary": "修复深色环境下表单控件「白字白底」不可见的问题，统一表单控件黑字白底；修复微信绑定页输入框文字发灰看不清的问题。",
   "changelog": [
-    "微信模板消息推送（新功能）版本架构修改。如非必要不建议更新",
-    "下版本将发布全新 2.0 版本，将更新微信功能，建议可等待 2.0 的发布"
+    "修复深色环境下未显式设色的表单控件出现「白字白底」不可见的问题：移除全局深色媒体查询",
+    "优化表单控件基础样式兜底：输入框、下拉框、文本域统一黑字白底，占位文字统一灰色",
+    "修复微信绑定页输入框文字发灰、看不清的问题"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.22",
+      "releaseDate": "2026-09-24",
+      "title": "表单与浅色显示修复",
+      "summary": "修复深色环境下表单控件「白字白底」不可见的问题，统一表单控件黑字白底；修复微信绑定页输入框文字发灰看不清的问题。",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.22",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.22.tar.gz"
+    },
     {
       "version": "1.5.21",
       "releaseDate": "2026-09-12",

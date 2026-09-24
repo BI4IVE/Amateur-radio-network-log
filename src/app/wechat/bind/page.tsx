@@ -1,4 +1,4 @@
-// @version v1.5.21
+// @version v1.5.22
 "use client"
 
 import { useState, useEffect } from "react"
@@ -248,7 +248,7 @@ export default function WechatBindPage() {
                     value={callsign}
                     onChange={(e) => setCallsign(e.target.value)}
                     placeholder="如 BI4IVE"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 uppercase"
                   />
                 </div>
 
@@ -264,7 +264,7 @@ export default function WechatBindPage() {
                       type="password"
                       inputMode="numeric"
                       maxLength={6}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                     <p className="text-xs text-black mt-1">
                       仅用于核验身份，系统只存储加盐哈希，不会保存明文。
@@ -279,7 +279,7 @@ export default function WechatBindPage() {
                       value={bindCode}
                       onChange={(e) => setBindCode(e.target.value)}
                       placeholder="管理员发放的绑定码"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-black placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                     <p className="text-xs text-black mt-1">
                       绑定码与呼号一一对应，使用后立即失效。

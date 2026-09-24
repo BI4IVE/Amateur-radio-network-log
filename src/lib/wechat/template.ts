@@ -1,4 +1,4 @@
-// @version v1.5.21
+// @version v1.5.22
 import { getAccessToken } from "./accessToken"
 import { getWechatSettings } from "./settings"
 

@@ -1,4 +1,4 @@
-// @version v1.5.21
+// @version v1.5.22
 import { NextRequest, NextResponse } from "next/server"
 import { checkSignature } from "@/lib/wechat/signature"
 import { wechatBindingsManager } from "@/storage/database"

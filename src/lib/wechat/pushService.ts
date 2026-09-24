@@ -1,4 +1,4 @@
-// @version v1.5.21
+// @version v1.5.22
 import { wechatBindingsManager, wechatPushLogManager } from "@/storage/database"
 import { isWechatConfigured } from "./config"
 import { getWechatSettings } from "./settings"
