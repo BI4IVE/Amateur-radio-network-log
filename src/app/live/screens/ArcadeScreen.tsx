@@ -1,6 +1,6 @@
 "use client";
 
-// @version v1.5.22
+// @version v1.5.23
 // 街机大屏：复古街机风（A9 参考），霓虹粉/青/黄 + CRT 扫描线 + 像素风
 
 import {

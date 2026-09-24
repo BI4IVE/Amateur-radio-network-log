@@ -1,4 +1,4 @@
-// @version v1.5.21
+// @version v1.5.23
 import { eq, and, SQL, sql } from "drizzle-orm"
 import { getDb } from "./db"
 import { pageConfigs, insertPageConfigSchema, updatePageConfigSchema } from "./shared/schema"
@@ -26,6 +26,12 @@ export class PageConfigManager {
   async getAllConfigs(): Promise<PageConfig[]> {
     const db = await getDb()
     return db.select().from(pageConfigs).orderBy(sql`category, key`)
+  }
+
+  // 仅供匿名公开接口使用：只返回白名单内的配置，避免后台新增配置被自动公开
+  async getPublicConfigs(): Promise<PageConfig[]> {
+    const all = await this.getAllConfigs()
+    return all.filter((c) => PageConfigManager.PUBLIC_KEYS.includes(c.key))
   }
 
   async updateConfig(key: string, data: UpdatePageConfig): Promise<PageConfig | null> {
@@ -173,6 +179,11 @@ export class PageConfigManager {
       description: "大屏是否对外开放（true=任何人可看，false=仅登录用户可看）",
     },
   ]
+
+  // [公开配置白名单] 仅白名单内的 key 会返回给匿名访问者（GET /api/page-configs）。
+  // 默认取「默认配置 key 全集」：均为站点展示类配置（标题/频率/证书签发方等），不含任何密钥。
+  // 管理员后续新增的自定义配置默认不公开，需显式加入本白名单才会对外返回。
+  static readonly PUBLIC_KEYS: string[] = PageConfigManager.DEFAULT_CONFIGS.map((c) => c.key)
 
   // 返回所有默认配置的 key（静态列表，用于检测缺失项并自愈补齐）
   getDefaultConfigKeys(): string[] {

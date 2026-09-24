@@ -1,4 +1,4 @@
-// @version v1.5.21
+// @version v1.5.23
 import { NextRequest, NextResponse } from "next/server"
 import { userManager } from "@/storage/database/userManager"
 import { verifyPassword } from "@/lib/password"
@@ -6,15 +6,28 @@ import { getAuthUser, requireAdmin } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
-// GET /api/debug/login-check?username=&password= —— 登录诊断
-export async function GET(req: NextRequest) {
+// POST /api/debug/login-check —— 登录诊断（仅管理员）
+// [安全] 密码改为 POST + JSON 请求体传递，不再走 URL query，
+// 避免密码被写入浏览器历史、Nginx/代理日志与 APM 系统。
+export async function POST(req: NextRequest) {
   const user = await getAuthUser(req)
   const guard = requireAdmin(user)
   if (guard.error) {
     return NextResponse.json({ error: "未授权" }, { status: 403 })
   }
-  const username = req.nextUrl.searchParams.get("username") || ""
-  const password = req.nextUrl.searchParams.get("password") || ""
+
+  let username = ""
+  let password = ""
+  try {
+    const body = await req.json()
+    username = typeof body?.username === "string" ? body.username : ""
+    password = typeof body?.password === "string" ? body.password : ""
+  } catch {
+    return NextResponse.json(
+      { error: "请求体需为 JSON：{ username, password }" },
+      { status: 400 }
+    )
+  }
 
   const targetUser = await userManager.getUserByUsername(username)
   if (!targetUser) {

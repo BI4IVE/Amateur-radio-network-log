@@ -1,11 +1,12 @@
-// @version v1.5.21
+// @version v1.5.23
 import { NextRequest, NextResponse } from "next/server"
 import { pageConfigManager } from "@/storage/database"
 
-// GET /api/page-configs - 获取所有公开配置（不包括管理员专用配置）
+// GET /api/page-configs - 仅返回「公开配置白名单」内的配置
+// 管理员新增的自定义配置默认不公开，需显式加入白名单才会对外返回
 export async function GET(request: NextRequest) {
   try {
-    const configs = await pageConfigManager.getAllConfigs()
+    const configs = await pageConfigManager.getPublicConfigs()
     
     // 将配置转换为 key-value 对象
     const configMap: Record<string, string> = {}

@@ -1,18 +1,13 @@
-// @version v1.5.21
+// @version v1.5.23
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireLogin } from "@/lib/auth"
 
-// [v1.5.13 安全] 校验当前用户是否有权操作该会话下的记录：
-// 管理员无限制；普通用户仅可操作「自己作为主控」的会话（防止越权篡改他人台网记录）。
-function assertCanMutate(user: { userId: string; role: string } | null, session: { controllerId: string }): { error?: string } {
-  if (!user) return { error: "需要登录" }
-  if (user.role === "admin") return {}
-  if (user.role === "user" && session.controllerId === user.userId) return {}
-  return { error: "您没有权限操作此台网记录" }
-}
+// [权限模型说明] 本系统权限仅区分「已登录」与「匿名」：
+// 所有已登录用户（内部人员）均可增改删任意台网记录，不做按人/按主控的归属隔离。
+// 因此本接口只做登录校验（requireLogin）+ 会话存在性/过期校验，不再做主控归属校验。
 
 export async function PUT(
   request: NextRequest,
@@ -36,12 +31,6 @@ export async function PUT(
         { error: "会话不存在" },
         { status: 404 }
       )
-    }
-
-    // [v1.5.13 安全] 归属校验：非管理员只能修改自己主控会话的记录
-    const perm = assertCanMutate(user, session)
-    if (perm.error) {
-      return NextResponse.json({ error: perm.error }, { status: 403 })
     }
 
     // 检查会话是否已过期（时限由后台配置，默认 6 小时）
@@ -98,12 +87,6 @@ export async function DELETE(
         { error: "会话不存在" },
         { status: 404 }
       )
-    }
-
-    // [v1.5.13 安全] 归属校验：非管理员只能删除自己主控会话的记录
-    const perm = assertCanMutate(user, session)
-    if (perm.error) {
-      return NextResponse.json({ error: perm.error }, { status: 403 })
     }
 
     // 检查会话是否已过期（时限由后台配置，默认 6 小时）
