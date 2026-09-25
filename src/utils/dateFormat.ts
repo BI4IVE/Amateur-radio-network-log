@@ -88,9 +88,9 @@ export function formatTime(dateString: string | null): string {
  * @param dateString ISO格式的日期字符串
  * @returns 格式化的日期时间字符串
  */
-export function formatDateTime(dateString: string): string {
-  // 解析日期（数据库返回的是 UTC 时间）
-  const date = new Date(dateString)
+export function formatDateTime(dateString: string | Date): string {
+  // 解析日期（数据库返回的是 UTC 时间）；同时支持直接传 Date 对象
+  const date = dateString instanceof Date ? dateString : new Date(dateString)
   // 转换为北京时间（UTC+8）：直接在 UTC 时间戳上加 8 小时
   const beijingDate = new Date(date.getTime() + (8 * 60 * 60 * 1000))
   
