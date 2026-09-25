@@ -1,9 +1,10 @@
-// @version v1.5.24
+// @version v1.5.25
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import AdminLayout from "@/components/AdminLayout"
+import { formatDateTimeCN } from "@/utils/dateFormat"
 
 type PushLog = {
   id: string
@@ -115,7 +116,7 @@ export default function WechatPushLogsPage() {
                 {items.map((log) => (
                   <tr key={log.id}>
                     <td className="px-4 py-3 text-black">
-                      {new Date(log.createdAt).toLocaleString("zh-CN")}
+                      {formatDateTimeCN(log.createdAt)}
                     </td>
                     <td className="px-4 py-3 font-medium">{log.callsign || "-"}</td>
                     <td className="px-4 py-3">

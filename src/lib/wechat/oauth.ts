@@ -1,4 +1,4 @@
-// @version v1.5.24
+// @version v1.5.25
 import { getWechatEnv } from "./config"
 
 /**

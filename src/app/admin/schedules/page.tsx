@@ -1,8 +1,9 @@
 "use client"
 
-// @version v1.5.24
+// @version v1.5.25
 import { useEffect, useState } from "react"
 import AdminLayout from "@/components/AdminLayout"
+import { formatDateTimeCN } from "@/utils/dateFormat"
 
 interface Schedule {
   id: string
@@ -118,7 +119,7 @@ export default function SchedulesPage() {
               {!loading && list.map((s) => (
                 <tr key={s.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-semibold text-gray-900">{s.title || "未命名台网"}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{s.scheduledTime ? new Date(s.scheduledTime).toLocaleString("zh-CN") : "—"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900">{s.scheduledTime ? formatDateTimeCN(s.scheduledTime) : "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-900">{s.controllerName || "待定"}</td>
                   <td className="px-4 py-3 text-sm">
                     <button onClick={() => edit(s)} className="mr-3 font-medium text-blue-600 hover:underline">编辑</button>

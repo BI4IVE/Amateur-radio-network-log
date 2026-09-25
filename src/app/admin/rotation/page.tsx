@@ -1,8 +1,9 @@
 "use client"
 
-// @version v1.5.24
+// @version v1.5.25
 import { useEffect, useState } from "react"
 import AdminLayout from "@/components/AdminLayout"
+import { formatDateTimeCN } from "@/utils/dateFormat"
 
 interface RotationRow {
   controllerId: string | null
@@ -83,7 +84,7 @@ export default function RotationPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">{row.sessionCount}</td>
                       <td className="px-4 py-3 text-sm text-gray-500">
-                        {row.lastSessionAt ? new Date(row.lastSessionAt).toLocaleString("zh-CN") : "—"}
+                        {row.lastSessionAt ? formatDateTimeCN(row.lastSessionAt) : "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         <div className="flex items-center gap-2">

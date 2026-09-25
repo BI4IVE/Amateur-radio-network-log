@@ -1,9 +1,10 @@
-// @version v1.5.24
+// @version v1.5.25
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
 import AdminLayout from "@/components/AdminLayout"
 import type { AuditLog, LogSession } from "@/storage/database/shared/schema"
+import { formatDateTimeCN } from "@/utils/dateFormat"
 
 interface DeletedItem {
   session: LogSession
@@ -89,7 +90,7 @@ export default function RecyclePage() {
                     <div>
                       <p className="font-semibold text-gray-900">{it.session.title || it.session.controllerName}</p>
                       <p className="text-sm text-gray-500">
-                        {it.session.sessionTime ? new Date(it.session.sessionTime).toLocaleString("zh-CN") : ""}
+                        {it.session.sessionTime ? formatDateTimeCN(it.session.sessionTime) : ""}
                         {" · 主控 "}{it.session.controllerName}
                         {" · 软删记录 "}{it.deletedRecordCount}{" 条"}
                       </p>
@@ -122,7 +123,7 @@ export default function RecyclePage() {
                           log.action === "RESTORE" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
                         }`}>{log.action}</span>
                         <span className="text-xs text-gray-400">
-                          {log.createdAt ? new Date(log.createdAt).toLocaleString("zh-CN") : ""}
+                          {log.createdAt ? formatDateTimeCN(log.createdAt) : ""}
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-gray-700">{log.detail}</p>

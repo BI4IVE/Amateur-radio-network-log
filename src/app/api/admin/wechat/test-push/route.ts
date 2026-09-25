@@ -1,4 +1,4 @@
-// @version v1.5.24
+// @version v1.5.25
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser, requireAdmin } from "@/lib/auth"
 import {
@@ -8,6 +8,7 @@ import {
 import { isWechatConfigured } from "@/lib/wechat/config"
 import { sendTemplateMessage } from "@/lib/wechat/template"
 import { clearAccessTokenCache } from "@/lib/wechat/accessToken"
+import { formatDateTimeCN } from "@/utils/dateFormat"
 
 /**
  * [v1.5.21 微信推送] POST /api/admin/wechat/test-push
@@ -58,9 +59,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const now = new Date().toLocaleString("zh-CN", {
-      timeZone: "Asia/Shanghai",
-    })
+    const now = formatDateTimeCN(new Date())
 
     const result = await sendTemplateMessage(openid, {
       callsign: callsign || "TEST",

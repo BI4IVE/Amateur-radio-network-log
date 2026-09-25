@@ -1,9 +1,10 @@
-// @version v1.5.24
+// @version v1.5.25
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import AdminLayout from "@/components/AdminLayout"
+import { formatDateTimeCN } from "@/utils/dateFormat"
 
 type MemberRow = {
   id: string
@@ -196,7 +197,7 @@ export default function WechatMembersPage() {
                       {item.idHash.slice(0, 12)}...
                     </td>
                     <td className="px-4 py-3 text-black">
-                      {new Date(item.importedAt).toLocaleString("zh-CN")}
+                      {formatDateTimeCN(item.importedAt)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button

@@ -1,9 +1,10 @@
-// @version v1.5.24
+// @version v1.5.25
 "use client"
 
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import AdminLayout from "@/components/AdminLayout"
+import { formatDateTimeCN } from "@/utils/dateFormat"
 
 interface Equipment {
   id: string
@@ -190,7 +191,7 @@ export default function AdminEquipmentsPage() {
     const data = equipments.map((e) => ({
       "设备名称": e.name,
       "描述": e.description || "",
-      "创建时间": new Date(e.createdAt).toLocaleString("zh-CN"),
+      "创建时间": formatDateTimeCN(e.createdAt),
     }))
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
@@ -409,7 +410,7 @@ export default function AdminEquipmentsPage() {
                             />
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-500">
-                            {new Date(equipment.createdAt).toLocaleString("zh-CN")}
+                            {formatDateTimeCN(equipment.createdAt)}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-2">
@@ -437,7 +438,7 @@ export default function AdminEquipmentsPage() {
                             {equipment.description || "-"}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-500">
-                            {new Date(equipment.createdAt).toLocaleString("zh-CN")}
+                            {formatDateTimeCN(equipment.createdAt)}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-2">

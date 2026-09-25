@@ -1,7 +1,8 @@
 "use client"
 
-// @version v1.5.24
+// @version v1.5.25
 import { useEffect, useState } from "react"
+import { formatDateTimeCN } from "@/utils/dateFormat"
 
 interface Upcoming {
   id: string
@@ -74,7 +75,7 @@ export default function ScheduleCountdown() {
           <p className="text-xs font-medium uppercase tracking-wide text-indigo-500">下次台网预告</p>
           <p className="mt-1 text-lg font-bold text-gray-900">{up.title || "未命名台网"}</p>
           <p className="mt-0.5 text-sm text-gray-500">
-            {new Date(up.scheduledTime).toLocaleString("zh-CN")}
+            {formatDateTimeCN(up.scheduledTime)}
             {up.controllerName ? ` · 主控 ${up.controllerName}` : " · 主控待定"}
           </p>
         </div>

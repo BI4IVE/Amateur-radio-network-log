@@ -1,4 +1,4 @@
-// @version v1.5.24
+// @version v1.5.25
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, equipmentManager } from "@/storage/database"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"

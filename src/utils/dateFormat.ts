@@ -1,4 +1,4 @@
-// @version v1.5.24
+// @version v1.5.25
 /**
  * 将当前时间转换为北京时间 ISO 格式字符串（用于 datetime-local 输入框默认值）
  * @param date 可选的日期对象，默认为当前时间
@@ -141,4 +141,20 @@ export function formatDate(dateString: string): string {
   const day = beijingDate.getUTCDate().toString().padStart(2, '0')
 
   return `${year}-${month}-${day}`
+}
+
+/**
+ * 统一的时间显示入口：把任意时间值格式化为「北京时间」yyyy-MM-dd HH:mm:ss。
+ *
+ * 用于替换原先散落各处的 new Date(x).toLocaleString("zh-CN")：
+ * toLocaleString 按「运行环境时区」渲染，主控/管理员设备或服务器不在 UTC+8 时会整体偏 8 小时；
+ * 本函数恒定输出北京时间，与 formatTime/formatDate/formatDateTime 保持一致。
+ *
+ * @param value Date 对象、ISO 字符串，或 null/undefined（返回 "-"）
+ */
+export function formatDateTimeCN(value: string | Date | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "-"
+  const date = value instanceof Date ? value : new Date(value)
+  if (isNaN(date.getTime())) return "-"
+  return formatDateTime(date)
 }

@@ -1,16 +1,24 @@
 {
-  "latest": "1.5.24",
+  "latest": "1.5.25",
   "minRequired": "1.0.0",
   "releaseDate": "2026-09-26",
-  "title": "v1.5.24 版本更新（时间以服务器为准）",
-  "summary": "新增服务端时间接口，台网时间默认值统一取服务器时间，避免主控所处时区不同或本机时钟不准导致入库时间偏差。",
+  "title": "v1.5.25 版本更新（时间显示统一为北京时间）",
+  "summary": "统一各处时间显示为北京时间，替换原先按运行环境时区渲染的写法，避免非 UTC+8 环境下时间整体偏差。",
   "changelog": [
-    "新增服务端时间接口，台网时间默认值统一取服务器时间，不再依赖主控本机时钟",
-    "主页与后台「新建台网」的默认时间同步改用服务器时间"
+    "统一各处时间显示为北京时间：替换原先按运行环境时区渲染的 toLocaleString",
+    "新增统一入口 formatDateTimeCN，覆盖后台各管理页与首页倒计时等 16 处时间显示"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.25",
+      "releaseDate": "2026-09-26",
+      "title": "时间显示统一为北京时间",
+      "summary": "统一各处时间显示为北京时间，替换原先按运行环境时区渲染的写法，避免非 UTC+8 环境下时间整体偏差。",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.25",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.25.tar.gz"
+    },
     {
       "version": "1.5.24",
       "releaseDate": "2026-09-26",

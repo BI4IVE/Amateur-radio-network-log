@@ -1,9 +1,10 @@
-// @version v1.5.24
+// @version v1.5.25
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import AdminLayout from "@/components/AdminLayout"
+import { formatDateTimeCN } from "@/utils/dateFormat"
 
 interface User {
   id: string
@@ -371,7 +372,7 @@ export default function AdminPage() {
       设备: user.equipment || "",
       天线: user.antenna || "",
       QTH: user.qth || "",
-      创建时间: new Date(user.createdAt).toLocaleString("zh-CN"),
+      创建时间: formatDateTimeCN(user.createdAt),
     }))
 
     const csv = [
@@ -865,7 +866,7 @@ export default function AdminPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-500 uppercase">注册时间</label>
                   <p className="mt-1 text-sm text-gray-900">
-                    {new Date(detailUser.createdAt).toLocaleString("zh-CN")}
+                    {formatDateTimeCN(detailUser.createdAt)}
                   </p>
                 </div>
                 <div>
