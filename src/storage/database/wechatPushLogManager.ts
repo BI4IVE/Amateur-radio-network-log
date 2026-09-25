@@ -1,4 +1,4 @@
-// @version v1.5.23
+// @version v1.5.24
 import { desc, eq, and, sql, type SQL } from "drizzle-orm"
 import { getDb } from "./db"
 import { wechatPushLog, insertWechatPushLogSchema } from "./shared/schema"

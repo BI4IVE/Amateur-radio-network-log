@@ -1,4 +1,4 @@
-// @version v1.5.23
+// @version v1.5.24
 /**
  * 将当前时间转换为北京时间 ISO 格式字符串（用于 datetime-local 输入框默认值）
  * @param date 可选的日期对象，默认为当前时间
@@ -102,6 +102,27 @@ export function formatDateTime(dateString: string): string {
   const seconds = beijingDate.getUTCSeconds().toString().padStart(2, '0')
 
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
+/**
+ * 获取「服务器当前北京时间」（yyyy-MM-ddTHH:mm），用于时间输入框默认值。
+ *
+ * 以服务器时间为准：主控无论身处哪个时区、本机时钟是否准确，
+ * 取到的默认台网时间都一致，避免入库时间出现偏差。
+ * 请求失败时回退为本地计算（toBeijingISOString），不阻塞用户操作。
+ */
+export async function fetchServerBeijingTime(): Promise<string> {
+  try {
+    const res = await fetch("/api/server-time", { cache: "no-store" })
+    if (!res.ok) return toBeijingISOString()
+    const data = await res.json()
+    if (typeof data?.serverTime === "string" && data.serverTime.length > 0) {
+      return data.serverTime
+    }
+    return toBeijingISOString()
+  } catch {
+    return toBeijingISOString()
+  }
 }
 
 /**

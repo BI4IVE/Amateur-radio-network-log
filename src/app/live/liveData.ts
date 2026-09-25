@@ -1,6 +1,6 @@
 "use client";
 
-// @version v1.5.23
+// @version v1.5.24
 // 实况大屏共享数据 hook 与信号解析工具
 
 import { useCallback, useEffect, useState } from "react";

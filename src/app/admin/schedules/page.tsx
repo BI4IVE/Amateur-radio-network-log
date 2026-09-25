@@ -1,6 +1,6 @@
 "use client"
 
-// @version v1.5.23
+// @version v1.5.24
 import { useEffect, useState } from "react"
 import AdminLayout from "@/components/AdminLayout"
 

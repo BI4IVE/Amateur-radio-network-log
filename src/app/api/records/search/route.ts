@@ -1,4 +1,4 @@
-// @version v1.5.23
+// @version v1.5.24
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 // [v1.5.10] 记录公开查询接口，无需登录（middleware 已将 /api/records/search 列入 publicPaths）

@@ -1,9 +1,9 @@
-// @version v1.5.23
+// @version v1.5.24
 "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { formatTime, formatDateTime, formatDate, toBeijingISOString, beijingToUTCISOString, utcToBeijingLocalString } from "@/utils/dateFormat"
+import { formatTime, formatDateTime, formatDate, fetchServerBeijingTime, beijingToUTCISOString, utcToBeijingLocalString } from "@/utils/dateFormat"
 import ScheduleCountdown from "@/components/ScheduleCountdown"
 
 interface User {
@@ -196,7 +196,8 @@ export default function HomePage() {
         setSelectedControllerId(currentUser.id)
       }
       loadParticipants()
-      setSessionTime(toBeijingISOString())
+      // 台网时间默认取「服务器时间」为准，不受主控本机时区/时钟影响
+      fetchServerBeijingTime().then(setSessionTime)
       loadPageConfigs()
     }
   }, [currentUser])

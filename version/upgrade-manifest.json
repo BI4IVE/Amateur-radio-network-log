@@ -1,18 +1,24 @@
 {
-  "latest": "1.5.23",
+  "latest": "1.5.24",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-09-25",
-  "title": "v1.5.23 版本更新（权限与安全加固）",
-  "summary": "收敛记录修改/删除接口的权限判定；登录诊断凭据不再经由地址栏传递；公开配置接口按白名单返回；移除调试诊断页。",
+  "releaseDate": "2026-09-26",
+  "title": "v1.5.24 版本更新（时间以服务器为准）",
+  "summary": "新增服务端时间接口，台网时间默认值统一取服务器时间，避免主控所处时区不同或本机时钟不准导致入库时间偏差。",
   "changelog": [
-    "收敛记录修改/删除接口的权限判定，与「登录即可写」的权限模型保持一致",
-    "优化登录诊断流程，凭据不再经由地址栏传递",
-    "收敛公开配置接口的返回范围，按白名单输出",
-    "移除调试诊断页，精简生产构建内容"
+    "新增服务端时间接口，台网时间默认值统一取服务器时间，不再依赖主控本机时钟",
+    "主页与后台「新建台网」的默认时间同步改用服务器时间"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.24",
+      "releaseDate": "2026-09-26",
+      "title": "时间以服务器为准",
+      "summary": "新增服务端时间接口，台网时间默认值统一取服务器时间，避免主控所处时区不同或本机时钟不准导致入库时间偏差。",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.24",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.24.tar.gz"
+    },
     {
       "version": "1.5.23",
       "releaseDate": "2026-09-25",

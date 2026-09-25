@@ -1,11 +1,11 @@
-// @version v1.5.23
+// @version v1.5.24
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import AdminLayout from "@/components/AdminLayout"
 import { formatDate, formatDateTime, formatTime } from "@/utils/dateFormat"
-import { toBeijingISOString } from "@/utils/dateFormat"
+import { fetchServerBeijingTime } from "@/utils/dateFormat"
 import * as XLSX from "xlsx"
 
 interface LogSession {
@@ -331,7 +331,7 @@ export default function AdminLogsPage() {
             <p className="text-sm text-gray-500 mt-1">管理所有历史台网记录，支持修改、新增、导入导出</p>
           </div>
           <button
-            onClick={() => { setShowCreateSession(true); setNewSessionDate(toBeijingISOString()) }}
+            onClick={() => { setShowCreateSession(true); fetchServerBeijingTime().then(setNewSessionDate) }}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
           >
             + 新建指定日期会话
