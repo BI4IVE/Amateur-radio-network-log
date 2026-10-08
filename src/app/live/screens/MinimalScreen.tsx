@@ -1,6 +1,6 @@
 "use client";
 
-// @version v1.5.25
+// @version v1.5.26
 // 极简大屏：黑白高对比极简风（A8 参考）
 
 import {

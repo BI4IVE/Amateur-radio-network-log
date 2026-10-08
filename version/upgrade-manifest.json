@@ -1,16 +1,24 @@
 {
-  "latest": "1.5.25",
+  "latest": "1.5.26",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-09-26",
-  "title": "v1.5.25 版本更新（时间显示统一为北京时间）",
-  "summary": "统一各处时间显示为北京时间，替换原先按运行环境时区渲染的写法，避免非 UTC+8 环境下时间整体偏差。",
+  "releaseDate": "2026-10-08",
+  "title": "v1.5.26 版本更新（静态资源加载失败自愈）",
+  "summary": "修复部署后旧页面引用已失效静态资源导致页面无样式的问题：自愈守卫前置并同时监听脚本与样式表，资源 404 时自动刷新一次。",
   "changelog": [
-    "统一各处时间显示为北京时间：替换原先按运行环境时区渲染的 toLocaleString",
-    "新增统一入口 formatDateTimeCN，覆盖后台各管理页与首页倒计时等 16 处时间显示"
+    "修复部署后旧页面引用已失效 chunk 导致「页面无样式」的问题：自愈守卫移至页面最前",
+    "守卫同时监听脚本与样式表加载失败，资源 404 时自动刷新一次（仅一次）"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "1.5.26",
+      "releaseDate": "2026-10-08",
+      "title": "静态资源加载失败自愈",
+      "summary": "修复部署后旧页面引用已失效静态资源导致页面无样式的问题：自愈守卫前置并同时监听脚本与样式表，资源 404 时自动刷新一次。",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.26",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.26.tar.gz"
+    },
     {
       "version": "1.5.25",
       "releaseDate": "2026-09-26",
