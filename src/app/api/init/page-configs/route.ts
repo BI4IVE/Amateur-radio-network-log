@@ -1,4 +1,4 @@
-// @version v1.5.26
+// @version v1.5.27
 import { NextRequest, NextResponse } from "next/server"
 import { pageConfigManager } from "@/storage/database"
 import { getAuthUser, requireAdmin } from "@/lib/auth"

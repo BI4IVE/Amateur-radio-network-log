@@ -1,4 +1,4 @@
-// @version v1.5.26
+// @version v1.5.27
 import { createHash } from "crypto"
 import { getWechatEnv } from "./config"
 

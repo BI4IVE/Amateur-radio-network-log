@@ -1,4 +1,4 @@
-// @version v1.5.26
+// @version v1.5.27
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -158,8 +158,11 @@ export default function HomePage() {
   const powerRef = useRef<HTMLInputElement>(null)
   const signalRef = useRef<HTMLInputElement>(null)
 
-  // SSE connection ref
-  const eventSourceRef = useRef<EventSource | null>(null)
+  // [v1.5.27] 实时刷新：改用轮询，不再使用 SSE 长连接。
+  // 原因：站点前置 CDN 后会缓冲「尚未结束的流式响应」，实测 text/event-stream 长连接
+  // 在 CDN 后 4/4 次收不到任何字节（短响应正常），导致实时回显失效。
+  // 现改为定时拉取会话记录（服务端返回权威列表），对 CDN 完全友好。
+  const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     // [v1.5.11-fix] 始终以服务端 httpOnly cookie 为准，避免 localStorage 残留旧登录态
@@ -212,51 +215,49 @@ export default function HomePage() {
     }
   }
 
-  // SSE 实时连接
+  // 实时刷新（轮询）：定时拉取当前会话的权威记录列表，替代原先的 SSE 长连接
   useEffect(() => {
-    if (!currentSession) return
+    if (!currentSession?.id) return
 
-    // 创建 SSE 连接
-    const eventSource = new EventSource(`/api/sse/session/${currentSession.id}/subscribe`)
-    eventSourceRef.current = eventSource
+    const sessionId = currentSession.id
+    let cancelled = false
+    let inFlight = false
 
-    eventSource.onmessage = (event) => {
+    const poll = async () => {
+      if (cancelled || inFlight) return
+      // 页面在后台时跳过，切回前台会立即补一次
+      if (typeof document !== "undefined" && document.hidden) return
+      inFlight = true
       try {
-        const data = JSON.parse(event.data)
-
-        switch (data.type) {
-          case "connected":
-            console.log("SSE connected to session:", currentSession.id)
-            break
-
-          case "record_added":
-            // [v1.5.10] 按 id 兜底去重：无论提交响应与 SSE 回声的到达时序如何，最终数组唯一
-            setRecords((prev) => dedupeRecords([...prev, data.record]))
-            break
-
-          case "record_updated":
-            setRecords((prev) =>
-              dedupeRecords(prev.map((r) => (r.id === data.record.id ? data.record : r)))
-            )
-            break
-
-          case "record_deleted":
-            setRecords((prev) => prev.filter((r) => r.id !== data.recordId))
-            break
-        }
+        const res = await fetch(`/api/sessions/${sessionId}`, { cache: "no-store" })
+        if (!res.ok) return
+        const data = await res.json()
+        // [v1.5.10] 按 id 兜底去重，保证数组唯一
+        const next = dedupeRecords(data.records || [])
+        // 内容未变化时复用原数组，避免每 3 秒无谓重渲染
+        setRecords((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
       } catch (error) {
-        console.error("Failed to parse SSE message:", error)
+        console.error("轮询刷新记录失败:", error)
+      } finally {
+        inFlight = false
       }
     }
 
-    eventSource.onerror = (error) => {
-      console.error("SSE error:", error)
-      eventSource.close()
+    poll()
+    pollingTimerRef.current = setInterval(poll, 3000)
+
+    const onVisible = () => {
+      if (typeof document !== "undefined" && !document.hidden) poll()
     }
+    document.addEventListener("visibilitychange", onVisible)
 
     return () => {
-      eventSource.close()
-      eventSourceRef.current = null
+      cancelled = true
+      if (pollingTimerRef.current) {
+        clearInterval(pollingTimerRef.current)
+        pollingTimerRef.current = null
+      }
+      document.removeEventListener("visibilitychange", onVisible)
     }
   }, [currentSession?.id])
 

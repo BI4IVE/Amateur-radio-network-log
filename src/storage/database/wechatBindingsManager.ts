@@ -1,4 +1,4 @@
-// @version v1.5.26
+// @version v1.5.27
 import { desc, eq, and, sql, type SQL } from "drizzle-orm"
 import { getDb } from "./db"
 import { wechatBindings, insertWechatBindingSchema } from "./shared/schema"
