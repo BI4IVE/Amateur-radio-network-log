@@ -247,9 +247,18 @@ pnpm db:push
   curl -s -X POST http://127.0.0.1:5000/api/admin/migrate/page-configs -H "Authorization: Bearer $TOKEN"
   curl -s http://127.0.0.1:5000/api/admin/upgrade/check -H "Authorization: Bearer $TOKEN"
   ```
-  若想让「在线更新检测」真正可用，在 `.env` 设：
-  `UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-network-log/main/version/upgrade-manifest.json`
-  （不设也能用，只是检测时看不到远程清单，显示「当前已是最新版本」）。
+  若想让「在线更新检测」真正可用，在 `.env` 设 `UPGRADE_MANIFEST_URL`（不设也能用，只是检测时看不到远程清单，显示「当前已是最新版本」）。两个地址二选一：
+
+  ```bash
+  # ① GitHub raw：实时、无缓存延迟，但国内服务器基本连不上（实测 ECONNRESET / 连接超时）
+  UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-network-log/main/version/upgrade-manifest.json
+
+  # ② jsDelivr：国内可直连（实测 0.6~1.5s），代价是「分支方式」有约 12 小时缓存，
+  #    发新版后最多半天才检测到；需立即生效可到 jsDelivr 官网提交 purge
+  UPGRADE_MANIFEST_URL=https://cdn.jsdelivr.net/gh/BI4IVE/Amateur-radio-network-log@main/version/upgrade-manifest.json
+  ```
+
+  **国内部署推荐 ②**。另有一个环境坑：若服务器**没有 IPv6 出口**，Node 的 fetch 可能偶尔挑到 IPv6 导致间歇性 `ECONNRESET`（同一地址时好时坏），可给进程加 `NODE_OPTIONS=--dns-result-order=ipv4first` 规避。
 
 **坑 8：测试站与正式站共用端口/数据库的风险**
 - 现象：同一服务器两站都 `PORT=5000`、连同一库，重启容易误操作另一站。

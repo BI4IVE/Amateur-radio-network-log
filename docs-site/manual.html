@@ -567,7 +567,7 @@ docker-compose logs -f app</code></pre>
         <tr><td><code>PORT</code></td><td>推荐</td><td>服务监听端口，默认 5000，需与 Nginx 反代一致</td></tr>
         <tr><td><code>NODE_ENV</code></td><td>推荐</td><td>生产环境设为 <code>production</code></td></tr>
         <tr><td><code>FORCE_SECURE_COOKIE</code></td><td>可选</td><td>站点为 HTTPS 时设为 <code>true</code>，Cookie 才会带 <code>Secure</code> 属性</td></tr>
-        <tr><td><code>UPGRADE_MANIFEST_URL</code></td><td>可选</td><td>在线版本检测清单地址，默认指向 GitHub raw 的 <span class="path">version/upgrade-manifest.json</span></td></tr>
+        <tr><td><code>UPGRADE_MANIFEST_URL</code></td><td>可选</td><td>在线版本检测清单地址。<b>国内服务器连不上 GitHub raw，建议改用 jsDelivr 地址</b>（分支方式约 12 小时缓存，发新版后检测有延迟）</td></tr>
       </tbody>
     </table>
     <h4>完整示例</h4>
@@ -577,7 +577,9 @@ NODE_ENV=production
 JWT_SECRET=用 openssl rand -base64 48 生成的随机强密钥
 ADMIN_INIT_PASSWORD=你的初始管理员密码
 FORCE_SECURE_COOKIE=true
-UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-network-log/main/version/upgrade-manifest.json</code></pre>
+UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-network-log/main/version/upgrade-manifest.json
+# 国内服务器直连 GitHub raw 会失败（ECONNRESET），请改用下面这个：
+# UPGRADE_MANIFEST_URL=https://cdn.jsdelivr.net/gh/BI4IVE/Amateur-radio-network-log@main/version/upgrade-manifest.json</code></pre>
     <div class="callout c-warn"><b>服务器 .env 行尾带 CR</b><p>用脚本 <code>grep</code> / <code>cut</code> 取值时记得去除回车，否则密码会多出不可见字符导致连不上库。</p></div>
   </section>
 

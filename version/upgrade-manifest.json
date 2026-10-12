@@ -2,10 +2,12 @@
   "latest": "1.5.27",
   "minRequired": "1.0.0",
   "releaseDate": "2026-10-13",
-  "title": "v1.5.27 版本更新（实时刷新改为轮询）",
-  "summary": "实时列表刷新由 SSE 长连接改为定时轮询，保证站点前置 CDN 后实时回显仍可用。",
+  "title": "v1.5.27 版本更新（轮询刷新 · 404 页面）",
+  "summary": "实时列表刷新由 SSE 长连接改为定时轮询，保证站点前置 CDN 后实时回显仍可用；新增自定义 404 页面。",
   "changelog": [
-    "实时刷新由 SSE 长连接改为 3 秒轮询，兼容前置 CDN 环境（CDN 会缓冲未结束的流式响应）"
+    "实时刷新由 SSE 长连接改为 3 秒轮询，兼容前置 CDN 环境（CDN 会缓冲未结束的流式响应）",
+    "新增自定义 404 页面",
+    "部署文档与在线说明书补充国内可用的版本清单地址，以及无 IPv6 出口环境的规避说明"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
@@ -13,8 +15,8 @@
     {
       "version": "1.5.27",
       "releaseDate": "2026-10-13",
-      "title": "实时刷新改为轮询",
-      "summary": "实时列表刷新由 SSE 长连接改为定时轮询，保证站点前置 CDN 后实时回显仍可用。",
+      "title": "轮询刷新 · 404 页面",
+      "summary": "实时列表刷新由 SSE 长连接改为定时轮询，保证站点前置 CDN 后实时回显仍可用；新增自定义 404 页面。",
       "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v1.5.27",
       "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v1.5.27.tar.gz"
     },
