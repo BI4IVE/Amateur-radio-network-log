@@ -1,4 +1,4 @@
-// @version v1.5.27
+// @version v1.5.28
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -66,7 +66,7 @@ export default function RootLayout({
   })();`
 
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <head>
         {/* 必须置于 <head> 最前，早于后续 async 资源脚本，才能捕获它们的加载失败 */}
         <script dangerouslySetInnerHTML={{ __html: reloadScript }} />
