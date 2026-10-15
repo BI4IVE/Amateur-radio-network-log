@@ -1,4 +1,4 @@
-// @version v1.5.27
+// @version v1.5.28
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
 import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"

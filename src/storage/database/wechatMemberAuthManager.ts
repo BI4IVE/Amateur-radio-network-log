@@ -1,4 +1,4 @@
-// @version v1.5.27
+// @version v1.5.28
 import { desc, eq, and, sql, type SQL } from "drizzle-orm"
 import { getDb } from "./db"
 import { wechatMemberAuth, insertWechatMemberAuthSchema } from "./shared/schema"

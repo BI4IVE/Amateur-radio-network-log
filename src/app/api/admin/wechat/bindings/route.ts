@@ -1,4 +1,4 @@
-// @version v1.5.27
+// @version v1.5.28
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser, requireAdmin } from "@/lib/auth"
 import { wechatBindingsManager } from "@/storage/database"
