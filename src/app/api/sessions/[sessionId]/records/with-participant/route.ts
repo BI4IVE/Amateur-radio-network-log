@@ -1,4 +1,4 @@
-// @version v1.5.27
+// @version v1.5.28
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, participantManager } from "@/storage/database"
 import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
@@ -49,7 +49,9 @@ export async function POST(
     // Add record to session
     const record = await logManager.createLogRecord({
       sessionId,
-      callsign: body.callsign,
+      // [数据规范] 呼号统一大写入库。前端已做「输入法感知转大写」，但个别浏览器在
+      // 输入法组合提交后不再触发 input 事件，可能残留小写，这里做最后一道保证。
+      callsign: String(body.callsign ?? "").trim().toUpperCase(),
       qth: body.qth || null,
       equipment: body.equipment || null,
       antenna: body.antenna || null,

@@ -1,10 +1,11 @@
-// @version v1.5.27
+// @version v1.5.28
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import * as XLSX from "xlsx-js-style"
 import { formatDate, formatDateTime, formatTime } from "@/utils/dateFormat"
+import { useImeTracker, imeUpper } from "@/lib/ime"
 
 interface Session {
   id: string
@@ -31,6 +32,8 @@ interface LogRecord {
 }
 
 export default function SessionDetailPage() {
+  // [输入法保护] 监听输入法组合态：中文组词期间不改写输入值
+  useImeTracker()
   const router = useRouter()
   const params = useParams()
   const sessionId = params.id as string
@@ -742,7 +745,9 @@ export default function SessionDetailPage() {
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
                             {formatTime(record.createdAt)}
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
+                          {/* [换行] QTH 去掉 whitespace-nowrap 允许字间换行，并用 min-w-40 保底列宽：
+                              否则 auto 表格会把宽度赤字全压给唯一可换行的列，导致「单字一行」。 */}
+                          <td className="px-2 py-2 min-w-40 break-words text-sm text-black">
                             {record.qth || "-"}
                           </td>
                           <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
@@ -905,7 +910,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setEditingRecord({
                           ...editingRecord,
-                          callsign: e.target.value.toUpperCase(),
+                          callsign: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -921,7 +926,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setEditingRecord({
                           ...editingRecord,
-                          qth: e.target.value.toUpperCase(),
+                          qth: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -937,7 +942,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setEditingRecord({
                           ...editingRecord,
-                          equipment: e.target.value.toUpperCase(),
+                          equipment: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -953,7 +958,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setEditingRecord({
                           ...editingRecord,
-                          antenna: e.target.value.toUpperCase(),
+                          antenna: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -969,7 +974,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setEditingRecord({
                           ...editingRecord,
-                          power: e.target.value.toUpperCase(),
+                          power: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -985,7 +990,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setEditingRecord({
                           ...editingRecord,
-                          signal: e.target.value.toUpperCase(),
+                          signal: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1001,7 +1006,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setEditingRecord({
                           ...editingRecord,
-                          report: e.target.value.toUpperCase(),
+                          report: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1017,7 +1022,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setEditingRecord({
                           ...editingRecord,
-                          remarks: e.target.value.toUpperCase(),
+                          remarks: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1070,7 +1075,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setNewRecord({
                           ...newRecord,
-                          callsign: e.target.value.toUpperCase(),
+                          callsign: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1087,7 +1092,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setNewRecord({
                           ...newRecord,
-                          qth: e.target.value.toUpperCase(),
+                          qth: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1104,7 +1109,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setNewRecord({
                           ...newRecord,
-                          equipment: e.target.value.toUpperCase(),
+                          equipment: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1121,7 +1126,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setNewRecord({
                           ...newRecord,
-                          antenna: e.target.value.toUpperCase(),
+                          antenna: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1138,7 +1143,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setNewRecord({
                           ...newRecord,
-                          power: e.target.value.toUpperCase(),
+                          power: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1155,7 +1160,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setNewRecord({
                           ...newRecord,
-                          signal: e.target.value.toUpperCase(),
+                          signal: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1172,7 +1177,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setNewRecord({
                           ...newRecord,
-                          report: e.target.value.toUpperCase(),
+                          report: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1189,7 +1194,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setNewRecord({
                           ...newRecord,
-                          remarks: e.target.value.toUpperCase(),
+                          remarks: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
@@ -1249,7 +1254,7 @@ export default function SessionDetailPage() {
                       onChange={(e) =>
                         setSessionForm({
                           ...sessionForm,
-                          controllerName: e.target.value.toUpperCase(),
+                          controllerName: imeUpper(e.target.value),
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"

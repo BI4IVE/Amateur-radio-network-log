@@ -1,4 +1,4 @@
-// @version v1.5.27
+// @version v1.5.28
 "use client"
 
 // [v1.5.10] 强制动态渲染，避免静态预渲染被 CDN/浏览器强缓存导致后台配置修改后证书不更新
@@ -8,6 +8,7 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { formatDateTime } from "@/utils/dateFormat"
 import { useCertConfig } from "./certConfig"
+import { useImeTracker, imeUpper } from "@/lib/ime"
 
 interface ParticipationRecord {
   time: string
@@ -66,6 +67,8 @@ function drawField(ctx: CanvasRenderingContext2D, centerX: number, label: string
 }
 
 export default function QueryPage() {
+  // [输入法保护] 监听输入法组合态：中文组词期间不改写输入值
+  useImeTracker()
   const router = useRouter()
   const searchParams = useSearchParams()
   const serverCert = useCertConfig()
@@ -344,7 +347,7 @@ export default function QueryPage() {
               <input
                 type="text"
                 value={callsign}
-                onChange={(e) => setCallsign(e.target.value.toUpperCase())}
+                onChange={(e) => setCallsign(imeUpper(e.target.value))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-black"
                 placeholder="请输入呼号，例如: BI4KABC"
                 required

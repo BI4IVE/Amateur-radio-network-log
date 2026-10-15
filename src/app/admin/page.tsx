@@ -1,4 +1,4 @@
-// @version v1.5.27
+// @version v1.5.28
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -644,7 +644,7 @@ export default function AdminPage() {
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">{user.name}</div>
+                            <div className="text-sm text-black">{user.name}</div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span
@@ -657,10 +657,12 @@ export default function AdminPage() {
                               {user.role === "admin" ? "管理员" : "主控"}
                             </span>
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                             {user.equipment || "-"}
                           </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {/* [换行] QTH 去掉 whitespace-nowrap 允许字间换行，并用 min-w-40 保底列宽：
+                              否则 auto 表格会把宽度赤字全压给唯一可换行的列，导致「单字一行」。 */}
+                          <td className="px-2 py-4 min-w-40 break-words text-sm text-black">
                             {user.qth || "-"}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">

@@ -1,4 +1,4 @@
-// @version v1.5.27
+// @version v1.5.28
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, equipmentManager } from "@/storage/database"
 import { getAuthUser, requireAdmin } from "@/lib/auth"
@@ -61,6 +61,8 @@ export async function POST(
 
     const record = await logManager.createLogRecord({
       ...body,
+      // [数据规范] 呼号统一大写入库（前端可能因输入法组合残留小写）
+      callsign: String(body.callsign ?? "").trim().toUpperCase(),
       sessionId,
     })
 

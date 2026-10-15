@@ -1,9 +1,10 @@
-// @version v1.5.27
+// @version v1.5.28
 "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { formatTime, formatDateTime, formatDate, fetchServerBeijingTime, beijingToUTCISOString, utcToBeijingLocalString } from "@/utils/dateFormat"
+import { useImeTracker, imeUpper, isImeComposing } from "@/lib/ime"
 import ScheduleCountdown from "@/components/ScheduleCountdown"
 
 interface User {
@@ -52,7 +53,38 @@ interface Session {
   sessionTime: string
 }
 
+// 逐字段比较单条记录是否完全一致。
+// 目的：原先用 JSON.stringify(prev) === JSON.stringify(next) 做"内容是否变化"的判断，
+// 每次轮询会对两个数组各做一次全量序列化；记录较多时开销随记录数线性放大。
+// log_records 表没有 updatedAt 字段（编辑记录不产生时间戳变化），所以必须按内容逐字段比较，不能只比 id/时间。
+function isSameRecord(a: LogRecord, b: LogRecord): boolean {
+  return (
+    a.id === b.id &&
+    a.callsign === b.callsign &&
+    a.qth === b.qth &&
+    a.equipment === b.equipment &&
+    a.antenna === b.antenna &&
+    a.power === b.power &&
+    a.signal === b.signal &&
+    a.report === b.report &&
+    a.remarks === b.remarks &&
+    a.createdAt === b.createdAt
+  )
+}
+
+// 比较两个记录数组是否完全一致（长度 + 逐条内容）
+function isSameRecordList(a: LogRecord[], b: LogRecord[]): boolean {
+  if (a === b) return true
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    if (!isSameRecord(a[i], b[i])) return false
+  }
+  return true
+}
+
 export default function HomePage() {
+  // [输入法保护] 监听输入法组合态：中文组词期间不改写输入值、不弹联想下拉
+  useImeTracker()
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [users, setUsers] = useState<User[]>([])
@@ -235,7 +267,8 @@ export default function HomePage() {
         // [v1.5.10] 按 id 兜底去重，保证数组唯一
         const next = dedupeRecords(data.records || [])
         // 内容未变化时复用原数组，避免每 3 秒无谓重渲染
-        setRecords((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
+        // （用逐字段比较替代 JSON.stringify 全量序列化，见文件顶部 isSameRecordList 说明）
+        setRecords((prev) => (isSameRecordList(prev, next) ? prev : next))
       } catch (error) {
         console.error("轮询刷新记录失败:", error)
       } finally {
@@ -1042,7 +1075,7 @@ export default function HomePage() {
               <input
                 type="text"
                 value={controllerName}
-                onChange={(e) => setControllerName(e.target.value.toUpperCase())}
+                onChange={(e) => setControllerName(imeUpper(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控人员姓名"
               />
@@ -1055,7 +1088,7 @@ export default function HomePage() {
               <input
                 type="text"
                 value={controllerEquipment}
-                onChange={(e) => setControllerEquipment(e.target.value.toUpperCase())}
+                onChange={(e) => setControllerEquipment(imeUpper(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控设备"
               />
@@ -1068,7 +1101,7 @@ export default function HomePage() {
               <input
                 type="text"
                 value={controllerAntenna}
-                onChange={(e) => setControllerAntenna(e.target.value.toUpperCase())}
+                onChange={(e) => setControllerAntenna(imeUpper(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控天线"
               />
@@ -1081,7 +1114,7 @@ export default function HomePage() {
               <input
                 type="text"
                 value={controllerQth}
-                onChange={(e) => setControllerQth(e.target.value.toUpperCase())}
+                onChange={(e) => setControllerQth(imeUpper(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                 placeholder="主控位置"
               />
@@ -1242,11 +1275,13 @@ export default function HomePage() {
                     type="text"
                     value={callsign}
                     onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
+                      const value = imeUpper(e.target.value)
                       setCallsign(value)
                       searchParticipants(value)
                     }}
                     onKeyDown={(e) => {
+                      // [输入法保护] 组合期间的 Enter/方向键/数字键属于输入法选词，不抢
+                      if (isImeComposing() || e.nativeEvent.isComposing) return
                       if (showSearchResults && searchResults.length > 0) {
                         if (e.key === "ArrowDown") {
                           e.preventDefault()
@@ -1309,11 +1344,13 @@ export default function HomePage() {
                     type="text"
                     value={qth}
                     onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
+                      const value = imeUpper(e.target.value)
                       setQth(value)
                       searchFieldValues("qth", value, setQthResults, setSelectedQthIndex)
                     }}
                     onKeyDown={(e) => {
+                      // [输入法保护] 组合期间的 Enter/方向键/数字键属于输入法选词，不抢
+                      if (isImeComposing() || e.nativeEvent.isComposing) return
                       if (showQthResults && qthResults.length > 0) {
                         if (e.key === "ArrowDown") {
                           e.preventDefault()
@@ -1378,11 +1415,13 @@ export default function HomePage() {
                     type="text"
                     value={equipment}
                     onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
+                      const value = imeUpper(e.target.value)
                       setEquipment(value)
                       searchEquipmentWithLibrary(value)
                     }}
                     onKeyDown={(e) => {
+                      // [输入法保护] 组合期间的 Enter/方向键/数字键属于输入法选词，不抢
+                      if (isImeComposing() || e.nativeEvent.isComposing) return
                       if (showEquipmentResults && equipmentResults.length > 0) {
                         if (e.key === "ArrowDown") {
                           e.preventDefault()
@@ -1448,11 +1487,13 @@ export default function HomePage() {
                     type="text"
                     value={antenna}
                     onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
+                      const value = imeUpper(e.target.value)
                       setAntenna(value)
                       searchFieldValues("antenna", value, setAntennaResults, setSelectedAntennaIndex)
                     }}
                     onKeyDown={(e) => {
+                      // [输入法保护] 组合期间的 Enter/方向键/数字键属于输入法选词，不抢
+                      if (isImeComposing() || e.nativeEvent.isComposing) return
                       if (showAntennaResults && antennaResults.length > 0) {
                         if (e.key === "ArrowDown") {
                           e.preventDefault()
@@ -1518,11 +1559,13 @@ export default function HomePage() {
                     type="text"
                     value={power}
                     onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
+                      const value = imeUpper(e.target.value)
                       setPower(value)
                       searchFieldValues("power", value, setPowerResults, setSelectedPowerIndex)
                     }}
                     onKeyDown={(e) => {
+                      // [输入法保护] 组合期间的 Enter/方向键/数字键属于输入法选词，不抢
+                      if (isImeComposing() || e.nativeEvent.isComposing) return
                       if (showPowerResults && powerResults.length > 0) {
                         if (e.key === "ArrowDown") {
                           e.preventDefault()
@@ -1588,11 +1631,13 @@ export default function HomePage() {
                     type="text"
                     value={signal}
                     onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
+                      const value = imeUpper(e.target.value)
                       setSignal(value)
                       searchFieldValues("signal", value, setSignalResults, setSelectedSignalIndex)
                     }}
                     onKeyDown={(e) => {
+                      // [输入法保护] 组合期间的 Enter/方向键/数字键属于输入法选词，不抢
+                      if (isImeComposing() || e.nativeEvent.isComposing) return
                       if (showSignalResults && signalResults.length > 0) {
                         if (e.key === "ArrowDown") {
                           e.preventDefault()
@@ -1657,11 +1702,13 @@ export default function HomePage() {
                     type="text"
                     value={report}
                     onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
+                      const value = imeUpper(e.target.value)
                       setReport(value)
                       searchFieldValues("report", value, setReportResults, setSelectedReportIndex)
                     }}
                     onKeyDown={(e) => {
+                      // [输入法保护] 组合期间的 Enter/方向键/数字键属于输入法选词，不抢
+                      if (isImeComposing() || e.nativeEvent.isComposing) return
                       if (showReportResults && reportResults.length > 0) {
                         if (e.key === "ArrowDown") {
                           e.preventDefault()
@@ -1725,11 +1772,13 @@ export default function HomePage() {
                   <textarea
                     value={remarks}
                     onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
+                      const value = imeUpper(e.target.value)
                       setRemarks(value)
                       searchFieldValues("remarks", value, setRemarksResults, setSelectedRemarksIndex)
                     }}
                     onKeyDown={(e) => {
+                      // [输入法保护] 组合期间的 Enter/方向键/数字键属于输入法选词，不抢
+                      if (isImeComposing() || e.nativeEvent.isComposing) return
                       if (showRemarksResults && remarksResults.length > 0) {
                         if (e.key === "ArrowDown") {
                           e.preventDefault()
@@ -1845,31 +1894,31 @@ export default function HomePage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                         序号
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         呼号
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         时间
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         QTH
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         设备
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         天馈
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         功率
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                         信号
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
+                      <th className="px-2 py-3 text-left text-xs font-semibold text-indigo-900 uppercase tracking-wider">
                         操作
                       </th>
                     </tr>
@@ -1903,31 +1952,35 @@ export default function HomePage() {
                     ) : (
                       [...records].reverse().map((record, index) => (
                         <tr key={record.id} className="hover:bg-gray-50 transition-colors duration-150">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">
                             {records.length - index}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
+                          <td className="px-2 py-3 whitespace-nowrap text-sm font-semibold text-gray-900">
                             {record.callsign}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
                             {formatTime(record.createdAt)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          {/* [换行] QTH 常含详细地址：去掉 whitespace-nowrap 允许字间换行，
+                              并用 min-w-40 保底列宽 —— auto 表格布局会把宽度赤字全部压给
+                              「唯一可换行的列」，不给下限就会退化成一列一个字（单字一行）。
+                              内边距由 px-4 收到 px-2，为 QTH 腾出约 140px，避免反而出现横向滚动。 */}
+                          <td className="px-2 py-3 min-w-40 break-words text-sm text-black">
                             {record.qth || "-"}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
                             {record.equipment || "-"}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
                             {record.antenna || "-"}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
                             {record.power || "-"}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                          <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
                             {record.signal || "-"}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <td className="px-2 py-3 whitespace-nowrap text-sm">
                             <div className="flex gap-2">
                               {/* 管理员：显示编辑和删除 */}
                               {currentUser?.role === "admin" && (
@@ -2041,7 +2094,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.callsign}
                     onChange={(e) => {
-                      const value = e.target.value.toUpperCase()
+                      const value = imeUpper(e.target.value)
                       setEditingRecord({ ...editingRecord, callsign: value })
                       searchParticipantsForEdit(value)
                     }}
@@ -2085,7 +2138,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.qth || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, qth: e.target.value.toUpperCase() })
+                      setEditingRecord({ ...editingRecord, qth: imeUpper(e.target.value) })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -2099,7 +2152,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.equipment || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, equipment: e.target.value.toUpperCase() })
+                      setEditingRecord({ ...editingRecord, equipment: imeUpper(e.target.value) })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -2113,7 +2166,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.antenna || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, antenna: e.target.value.toUpperCase() })
+                      setEditingRecord({ ...editingRecord, antenna: imeUpper(e.target.value) })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -2127,7 +2180,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.power || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, power: e.target.value.toUpperCase() })
+                      setEditingRecord({ ...editingRecord, power: imeUpper(e.target.value) })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -2141,7 +2194,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.signal || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, signal: e.target.value.toUpperCase() })
+                      setEditingRecord({ ...editingRecord, signal: imeUpper(e.target.value) })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -2155,7 +2208,7 @@ export default function HomePage() {
                     type="text"
                     value={editingRecord.report || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, report: e.target.value.toUpperCase() })
+                      setEditingRecord({ ...editingRecord, report: imeUpper(e.target.value) })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
                   />
@@ -2168,7 +2221,7 @@ export default function HomePage() {
                   <textarea
                     value={editingRecord.remarks || ""}
                     onChange={(e) =>
-                      setEditingRecord({ ...editingRecord, remarks: e.target.value.toUpperCase() })
+                      setEditingRecord({ ...editingRecord, remarks: imeUpper(e.target.value) })
                     }
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-black"
