@@ -1,4 +1,4 @@
-// @version v1.5.27
+// @version v1.5.28
 import { eq, and, SQL, like, desc, gte, sql, isNull } from "drizzle-orm"
 import { getDb } from "./db"
 import {
@@ -496,17 +496,23 @@ export class LogManager {
       .from(logSessions)
       .where(sql`${logSessions.deletedAt} IS NOT NULL`)
       .orderBy(desc(logSessions.deletedAt))
-    const result: { session: LogSession; deletedRecordCount: number }[] = []
-    for (const session of rows) {
-      const [cnt] = await db
-        .select({ c: sql<number>`count(*)::int` })
-        .from(logRecords)
-        .where(
-          and(eq(logRecords.sessionId, session.id), sql`${logRecords.deletedAt} IS NOT NULL`)
-        )
-      result.push({ session, deletedRecordCount: Number(cnt?.c ?? 0) })
-    }
-    return result
+    if (rows.length === 0) return []
+
+    // [C2 修复] 原实现是「对每个会话各发一条 count 查询」（N+1）；改为一次 GROUP BY 聚合后在内存里合并。
+    const grouped = await db
+      .select({
+        sessionId: logRecords.sessionId,
+        c: sql<number>`count(*)::int`,
+      })
+      .from(logRecords)
+      .where(sql`${logRecords.deletedAt} IS NOT NULL`)
+      .groupBy(logRecords.sessionId)
+    const countMap = new Map(grouped.map((g) => [g.sessionId, Number(g.c ?? 0)]))
+
+    return rows.map((session) => ({
+      session,
+      deletedRecordCount: countMap.get(session.id) ?? 0,
+    }))
   }
 }
 
