@@ -1,4 +1,4 @@
-// @version v2.0.0
+// @version v2.0.1
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST() {

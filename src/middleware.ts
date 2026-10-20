@@ -1,4 +1,4 @@
-// @version v2.0.0
+// @version v2.0.1
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { verifyToken } from "@/lib/auth"
