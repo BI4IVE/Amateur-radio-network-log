@@ -325,16 +325,25 @@ export default function QueryPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-2">
+          <h1 className="text-xl font-bold text-gray-900 truncate">
             呼号参与查询
           </h1>
-          <button
-            onClick={handleBack}
-            className="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-          >
-            返回
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* [v2.0.0] 从个人中心跳来查询页后，可以直接回去 */}
+            <a
+              href="/me"
+              className="px-3 py-2 text-xs sm:text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 whitespace-nowrap"
+            >
+              个人中心
+            </a>
+            <button
+              onClick={handleBack}
+              className="px-3 py-2 text-xs sm:text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 whitespace-nowrap"
+            >
+              返回
+            </button>
+          </div>
         </div>
       </header>
 

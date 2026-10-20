@@ -74,6 +74,9 @@ function licenseCell(value: string | null): { text: string; className: string } 
   )
   if (Number.isNaN(days)) return { text: value, className: "text-gray-600" }
   if (days < 0) return { text: `${value} 已过期`, className: "text-red-600 font-medium" }
+  // 与个人中心、会员详情保持一致：30 天内红、31–90 天黄
+  if (days <= 30)
+    return { text: `${value}（${days} 天）`, className: "text-red-600 font-medium" }
   if (days <= 90)
     return { text: `${value}（${days} 天）`, className: "text-amber-600 font-medium" }
   return { text: value, className: "text-gray-600" }

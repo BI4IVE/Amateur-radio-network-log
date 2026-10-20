@@ -33,6 +33,7 @@ type Participant = {
 type Detail = {
   callsign: string
   participant: Participant | null
+  defaults?: { licenseIssuer: string }
   license: {
     state: "none" | "ok" | "soon" | "urgent" | "expired"
     label: string
@@ -171,7 +172,8 @@ export default function AdminParticipantDetailPage() {
         licenseNo: p?.licenseNo ?? "",
         licenseType: p?.licenseType ?? "",
         operatorClass: p?.operatorClass ?? "",
-        licenseIssuer: p?.licenseIssuer ?? "",
+        // 未填写时用后台配置的默认发证机关预填
+        licenseIssuer: p?.licenseIssuer || (json.defaults?.licenseIssuer ?? ""),
         licenseIssueDate: p?.licenseIssueDate ?? "",
         licenseExpireDate: p?.licenseExpireDate ?? "",
       })

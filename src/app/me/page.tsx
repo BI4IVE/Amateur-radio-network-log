@@ -21,6 +21,8 @@ type Overview = {
   profile?: Profile
   license?: License
   stats?: Stats
+  /** 档案默认值（发证机关等，后台可配） */
+  defaults?: { licenseIssuer: string }
 }
 
 type Profile = {
@@ -143,6 +145,13 @@ function licenseTone(state: License["state"]) {
   }
 }
 
+/** 执照编号脱敏：保留前 3 位与后 3 位，中间用圆点代替 */
+function maskLicenseNo(value: string): string {
+  const trimmed = value.trim()
+  if (trimmed.length <= 6) return trimmed
+  return `${trimmed.slice(0, 3)}••••${trimmed.slice(-3)}`
+}
+
 /** 发证日期 + 5 年（YYYY-MM-DD） */
 function plusFiveYears(value: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return ""
@@ -170,6 +179,8 @@ export default function MePage() {
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [unbinding, setUnbinding] = useState(false)
+  // 执照编号默认脱敏，点小眼睛才显示完整
+  const [showLicenseNo, setShowLicenseNo] = useState(false)
 
   const loadOverview = useCallback(async () => {
     setLoading(true)
@@ -183,7 +194,14 @@ export default function MePage() {
       const json = (await res.json()) as Overview & { error?: string }
       if (!res.ok) throw new Error(json.error || "加载失败")
       setData(json)
-      if (json.profile) setForm({ ...json.profile })
+      if (json.profile) {
+        const next = { ...json.profile }
+        // [v2.0.0] 发证机关为空时用后台配置的默认值预填，用户仍可改
+        if (!next.licenseIssuer && json.defaults?.licenseIssuer) {
+          next.licenseIssuer = json.defaults.licenseIssuer
+        }
+        setForm(next)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "加载失败")
     } finally {
@@ -195,16 +213,22 @@ export default function MePage() {
     loadOverview()
   }, [loadOverview])
 
-  const loadRecords = useCallback(async (offset = 0) => {
+  // [v2.0.0] 我的记录每页 5 条，其余翻页查看
+  const RECORD_PAGE_SIZE = 5
+  const [recordPage, setRecordPage] = useState(0)
+
+  const loadRecords = useCallback(async (pageIndex = 0) => {
     setRecordsLoading(true)
     try {
-      const res = await fetch(`/api/me/records?limit=50&offset=${offset}`, {
-        cache: "no-store",
-      })
+      const res = await fetch(
+        `/api/me/records?limit=${RECORD_PAGE_SIZE}&offset=${pageIndex * RECORD_PAGE_SIZE}`,
+        { cache: "no-store" }
+      )
       if (!res.ok) return
       const json = await res.json()
-      setRecords((prev) => (offset === 0 ? json.items || [] : [...prev, ...(json.items || [])]))
+      setRecords(json.items || [])
       setRecordTotal(json.total || 0)
+      setRecordPage(pageIndex)
     } finally {
       setRecordsLoading(false)
     }
@@ -380,11 +404,12 @@ export default function MePage() {
             label="最常信号"
             note={data.stats?.lastTime ? `最近 ${fmtDate(data.stats.lastTime)}` : "暂无记录"}
           />
+          {/* [v2.0.0] 不再展示「共 N 位活跃」：会暴露服务器累计会员总数 */}
           <StatCell
             value={data.stats?.rank ? `${data.stats.rank}` : "-"}
             unit="位"
             label="台网排名"
-            note={`共 ${data.stats?.rankedTotal ?? 0} 位活跃`}
+            note=""
           />
         </div>
 
@@ -405,9 +430,47 @@ export default function MePage() {
             </span>
           </div>
 
-          <p className="mt-3 text-lg font-extrabold tracking-wide text-black">
-            {data.profile?.licenseNo || "未填写执照编号"}
-          </p>
+          <div className="mt-3 flex items-center gap-1.5">
+            <p className="text-lg font-extrabold tracking-wide text-black">
+              {data.profile?.licenseNo
+                ? showLicenseNo
+                  ? data.profile.licenseNo
+                  : maskLicenseNo(data.profile.licenseNo)
+                : "未填写执照编号"}
+            </p>
+            {data.profile?.licenseNo ? (
+              <button
+                type="button"
+                onClick={() => setShowLicenseNo((v) => !v)}
+                aria-label={showLicenseNo ? "隐藏执照编号" : "显示完整执照编号"}
+                className="p-1 text-black/35 hover:text-black/60"
+              >
+                {showLicenseNo ? (
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-[18px] h-[18px] stroke-current fill-none"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <path d="M1 1l22 22" />
+                  </svg>
+                ) : (
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-[18px] h-[18px] stroke-current fill-none"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            ) : null}
+          </div>
           <p className="text-[10px] font-semibold text-black/45 mt-1">
             {data.profile?.licenseType || "未填写类别"}
             {data.profile?.operatorClass ? ` · ${data.profile.operatorClass}` : ""}
@@ -448,6 +511,53 @@ export default function MePage() {
               在「档案」里填写执照信息后，这里会显示到期倒计时。
             </p>
           )}
+        </div>
+
+        {/* 更多服务：两格入口 */}
+        <div className="mx-4 mt-3.5">
+          <p className="text-xs font-extrabold text-black/50 mb-2 pl-1">更多服务</p>
+          <div className="grid grid-cols-2 gap-3">
+            <a
+              href={`/query?callsign=${encodeURIComponent(data.binding.callsign || "")}`}
+              className="bg-white rounded-2xl p-3.5 shadow-[0_6px_18px_rgba(24,24,60,0.06)] block"
+            >
+              <span className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-[17px] h-[17px] stroke-indigo-600 fill-none"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+              </span>
+              <span className="block text-sm font-extrabold text-black mt-2.5">
+                台网查询
+              </span>
+              <span className="block text-[11px] text-black/45 mt-1">
+                查任意呼号历史记录
+              </span>
+            </a>
+
+            {/* [v2.0.0] 台网预告暂未开放，先占位、不可点击 */}
+            <div className="bg-white rounded-2xl p-3.5 shadow-[0_6px_18px_rgba(24,24,60,0.06)] flex flex-col justify-center">
+              <span className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-[17px] h-[17px] stroke-amber-500 fill-none"
+                  strokeWidth={1.9}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                </svg>
+              </span>
+              <span className="block text-sm font-extrabold text-black mt-2.5">
+                正在建设中
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* tabs */}
@@ -509,14 +619,34 @@ export default function MePage() {
               </div>
             )}
 
-            {records.length < recordTotal ? (
-              <button
-                onClick={() => loadRecords(records.length)}
-                disabled={recordsLoading}
-                className="mt-3 w-full h-11 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-black disabled:opacity-50"
-              >
-                {recordsLoading ? "加载中..." : `加载更多（${records.length}/${recordTotal}）`}
-              </button>
+            {recordTotal > RECORD_PAGE_SIZE ? (
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-[11px] text-black/45">
+                  共 {recordTotal} 条 · 每页 {RECORD_PAGE_SIZE} 条
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => loadRecords(recordPage - 1)}
+                    disabled={recordPage <= 0 || recordsLoading}
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-black disabled:opacity-40"
+                  >
+                    上一页
+                  </button>
+                  <span className="text-xs text-black/60 tabular-nums">
+                    {recordPage + 1} / {Math.max(1, Math.ceil(recordTotal / RECORD_PAGE_SIZE))}
+                  </span>
+                  <button
+                    onClick={() => loadRecords(recordPage + 1)}
+                    disabled={
+                      recordsLoading ||
+                      recordPage + 1 >= Math.ceil(recordTotal / RECORD_PAGE_SIZE)
+                    }
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-xs font-semibold text-black disabled:opacity-40"
+                  >
+                    下一页
+                  </button>
+                </div>
+              </div>
             ) : null}
           </div>
         ) : null}
@@ -748,21 +878,23 @@ function StatCell({
   value: string | number
   unit?: string
   label: string
-  note: string
+  note?: string
   border?: boolean
 }) {
   return (
     <div
-      className={`px-3.5 py-3.5 border-b border-gray-100 ${
+      className={`px-4 py-[18px] border-b border-gray-100 ${
         border ? "border-r" : ""
       }`}
     >
-      <p className="text-[22px] font-extrabold text-black leading-none tabular-nums">
+      <p className="text-[30px] font-extrabold text-black leading-none tabular-nums">
         {value}
-        {unit ? <span className="text-xs font-bold text-black/50 ml-0.5">{unit}</span> : null}
+        {unit ? (
+          <span className="text-[14px] font-bold text-black/50 ml-1">{unit}</span>
+        ) : null}
       </p>
-      <p className="text-[11px] text-black/55 mt-1.5">{label}</p>
-      <p className="text-[10px] text-black/40 mt-1">{note}</p>
+      <p className="text-[14px] font-medium text-black/60 mt-2.5">{label}</p>
+      {note ? <p className="text-[11.5px] text-black/45 mt-1.5">{note}</p> : null}
     </div>
   )
 }

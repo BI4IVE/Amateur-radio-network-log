@@ -1,7 +1,8 @@
 // @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions-server"
 import { computeLicenseInfo, LICENSE_STATE_LABEL, isValidDateString } from "@/lib/me/license"
+import { getDefaultLicenseIssuer } from "@/lib/me/defaults"
 import {
   logManager,
   participantManager,
@@ -41,21 +42,21 @@ function normalize(raw: unknown): string | null {
   return value === "" ? null : value
 }
 
-async function requireAdminUser(request: NextRequest) {
-  const user = await getAuthUser(request)
-  const error = requireAdmin(user)
-  if (error.error) {
-    return { error: NextResponse.json({ error: error.error }, { status: 403 }) }
-  }
-  return { user }
-}
+/**
+ * [v2.0.0] 权限点接入
+ *
+ * 之前这里只判断「是不是管理员」，导致超管在用户管理里取消勾选
+ * 「会员详情 / 修改档案」也不生效 —— 逐项权限在会员模块等于是半失效的。
+ * 现在读走 member.detail，写走 member.edit.profile，
+ * 与会员列表的 member.view 保持同一套口径。
+ */
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ callsign: string }> }
 ) {
   try {
-    const auth = await requireAdminUser(request)
+    const auth = await requirePermission(request, "member.detail")
     if ("error" in auth) return auth.error
 
     const { callsign: raw } = await params
@@ -87,6 +88,9 @@ export async function GET(
     return NextResponse.json({
       callsign,
       participant,
+      defaults: {
+        licenseIssuer: await getDefaultLicenseIssuer(),
+      },
       license: {
         ...license,
         label: LICENSE_STATE_LABEL[license.state],
@@ -143,7 +147,7 @@ export async function PUT(
   { params }: { params: Promise<{ callsign: string }> }
 ) {
   try {
-    const auth = await requireAdminUser(request)
+    const auth = await requirePermission(request, "member.edit.profile")
     if ("error" in auth) return auth.error
 
     const { callsign: raw } = await params

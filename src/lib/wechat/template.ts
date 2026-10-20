@@ -28,6 +28,19 @@ export type SendResult = {
   msgid?: string
 }
 
+/**
+ * [v2.0.0] 模板消息点击跳转链接（指向个人中心）
+ *
+ * 微信的 url 是发送时参数，不需要改公众号模板。
+ * 域名取 WECHAT_SITE_ORIGIN（绑定页授权一直在用）；没配就返回 undefined，
+ * 此时不传 url —— 宁可没有跳转，也不能因为链接非法让整条推送失败。
+ */
+function buildMeUrl(): string | undefined {
+  const origin = process.env.WECHAT_SITE_ORIGIN?.trim().replace(/\/+$/, "")
+  if (!origin) return undefined
+  return `${origin}/me`
+}
+
 export async function sendTemplateMessage(
   openid: string,
   data: TemplateData
@@ -66,14 +79,17 @@ export async function sendTemplateMessage(
     return { ok: false, errmsg: "模板 keyword 映射为空，无法组装消息内容" }
   }
 
-  let result = await postTemplate(openid, templateId, payload)
+  // 点击消息跳个人中心（顺带成为会员补全执照信息的触达渠道）
+  const linkUrl = buildMeUrl()
+
+  let result = await postTemplate(openid, templateId, payload, linkUrl)
 
   // access_token 失效（40001 invalid credential / 42001 expired）：
   // 丢弃内存缓存并重试一次。旧逻辑不清缓存，token 被其他消费者刷新后
   // 会一直失败到缓存过期（最长 2 小时），只能靠重启进程恢复。
   if (!result.ok && (result.errcode === 40001 || result.errcode === 42001)) {
     clearAccessTokenCache()
-    result = await postTemplate(openid, templateId, payload)
+    result = await postTemplate(openid, templateId, payload, linkUrl)
   }
 
   return result
@@ -82,15 +98,18 @@ export async function sendTemplateMessage(
 async function postTemplate(
   openid: string,
   templateId: string,
-  payload: Record<string, { value: string }>
+  payload: Record<string, { value: string }>,
+  url?: string
 ): Promise<SendResult> {
   const accessToken = await getAccessToken()
 
-  const body = {
+  const body: Record<string, unknown> = {
     touser: openid,
     template_id: templateId,
     data: payload,
   }
+  // 微信要求 http/https 且不能带 #；这里指向个人中心，用户点整条消息即跳转
+  if (url) body.url = url
 
   const res = await fetch(
     `https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=${accessToken}`,

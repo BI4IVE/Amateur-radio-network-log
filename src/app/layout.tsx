@@ -2,6 +2,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Analytics from "@/components/Analytics";
+import { pageConfigManager } from "@/storage/database";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,7 +26,37 @@ export const metadata: Metadata = {
   description: "济南黄河业余无线电中继台台网日志系统",
 };
 
-export default function RootLayout({
+/**
+ * [v2.0.0] 51LA 统计配置
+ *
+ * 存 page_configs：analytics_51la_id / analytics_51la_ck。
+ * 加 60 秒内存缓存，避免每个请求（含大屏轮询）都多打两次库。
+ * 读库失败时返回空值 —— 统计挂了不能影响整站渲染。
+ */
+let analyticsCache: { id: string; ck: string; at: number } | null = null;
+
+async function getAnalyticsConfig(): Promise<{ id: string; ck: string }> {
+  if (analyticsCache && Date.now() - analyticsCache.at < 60_000) {
+    return { id: analyticsCache.id, ck: analyticsCache.ck };
+  }
+  try {
+    const [idConfig, ckConfig] = await Promise.all([
+      pageConfigManager.getConfigByKey("analytics_51la_id"),
+      pageConfigManager.getConfigByKey("analytics_51la_ck"),
+    ]);
+    const value = {
+      id: idConfig?.value?.trim() || "",
+      ck: ckConfig?.value?.trim() || "",
+    };
+    analyticsCache = { ...value, at: Date.now() };
+    return value;
+  } catch (error) {
+    console.error("[layout] 读取 51LA 统计配置失败:", error);
+    return { id: "", ck: "" };
+  }
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -65,6 +97,8 @@ export default function RootLayout({
     } catch (e) {}
   })();`
 
+  const analytics = await getAnalyticsConfig();
+
   return (
     <html lang="zh-CN">
       <head>
@@ -75,6 +109,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        {/* 51LA 统计：未填 id/ck 时不渲染任何脚本 */}
+        <Analytics id={analytics.id} ck={analytics.ck} />
       </body>
     </html>
   );

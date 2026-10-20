@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getMemberIdentity, isActiveMember } from "@/lib/me/identity"
 import { computeLicenseInfo, LICENSE_STATE_LABEL } from "@/lib/me/license"
+import { getDefaultLicenseIssuer } from "@/lib/me/defaults"
 import { getWechatSettings } from "@/lib/wechat/settings"
 import {
   logManager,
@@ -41,13 +42,15 @@ export async function GET(request: NextRequest) {
 
     const callsign = identity.callsign
 
-    const [participant, stats, topSignal, rank, binding] = await Promise.all([
-      participantManager.getParticipantByCallsign(callsign),
-      logManager.getCallsignStats(callsign),
-      logManager.getCallsignTopSignal(callsign),
-      logManager.getCallsignRank(callsign),
-      wechatBindingsManager.getByOpenid(identity.openid),
-    ])
+    const [participant, stats, topSignal, rank, binding, defaultLicenseIssuer] =
+      await Promise.all([
+        participantManager.getParticipantByCallsign(callsign),
+        logManager.getCallsignStats(callsign),
+        logManager.getCallsignTopSignal(callsign),
+        logManager.getCallsignRank(callsign),
+        wechatBindingsManager.getByOpenid(identity.openid),
+        getDefaultLicenseIssuer(),
+      ])
 
     const license = computeLicenseInfo(
       participant?.licenseIssueDate ?? null,
@@ -61,6 +64,9 @@ export async function GET(request: NextRequest) {
         status: identity.status,
         callsign,
         boundAt: binding?.createdAt ?? null,
+      },
+      defaults: {
+        licenseIssuer: defaultLicenseIssuer,
       },
       profile: {
         callsign,
@@ -91,7 +97,7 @@ export async function GET(request: NextRequest) {
         lastTime: stats.lastTime,
         topSignal,
         rank: rank.rank,
-        rankedTotal: rank.total,
+        // 不返回全站活跃人数：这是服务器侧统计，不应暴露给普通会员
       },
     })
   } catch (error) {
