@@ -1,7 +1,8 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { participantManager } from "@/storage/database"
-import { getAuthUser, requireLogin, requireAdmin } from "@/lib/auth"
+import { getAuthUser, requireLogin } from "@/lib/auth"
+import { checkPermission } from "@/lib/permissions-server"
 
 export async function PUT(
   request: NextRequest,
@@ -17,7 +18,7 @@ export async function PUT(
     if (loginError.error) {
       return NextResponse.json({ error: loginError.error }, { status: 401 })
     }
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "member.edit.profile")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }

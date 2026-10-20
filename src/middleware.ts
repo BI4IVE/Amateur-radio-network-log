@@ -1,7 +1,8 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { verifyToken } from "@/lib/auth"
+import { roleRank } from "@/lib/permissions"
 // 需要登录的路径
 const protectedPaths = [
   "/api/users",
@@ -13,11 +14,13 @@ const protectedPaths = [
   "/admin",
 ]
 // 需要管理员权限的路径
+// [v1.5.29 权限] 中间件运行在 Edge、无法查库，只能做粗粒度硬边界：
+// 用户管理、页面配置只对管理员/超管开放。
+// 其余 /api/admin/* 与 /admin 页面不再一刀切，改由接口内的权限点判断，
+// 否则主控无法使用后台的「运营中心」（统计/看板/轮值/预告）。
 const adminPaths = [
   "/api/users",
-  "/api/admin",
   "/api/page-configs",
-  "/admin",
 ]
 // 公开路径（不需要认证）
 // 说明：导出接口 /api/sessions/*/export 需要登录，已从此名单移除，改由中间件统一保护
@@ -118,7 +121,7 @@ export async function middleware(request: NextRequest) {
   const isAdminPath = adminPaths.some(path => 
     pathname === path || pathname.startsWith(path + "/")
   )
-  if (isAdminPath && payload.role !== "admin") {
+  if (isAdminPath && roleRank(payload.role) < 2) {
     // API 路径：返回 JSON 403，由前端处理
     if (pathname.startsWith("/api/")) {
       console.log(`[Middleware] ${pathname} - Admin required but user role is ${payload.role}, returning 403`)

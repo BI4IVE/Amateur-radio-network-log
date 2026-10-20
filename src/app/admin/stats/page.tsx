@@ -1,8 +1,9 @@
-// @version v1.5.28
+// @version v2.0.0
 "use client"
 
 
 
+import { isAdminRole } from "@/lib/permissions"
 import { useState, useEffect } from "react"
 
 import { useRouter } from "next/navigation"
@@ -116,7 +117,7 @@ export default function AdminStatsPage() {
 
       // 数据过滤：非管理员只看到自己作为主控的会话
 
-      if (currentUser && currentUser.role !== "admin") {
+      if (currentUser && !isAdminRole(currentUser.role)) {
 
         params.append("controllerId", currentUser.id)
 

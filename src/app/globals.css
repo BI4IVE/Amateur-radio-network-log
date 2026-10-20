@@ -3,7 +3,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #000000;
 }
 
 @theme inline {
@@ -16,7 +16,12 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* [字体] 拉丁字母与数字用 Geist（呼号、频率、时间更耐看），
+     中文按平台回落到苹方 / 微软雅黑 / Noto Sans SC。
+     此前是 Arial —— Arial 不含中文字形，Windows 下中文只能落到宋体，观感显旧。 */
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+    "Helvetica Neue", Arial, sans-serif;
 }
 
 /* [v1.5.21] 全站为浅色设计，不再跟随系统深色模式切换前景/背景色。
@@ -34,5 +39,18 @@ body {
   input::placeholder,
   textarea::placeholder {
     color: #9ca3af;
+  }
+
+  /* [数字对齐] 表格里的数字改用等宽数字（tabular numerals）：
+     小数点、冒号位置对齐，同一列等长数字整齐，数字位数变化时列宽更稳定。
+     需要字体支持 OpenType 的 tnum 特性；Geist / 苹方 / 微软雅黑 均支持或本身即为等宽数字。 */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 呼号查询页保持原样：用更高优先级的选择器把表格数字变体还原。
+     （内联样式只能继承、压不住上面直接命中 table 的规则，所以必须用类选择器） */
+  .legacy-typography table {
+    font-variant-numeric: normal;
   }
 }

@@ -1,6 +1,6 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions-server"
 import { logManager } from "@/storage/database"
 import { eq } from "drizzle-orm"
 import { logSessions } from "@/storage/database/shared/schema"
@@ -10,11 +10,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
-  const user = await getAuthUser(_req)
-  const authError = requireAdmin(user)
-  if (authError.error) {
-    return NextResponse.json({ error: authError.error }, { status: 403 })
-  }
+  // [v1.5.29 权限] 主控可开启预告的台网
+  const auth = await requirePermission(_req, "ops.schedule")
+  if ("error" in auth) return auth.error
 
   const session = await logManager.getLogSessionById(id)
   if (!session) {

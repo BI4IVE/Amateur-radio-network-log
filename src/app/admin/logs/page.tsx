@@ -1,6 +1,7 @@
-// @version v1.5.28
+// @version v2.0.0
 "use client"
 
+import { isAdminRole } from "@/lib/permissions"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import AdminLayout from "@/components/AdminLayout"
@@ -72,7 +73,7 @@ export default function AdminLogsPage() {
     const userStr = localStorage.getItem("user")
     if (!userStr) { router.push("/login"); return }
     const u = JSON.parse(userStr)
-    if (u.role !== "admin") { router.push("/"); return }
+    if (!isAdminRole(u.role)) { router.push("/"); return }
     setUser(u)
     loadSessions()
   }, [])

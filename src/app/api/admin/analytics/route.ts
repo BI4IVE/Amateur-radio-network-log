@@ -1,7 +1,7 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions-server"
 import type { LogSession } from "@/storage/database/shared/schema"
 
 const WEEKDAY_LABELS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
@@ -25,11 +25,9 @@ function bjParts(d: Date) {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
-    if (adminError.error) {
-      return NextResponse.json({ error: adminError.error }, { status: 403 })
-    }
+    // [v1.5.29 权限] 主控也能看数据看板
+    const auth = await requirePermission(request, "ops.analytics")
+    if ("error" in auth) return auth.error
 
     const searchParams = request.nextUrl.searchParams
     const startDate = searchParams.get("startDate") || undefined

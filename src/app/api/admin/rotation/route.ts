@@ -1,16 +1,18 @@
-// @version v1.5.28
+// @version v1.5.29
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions-server"
 import { logManager } from "@/storage/database/logManager"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(req: NextRequest) {
-  // 管理员鉴权（与 /api/admin/stats 保持一致）
-  const user = await getAuthUser(req)
-  const authCheck = requireAdmin(user)
-  if (authCheck.error) {
-    return NextResponse.json({ success: false, message: authCheck.error }, { status: 401 })
+  // [v1.5.29 权限] 主控也能查看轮值
+  const auth = await requirePermission(req, "ops.rotation")
+  if ("error" in auth) {
+    return NextResponse.json(
+      { success: false, message: "无此操作权限" },
+      { status: 403 }
+    )
   }
 
   try {

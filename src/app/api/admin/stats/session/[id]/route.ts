@@ -1,18 +1,16 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions-server"
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
-    if (adminError.error) {
-      return NextResponse.json({ error: adminError.error }, { status: 403 })
-    }
+    // [v1.5.29 权限] 与台网统计同一权限点
+    const auth = await requirePermission(request, "ops.stats")
+    if ("error" in auth) return auth.error
 
     const { id: sessionId } = await params
 

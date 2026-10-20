@@ -1,6 +1,8 @@
-// @version v1.5.28
+// @version v2.0.0
 // 简单的 token 认证工具（兼容 Edge runtime）
 // 使用 Base64 编码的 JSON 作为 token，配合 HMAC 签名
+
+import { roleRank } from "./permissions"
 
 // [v1.5.13 安全] JWT_SECRET 必须显式配置，禁止硬编码默认值（高危：默认密钥可被伪造签名）。
 // 缺失时直接抛错，迫使部署方在 .env 中配置，避免静默使用弱密钥。
@@ -127,9 +129,11 @@ export async function getAuthUser(request: { headers: Headers }): Promise<JwtPay
 }
 
 // 检查用户是否为管理员
+// [v1.5.29 权限] 改为角色等级判断：admin 与 superadmin 都算管理员，
+// 否则升级出 superadmin 后，所有旧的 requireAdmin 会把超管挡在门外。
 export function requireAdmin(user: JwtPayload | null): { error?: string } {
   if (!user) return { error: "需要登录" }
-  if (user.role !== "admin") return { error: "需要管理员权限" }
+  if (roleRank(user.role) < 2) return { error: "需要管理员权限" }
   return {}
 }
 

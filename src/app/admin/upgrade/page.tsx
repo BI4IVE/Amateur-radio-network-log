@@ -1,6 +1,7 @@
-// @version v1.5.28
+// @version v2.0.0
 "use client"
 
+import { isAdminRole } from "@/lib/permissions"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import AdminLayout from "@/components/AdminLayout"
@@ -56,7 +57,7 @@ export default function UpgradePage() {
     }
     const user = JSON.parse(userStr)
     setCurrentUser(user)
-    if (user.role !== "admin") {
+    if (!isAdminRole(user.role)) {
       alert("无权访问此页面")
       router.push("/")
       return

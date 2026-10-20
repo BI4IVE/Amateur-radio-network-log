@@ -1,6 +1,7 @@
-// @version v1.5.28
+// @version v2.0.0
 "use client"
 
+import { isAdminRole } from "@/lib/permissions"
 import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import AdminLayout from "@/components/AdminLayout"
@@ -33,7 +34,7 @@ export default function AdminEquipmentsPage() {
       return
     }
     const user = JSON.parse(userStr)
-    if (user.role !== "admin") {
+    if (!isAdminRole(user.role)) {
       router.push("/")
       return
     }

@@ -1,5 +1,5 @@
-// @version v1.5.28
-import { getAccessToken } from "./accessToken"
+// @version v2.0.0
+import { getAccessToken, clearAccessTokenCache } from "./accessToken"
 import { getWechatSettings } from "./settings"
 
 /**
@@ -66,6 +66,24 @@ export async function sendTemplateMessage(
     return { ok: false, errmsg: "模板 keyword 映射为空，无法组装消息内容" }
   }
 
+  let result = await postTemplate(openid, templateId, payload)
+
+  // access_token 失效（40001 invalid credential / 42001 expired）：
+  // 丢弃内存缓存并重试一次。旧逻辑不清缓存，token 被其他消费者刷新后
+  // 会一直失败到缓存过期（最长 2 小时），只能靠重启进程恢复。
+  if (!result.ok && (result.errcode === 40001 || result.errcode === 42001)) {
+    clearAccessTokenCache()
+    result = await postTemplate(openid, templateId, payload)
+  }
+
+  return result
+}
+
+async function postTemplate(
+  openid: string,
+  templateId: string,
+  payload: Record<string, { value: string }>
+): Promise<SendResult> {
   const accessToken = await getAccessToken()
 
   const body = {
@@ -86,11 +104,18 @@ export async function sendTemplateMessage(
   const json = (await res.json()) as {
     errcode?: number
     errmsg?: string
-    msgid?: string
+    // 微信实际返回的是数字（int64），类型声明必须如实反映，
+    // 否则写库时会被 Zod 按 varchar 校验失败（路径 msgid）。
+    msgid?: string | number
   }
 
   if (json.errcode === 0) {
-    return { ok: true, msgid: json.msgid }
+    // 统一转字符串：wechat_push_log.msgid 是 varchar，
+    // 且推送日志 / 去重逻辑都依赖这条记录真正落库。
+    return {
+      ok: true,
+      msgid: json.msgid != null ? String(json.msgid) : undefined,
+    }
   }
   return { ok: false, errcode: json.errcode, errmsg: json.errmsg }
 }

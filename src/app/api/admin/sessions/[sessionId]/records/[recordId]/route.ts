@@ -1,7 +1,8 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { getAuthUser } from "@/lib/auth"
+import { checkPermission } from "@/lib/permissions-server"
 
 // PUT - 更新记录（管理员专用，不过期检查）
 export async function PUT(
@@ -10,7 +11,7 @@ export async function PUT(
 ) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "logs.edit")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }
@@ -44,7 +45,7 @@ export async function DELETE(
 ) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "logs.edit")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }

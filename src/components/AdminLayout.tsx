@@ -1,8 +1,45 @@
-// @version v1.5.28
+// @version v2.0.0
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { ReactNode, useState, useEffect } from "react"
+import { ReactNode, useState, useEffect, useMemo } from "react"
+import { ROLE_LABELS, isAdminRole, type PermissionKey } from "@/lib/permissions"
+
+/**
+ * [v1.5.29 权限] 页面路径 → 所需权限点
+ * 不挂在菜单数据上，是为了让菜单结构保持原样、只改判断逻辑，降低改错风险。
+ */
+const EXACT_PATH_PERMISSION: Record<string, PermissionKey> = {
+  "/admin": "user.manage",
+  "/admin/equipments": "equipment.manage",
+}
+
+const PREFIX_PATH_PERMISSION: [string, PermissionKey][] = [
+  ["/admin/stats", "ops.stats"],
+  ["/admin/analytics", "ops.analytics"],
+  ["/admin/rotation", "ops.rotation"],
+  ["/admin/schedules", "ops.schedule"],
+  ["/admin/logs", "logs.view"],
+  ["/admin/recycle", "recycle.view"],
+  ["/admin/login-logs", "loginlog.view"],
+  ["/admin/audit", "audit.view"],
+  ["/admin/participants", "member.view"],
+  ["/admin/page-configs", "pageconfig.manage"],
+  ["/admin/upgrade", "upgrade.manage"],
+  ["/admin/wechat/config", "push.config"],
+  ["/admin/wechat/bindings", "binding.view"],
+  ["/admin/wechat/bind-codes", "bindcode.manage"],
+  ["/admin/wechat/members", "memberauth.manage"],
+  ["/admin/wechat/push-logs", "pushlog.view"],
+]
+
+function requiredPermission(pathname: string): PermissionKey | undefined {
+  if (EXACT_PATH_PERMISSION[pathname]) return EXACT_PATH_PERMISSION[pathname]
+  for (const [prefix, permission] of PREFIX_PATH_PERMISSION) {
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return permission
+  }
+  return undefined
+}
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -104,7 +141,7 @@ const menuGroups: MenuGroup[] = [
       },
       {
         id: "recycle",
-        label: "回收站/审计",
+        label: "回收站",
         path: "/admin/recycle",
         icon: (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,6 +157,17 @@ const menuGroups: MenuGroup[] = [
         icon: (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        ),
+        requiredRole: "admin",
+      },
+      {
+        id: "audit",
+        label: "审计日志",
+        path: "/admin/audit",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
           </svg>
         ),
         requiredRole: "admin",
@@ -197,6 +245,68 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
+    // [v1.5.29 会员中心] 会员档案与微信绑定从「系统管理 / 微信推送」独立出来
+    id: "members",
+    label: "会员中心",
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+    items: [
+      {
+        id: "member-profiles",
+        label: "会员档案",
+        path: "/admin/participants",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        ),
+      },
+      {
+        id: "member-bindings",
+        label: "微信绑定",
+        path: "/admin/wechat/bindings",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+      },
+      {
+        id: "member-auth",
+        label: "会员对照表",
+        path: "/admin/wechat/members",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        ),
+      },
+      {
+        id: "member-bind-codes",
+        label: "绑定码",
+        path: "/admin/wechat/bind-codes",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+          </svg>
+        ),
+      },
+      {
+        id: "member-push-logs",
+        label: "推送日志",
+        path: "/admin/wechat/push-logs",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        ),
+      },
+    ],
+  },
+  {
     // [v1.5.21 微信推送]
     id: "wechat",
     label: "微信推送",
@@ -219,50 +329,6 @@ const menuGroups: MenuGroup[] = [
         ),
         requiredRole: "admin",
       },
-      {
-        id: "wechat-bindings",
-        label: "绑定管理",
-        path: "/admin/wechat/bindings",
-        icon: (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        ),
-        requiredRole: "admin",
-      },
-      {
-        id: "wechat-bind-codes",
-        label: "绑定码",
-        path: "/admin/wechat/bind-codes",
-        icon: (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-          </svg>
-        ),
-        requiredRole: "admin",
-      },
-      {
-        id: "wechat-members",
-        label: "会员对照表",
-        path: "/admin/wechat/members",
-        icon: (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-        ),
-        requiredRole: "admin",
-      },
-      {
-        id: "wechat-push-logs",
-        label: "推送日志",
-        path: "/admin/wechat/push-logs",
-        icon: (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-        ),
-        requiredRole: "admin",
-      },
     ],
   },
 ]
@@ -277,46 +343,79 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
+  // [v1.5.29 权限] null = 还在加载；空集合 = 明确没有任何后台权限
+  const [permissions, setPermissions] = useState<Set<string> | null>(null)
 
-  // 根据用户角色过滤分组与子项
-  const visibleGroups = currentUser
-    ? menuGroups
-        .map((group) => ({
-          ...group,
-          items: group.items.filter(
-            (item) =>
-              !item.requiredRole ||
-              item.requiredRole === "user" ||
-              currentUser.role === "admin"
-          ),
-        }))
-        .filter((group) => group.items.length > 0)
-    : []
+  // 按服务端返回的最终权限渲染菜单
+  const visibleGroups = useMemo(() => {
+    if (!permissions) return []
+    return menuGroups
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => {
+          const need = requiredPermission(item.path)
+          return !need || permissions.has(need)
+        }),
+      }))
+      .filter((group) => group.items.length > 0)
+  }, [permissions])
 
   // 当前激活的分组（按其子项是否命中当前路径判断）
   const activeGroup =
     visibleGroups.find((g) => g.items.some((it) => isItemActive(it.path, pathname))) ??
     visibleGroups[0]
 
-  const allItems = menuGroups.flatMap((g) => g.items)
-
   useEffect(() => {
-    const userStr = localStorage.getItem("user")
-    if (!userStr) {
-      router.push("/login")
-      return
+    let cancelled = false
+
+    const loadMe = async () => {
+      const userStr = localStorage.getItem("user")
+      if (!userStr) {
+        router.push("/login")
+        return
+      }
+
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" })
+        if (!res.ok) {
+          localStorage.removeItem("user")
+          router.push("/login")
+          return
+        }
+        const data = await res.json()
+        if (cancelled) return
+
+        const user = { ...data.user, role: data.role }
+        setCurrentUser(user)
+        setPermissions(new Set<string>(data.permissions || []))
+        // 同步本地缓存，供其它页面读取角色
+        localStorage.setItem("user", JSON.stringify(user))
+      } catch {
+        // 网络异常时退回本地缓存，避免后台完全打不开
+        if (cancelled) return
+        try {
+          setCurrentUser(JSON.parse(userStr))
+          setPermissions(new Set<string>())
+        } catch {
+          router.push("/login")
+        }
+      }
     }
 
-    const user = JSON.parse(userStr)
-    setCurrentUser(user)
-
-    // 检查用户是否有权限访问当前页面
-    const menuItem = allItems.find((item) => item.path === pathname)
-    if (menuItem?.requiredRole === "admin" && user.role !== "admin") {
-      router.push("/")
-      return
+    loadMe()
+    return () => {
+      cancelled = true
     }
-  }, [pathname, router])
+  }, [router])
+
+  // 当前页面没有对应权限 → 回首页，而不是渲染一个取不到数据的空壳
+  useEffect(() => {
+    if (!permissions) return
+    const need = requiredPermission(pathname)
+    if (need && !permissions.has(need)) {
+      router.replace("/")
+    }
+  }, [pathname, permissions, router])
 
   const handleLogout = async () => {
     try {
@@ -374,9 +473,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <span className="text-black">当前用户:</span>
                 <span className="font-medium text-black">{currentUser.name}</span>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  currentUser.role === "admin" ? "bg-purple-100 text-purple-800" : "bg-blue-100 text-blue-800"
+                  currentUser.role === "superadmin"
+                    ? "bg-purple-100 text-purple-800"
+                    : isAdminRole(currentUser.role)
+                      ? "bg-indigo-100 text-indigo-800"
+                      : "bg-blue-100 text-blue-800"
                 }`}>
-                  {currentUser.role === "admin" ? "管理员" : "主控"}
+                  {ROLE_LABELS[currentUser.role as keyof typeof ROLE_LABELS] ?? "主控"}
                 </span>
               </div>
             )}

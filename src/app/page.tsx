@@ -1,6 +1,7 @@
-// @version v1.5.28
+// @version v2.0.0
 "use client"
 
+import { isAdminRole } from "@/lib/permissions"
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { formatTime, formatDateTime, formatDate, fetchServerBeijingTime, beijingToUTCISOString, utcToBeijingLocalString } from "@/utils/dateFormat"
@@ -224,7 +225,7 @@ export default function HomePage() {
   useEffect(() => {
     if (currentUser) {
       // 仅管理员需要加载用户列表（主控无权限访问 /api/users，避免 403 弹错）
-      if (currentUser.role === "admin") {
+      if (isAdminRole(currentUser.role)) {
         loadUsers()
       } else if (currentUser.role === "user") {
         // 主控：直接以自身作为默认主控，不依赖 /api/users
@@ -617,7 +618,7 @@ export default function HomePage() {
     }
 
     // 检查权限：管理员和主控都可以添加记录到任何会话
-    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
+    if (!isAdminRole(currentUser?.role) && currentUser?.role !== "user") {
       alert("您没有权限添加记录")
       return
     }
@@ -766,7 +767,7 @@ export default function HomePage() {
 
   const handleEditRecord = (record: LogRecord) => {
     // 检查权限：管理员和主控都可以编辑任何记录
-    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
+    if (!isAdminRole(currentUser?.role) && currentUser?.role !== "user") {
       alert("您没有权限编辑此记录")
       return
     }
@@ -785,7 +786,7 @@ export default function HomePage() {
     }
 
     // 检查权限：只有管理员可以删除记录
-    if (currentUser?.role !== "admin") {
+    if (!isAdminRole(currentUser?.role)) {
       alert("您没有权限删除此记录")
       return
     }
@@ -821,7 +822,7 @@ export default function HomePage() {
     }
 
     // 检查权限：管理员和主控都可以修改任何记录
-    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
+    if (!isAdminRole(currentUser?.role) && currentUser?.role !== "user") {
       alert("您没有权限修改此记录")
       setShowEditModal(false)
       setEditingRecord(null)
@@ -926,7 +927,7 @@ export default function HomePage() {
               </svg>
               呼号查询
             </button>
-            {currentUser?.role === "admin" && (
+            {isAdminRole(currentUser?.role) && (
               <>
                 <button
                   onClick={() => router.push("/admin/stats")}
@@ -981,7 +982,7 @@ export default function HomePage() {
               </>
             )}
             <span className="text-sm text-white/90">
-              当前用户: {currentUser?.name} ({currentUser?.role === "admin" ? "管理员" : "主控"})
+              当前用户: {currentUser?.name} ({isAdminRole(currentUser?.role) ? "管理员" : "主控"})
             </span>
             <button
               onClick={handleClearCache}
@@ -1036,7 +1037,7 @@ export default function HomePage() {
             <h2 className="text-lg font-semibold text-black">台网主控人员信息</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {currentUser?.role === "admin" && (
+            {isAdminRole(currentUser?.role) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   主控人员
@@ -1172,7 +1173,8 @@ export default function HomePage() {
               </svg>
               查看当前台网
             </button>
-            {currentUser?.role === "admin" && (
+            {/* [v1.5.29 权限] 主控也有 ops.stats，运营中心入口对所有登录用户开放 */}
+            {currentUser && (
               <button
                 onClick={() => router.push("/admin/stats")}
                 className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -1983,7 +1985,7 @@ export default function HomePage() {
                           <td className="px-2 py-3 whitespace-nowrap text-sm">
                             <div className="flex gap-2">
                               {/* 管理员：显示编辑和删除 */}
-                              {currentUser?.role === "admin" && (
+                              {isAdminRole(currentUser?.role) && (
                                 <>
                                   <button
                                     onClick={() => handleEditRecord(record)}

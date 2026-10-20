@@ -1,4 +1,4 @@
-// @version v1.5.28
+// @version v2.0.0
 import {
   wechatBindingsManager,
   wechatMemberAuthManager,

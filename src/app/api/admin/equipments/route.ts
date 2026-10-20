@@ -1,13 +1,14 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { equipmentManager } from "@/storage/database/equipmentManager"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { getAuthUser } from "@/lib/auth"
+import { checkPermission } from "@/lib/permissions-server"
 
 // GET /api/admin/equipments - 获取设备列表
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "equipment.manage")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "equipment.manage")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }

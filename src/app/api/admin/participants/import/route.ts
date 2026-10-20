@@ -1,13 +1,14 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { participantManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { getAuthUser } from "@/lib/auth"
+import { checkPermission } from "@/lib/permissions-server"
 
 // POST - 批量导入参与者（管理员专用，基于 callsign upsert）
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "member.import")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }

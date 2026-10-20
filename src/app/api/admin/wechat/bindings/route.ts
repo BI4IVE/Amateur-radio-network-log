@@ -1,21 +1,22 @@
-// @version v1.5.28
+// @version v1.5.29
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { getAuthUser } from "@/lib/auth"
+import { checkPermission } from "@/lib/permissions-server"
 import { wechatBindingsManager } from "@/storage/database"
 import type { WechatBindStatus } from "@/storage/database/wechatBindingsManager"
 
 /**
  * [v1.5.21 微信推送] 后台绑定管理
  *
- * GET  ?status=&callsign=&limit=&offset=  列表（不传 status 时按呼号模糊搜索全部）
- * POST { action, openid, callsign? }
+ * GET  ?status=&callsign=&limit=&offset=  列表（binding.view）
+ * POST { action, openid, callsign? }      审核/解绑/改绑（binding.review）
  *      action = approve | reject | unbind | update-callsign
  */
 
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "binding.view")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "binding.review")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }

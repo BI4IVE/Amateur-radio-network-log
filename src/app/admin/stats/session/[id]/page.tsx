@@ -1,6 +1,7 @@
-// @version v1.5.28
+// @version v2.0.0
 "use client"
 
+import { isAdminRole } from "@/lib/permissions"
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import * as XLSX from "xlsx-js-style"
@@ -97,7 +98,7 @@ export default function SessionDetailPage() {
       const data = await response.json()
 
       // 权限检查：如果不是管理员，检查会话是否属于当前用户
-      if (currentUser && currentUser.role !== "admin") {
+      if (currentUser && !isAdminRole(currentUser.role)) {
         if (data.session && data.session.controllerId && data.session.controllerId !== currentUser.id) {
           alert("无权访问此会话详情")
           router.back()
@@ -329,7 +330,7 @@ export default function SessionDetailPage() {
 
   const handleEditRecord = (record: LogRecord) => {
     // 检查权限：管理员和主控都可以编辑任何记录
-    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
+    if (!isAdminRole(currentUser?.role) && currentUser?.role !== "user") {
       alert("您没有权限编辑此记录")
       return
     }
@@ -342,7 +343,7 @@ export default function SessionDetailPage() {
     if (!session || !editingRecord) return
 
     // 检查权限：管理员和主控都可以修改任何记录
-    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
+    if (!isAdminRole(currentUser?.role) && currentUser?.role !== "user") {
       alert("您没有权限修改此记录")
       setShowEditModal(false)
       setEditingRecord(null)
@@ -388,7 +389,7 @@ export default function SessionDetailPage() {
     }
 
     // 检查权限：只有管理员可以删除记录
-    if (currentUser?.role !== "admin") {
+    if (!isAdminRole(currentUser?.role)) {
       alert("您没有权限删除此记录")
       return
     }
@@ -416,7 +417,7 @@ export default function SessionDetailPage() {
 
   const handleInsertRecord = (record: LogRecord) => {
     // 检查权限：管理员和主控都可以在任何会话插入记录
-    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
+    if (!isAdminRole(currentUser?.role) && currentUser?.role !== "user") {
       alert("您没有权限插入记录")
       return
     }
@@ -442,7 +443,7 @@ export default function SessionDetailPage() {
     }
 
     // 检查权限：管理员和主控都可以在任何会话插入记录
-    if (currentUser?.role !== "admin" && currentUser?.role !== "user") {
+    if (!isAdminRole(currentUser?.role) && currentUser?.role !== "user") {
       alert("您没有权限插入记录")
       setShowInsertModal(false)
       return
@@ -516,7 +517,7 @@ export default function SessionDetailPage() {
 
   const openSessionEdit = () => {
     if (!session) return
-    if (currentUser?.role !== "admin") {
+    if (!isAdminRole(currentUser?.role)) {
       alert("仅管理员可修改主控信息")
       return
     }
@@ -531,7 +532,7 @@ export default function SessionDetailPage() {
 
   const handleUpdateSessionInfo = async () => {
     if (!session) return
-    if (currentUser?.role !== "admin") {
+    if (!isAdminRole(currentUser?.role)) {
       alert("仅管理员可修改主控信息")
       setEditingSessionInfo(false)
       return
@@ -601,7 +602,7 @@ export default function SessionDetailPage() {
             <div className="bg-white rounded-lg shadow p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-black">会话信息</h2>
-                {currentUser?.role === "admin" && (
+                {isAdminRole(currentUser?.role) && (
                   <button
                     onClick={openSessionEdit}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
@@ -771,7 +772,7 @@ export default function SessionDetailPage() {
                           <td className="px-4 py-2 whitespace-nowrap text-sm">
                             <div className="flex gap-2">
                               {/* 管理员：显示所有按钮 */}
-                              {currentUser?.role === "admin" && (
+                              {isAdminRole(currentUser?.role) && (
                                 <>
                                   <button
                                     onClick={() => handleInsertRecord(record)}

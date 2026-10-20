@@ -1,4 +1,5 @@
-// @version v1.5.28
+// @version v2.0.0
+import { isAdminRole } from "@/lib/permissions"
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, participantManager } from "@/storage/database"
 import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
@@ -39,7 +40,7 @@ export async function POST(
     }
 
     // 检查权限：管理员和主控都可以添加记录到任何会话
-    if (!user || (user.role !== "admin" && user.role !== "user")) {
+    if (!user || (!isAdminRole(user.role) && user.role !== "user")) {
       return NextResponse.json(
         { error: "您没有权限添加记录" },
         { status: 403 }

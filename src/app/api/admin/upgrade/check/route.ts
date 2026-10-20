@@ -1,18 +1,16 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { pageConfigManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions-server"
 import { FALLBACK_VERSION, CODE_VERSION, isNewerVersion } from "@/lib/version"
 
 // GET /api/admin/upgrade/check
 // 校验管理员登录后，比对「数据库中的当前版本」与「远程版本清单」，返回是否有新版本。
 export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
-    if (adminError.error) {
-      return NextResponse.json({ error: adminError.error }, { status: 403 })
-    }
+    // [v1.5.29 权限] 版本更新仅超管可用
+    const auth = await requirePermission(request, "upgrade.manage")
+    if ("error" in auth) return auth.error
 
     // 1) 当前版本：以数据库 page_configs.version 为准；数据库异常时回退兜底版本
     let currentVersion = FALLBACK_VERSION

@@ -1,8 +1,10 @@
-// @version v1.5.28
+// @version v2.0.0
 "use client"
 
+import { isAdminRole } from "@/lib/permissions"
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import AdminLayout from "@/components/AdminLayout"
 import * as XLSX from "xlsx"
 
@@ -17,6 +19,16 @@ interface Participant {
   signal: string | null
   report: string | null
   remarks: string | null
+  // [个人中心] 会员编号与执照（用户可自助维护）
+  memberNo: string | null
+  licenseNo: string | null
+  licenseType: string | null
+  operatorClass: string | null
+  licenseIssuer: string | null
+  licenseIssueDate: string | null
+  licenseExpireDate: string | null
+  /** [v1.5.29 会员中心] active / pending / inactive / rejected / null */
+  bindingStatus?: string | null
   createdAt: string
   updatedAt: string | null
 }
@@ -32,12 +44,55 @@ const emptyForm = {
   callsign: "", name: "", qth: "", equipment: "", antenna: "", power: "", signal: "", report: "", remarks: ""
 }
 
+/** [v1.5.29 会员中心] 微信绑定状态徽标 */
+function bindingCell(status: string | null | undefined): {
+  text: string
+  className: string
+} {
+  if (status === "active")
+    return { text: "已绑定", className: "bg-emerald-50 text-emerald-700" }
+  if (status === "pending")
+    return { text: "待审核", className: "bg-amber-100 text-amber-800" }
+  if (status === "rejected")
+    return { text: "已拒绝", className: "bg-red-50 text-red-600" }
+  if (status === "inactive")
+    return { text: "已失效", className: "bg-gray-100 text-gray-500" }
+  return { text: "未绑定", className: "bg-gray-50 text-gray-400" }
+}
+
+/** [个人中心] 执照到期列：按北京时间算剩余天数，90 天内转黄、30 天内转红 */
+function licenseCell(value: string | null): { text: string; className: string } {
+  if (!value) return { text: "-", className: "text-gray-400" }
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date())
+  const days = Math.round(
+    (Date.parse(`${value}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000
+  )
+  if (Number.isNaN(days)) return { text: value, className: "text-gray-600" }
+  if (days < 0) return { text: `${value} 已过期`, className: "text-red-600 font-medium" }
+  if (days <= 90)
+    return { text: `${value}（${days} 天）`, className: "text-amber-600 font-medium" }
+  return { text: value, className: "text-gray-600" }
+}
+
 export default function AdminParticipantsPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [participants, setParticipants] = useState<Participant[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  // [v1.5.29 会员中心] 绑定状态筛选：all / active / pending / none / expiring
+  const [bindingFilter, setBindingFilter] = useState("all")
+  // [v2.0.0] 分页
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  // 已绑定微信但没有会员档案的呼号（用于提示与一键补建）
+  const [missingProfiles, setMissingProfiles] = useState<string[]>([])
+  const [backfilling, setBackfilling] = useState(false)
   const [importResult, setImportResult] = useState<{
     success: boolean
     total: number
@@ -62,7 +117,7 @@ export default function AdminParticipantsPage() {
     const userStr = localStorage.getItem("user")
     if (!userStr) { router.push("/login"); return }
     const u = JSON.parse(userStr)
-    if (u.role !== "admin") { router.push("/"); return }
+    if (!isAdminRole(u.role)) { router.push("/"); return }
     setUser(u)
     loadParticipants()
   }, [])
@@ -70,9 +125,10 @@ export default function AdminParticipantsPage() {
   const loadParticipants = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/participants?limit=500")
+      const res = await fetch("/api/participants?limit=500&includeBinding=1")
       const data = await res.json()
       if (data.participants) setParticipants(data.participants)
+      setMissingProfiles(Array.isArray(data.missingProfiles) ? data.missingProfiles : [])
     } catch (err) { console.error(err) }
     setLoading(false)
   }
@@ -152,6 +208,32 @@ export default function AdminParticipantsPage() {
       alert("导入失败")
     }
     setImporting(false)
+  }
+
+  // [v2.0.0] 为「已绑定但无档案」的呼号补建空档案
+  const handleBackfill = async () => {
+    if (missingProfiles.length === 0) return
+    if (
+      !confirm(
+        `确定为这 ${missingProfiles.length} 个已绑定呼号补建会员档案吗？\n将创建仅含呼号的空档案，之后可点呼号补填资料。`
+      )
+    ) {
+      return
+    }
+    setBackfilling(true)
+    try {
+      const res = await fetch("/api/admin/participants/backfill-bindings", {
+        method: "POST",
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "补建失败")
+      alert(`已补建 ${json.created} 条会员档案`)
+      await loadParticipants()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "补建失败")
+    } finally {
+      setBackfilling(false)
+    }
   }
 
   const handleDelete = async (id: string, callsign: string) => {
@@ -284,12 +366,47 @@ export default function AdminParticipantsPage() {
     XLSX.writeFile(wb, "设备库数据导出.xlsx")
   }
 
-  const filteredParticipants = participants.filter((p) =>
-    !searchTerm ||
-    p.callsign.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.name && p.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (p.equipment && p.equipment.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredParticipants = participants.filter((p) => {
+    const keyword = searchTerm.trim().toLowerCase()
+    const matchKeyword =
+      !keyword ||
+      p.callsign.toLowerCase().includes(keyword) ||
+      (p.name && p.name.toLowerCase().includes(keyword)) ||
+      (p.equipment && p.equipment.toLowerCase().includes(keyword)) ||
+      (p.memberNo && p.memberNo.includes(keyword))
+
+    if (!matchKeyword) return false
+
+    if (bindingFilter === "active") return p.bindingStatus === "active"
+    if (bindingFilter === "pending") return p.bindingStatus === "pending"
+    if (bindingFilter === "none") return !p.bindingStatus
+    if (bindingFilter === "expiring") {
+      const cell = licenseCell(p.licenseExpireDate)
+      return cell.className.includes("amber") || cell.className.includes("red")
+    }
+    return true
+  })
+
+  const pendingCount = participants.filter((p) => p.bindingStatus === "pending").length
+  const activeCount = participants.filter((p) => p.bindingStatus === "active").length
+  const noneCount = participants.filter((p) => !p.bindingStatus).length
+  const isExpiring = (p: Participant) => {
+    const cell = licenseCell(p.licenseExpireDate)
+    return cell.className.includes("amber") || cell.className.includes("red")
+  }
+  const expiringCount = participants.filter(isExpiring).length
+
+  // [v2.0.0] 分页切片（数据量 < 500，前端分页足够）
+  const totalPages = Math.max(1, Math.ceil(filteredParticipants.length / pageSize))
+  const currentPage = Math.min(page, totalPages)
+  const pagedParticipants = filteredParticipants.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   )
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchTerm, bindingFilter, pageSize])
 
   if (!user) return null
 
@@ -315,8 +432,15 @@ export default function AdminParticipantsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">设备库</h1>
-            <p className="text-sm text-gray-500 mt-1">管理设备/呼号信息库，支持导入导出、编辑、删除</p>
+            <h1 className="text-2xl font-bold text-gray-900">会员档案</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              呼号 / 编号 / 执照与微信绑定状态，支持导入导出、编辑、查看详情
+              {pendingCount > 0 ? (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
+                  {pendingCount} 条绑定待审核
+                </span>
+              ) : null}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -384,21 +508,70 @@ export default function AdminParticipantsPage() {
           </div>
         )}
 
-        {/* Search */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4">
+        {/* 搜索 + 顶部筛选标签 */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 space-y-3">
           <input
             type="text"
-            placeholder="搜索呼号、姓名、设备..."
+            placeholder="搜索呼号、编号、姓名、设备..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "all", label: "全部", count: participants.length },
+              { key: "active", label: "已绑定", count: activeCount },
+              { key: "pending", label: "待审核", count: pendingCount },
+              { key: "none", label: "未绑定", count: noneCount },
+              { key: "expiring", label: "执照临期", count: expiringCount },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setBindingFilter(tab.key)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                  bindingFilter === tab.key
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {tab.label}
+                <span
+                  className={`ml-1.5 ${
+                    bindingFilter === tab.key ? "text-white/80" : "text-gray-400"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* 已绑定但没有会员档案的提示 */}
+        {missingProfiles.length > 0 && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex flex-col md:flex-row md:items-center gap-3">
+            <p className="text-xs text-amber-900 leading-6 flex-1">
+              有 <b>{missingProfiles.length}</b> 个呼号已绑定微信，但还没有会员档案（
+              {missingProfiles.slice(0, 6).join("、")}
+              {missingProfiles.length > 6 ? " 等" : ""}
+              ），所以「会员档案-已绑定」比「微信绑定」少。补建后会以空档案出现在列表里。
+            </p>
+            <button
+              onClick={handleBackfill}
+              disabled={backfilling}
+              className="shrink-0 px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-semibold hover:bg-amber-700 disabled:opacity-60"
+            >
+              {backfilling ? "补建中..." : "补建会员档案"}
+            </button>
+          </div>
+        )}
 
         {/* Participants Table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">设备/呼号信息库 ({filteredParticipants.length})</span>
+            <span className="text-sm font-medium text-gray-700">
+              会员档案（共 {filteredParticipants.length} 条，第 {currentPage} / {totalPages} 页）
+            </span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -406,6 +579,8 @@ export default function AdminParticipantsPage() {
                 <tr>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">#</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">呼号</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">绑定</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">编号</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">姓名</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">QTH</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">设备</th>
@@ -414,19 +589,41 @@ export default function AdminParticipantsPage() {
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">信号</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">报告</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">备注</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">执照到期</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td colSpan={11} className="px-3 py-8 text-center text-gray-500">加载中...</td></tr>
+                  <tr><td colSpan={14} className="px-3 py-8 text-center text-gray-500">加载中...</td></tr>
                 ) : filteredParticipants.length === 0 ? (
-                  <tr><td colSpan={11} className="px-3 py-8 text-center text-gray-500">暂无数据</td></tr>
+                  <tr><td colSpan={14} className="px-3 py-8 text-center text-gray-500">暂无数据</td></tr>
                 ) : (
-                  filteredParticipants.map((p, idx) => (
+                  pagedParticipants.map((p, idx) => {
+                    const lic = licenseCell(p.licenseExpireDate)
+                    const bind = bindingCell(p.bindingStatus)
+                    return (
                     <tr key={p.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-2 text-gray-500">{idx + 1}</td>
-                      <td className="px-3 py-2 font-medium text-gray-900">{p.callsign}</td>
+                      <td className="px-3 py-2 text-gray-500">
+                        {(currentPage - 1) * pageSize + idx + 1}
+                      </td>
+                      <td className="px-3 py-2 font-medium">
+                        <Link
+                          href={`/admin/participants/${encodeURIComponent(p.callsign)}`}
+                          className="text-indigo-600 hover:underline"
+                          title="查看用户详情"
+                        >
+                          {p.callsign}
+                        </Link>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${bind.className}`}
+                        >
+                          {bind.text}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-gray-600 tabular-nums">{p.memberNo || "-"}</td>
                       <td className="px-3 py-2 text-gray-600">{p.name || "-"}</td>
                       <td className="px-3 py-2 text-gray-600">{p.qth || "-"}</td>
                       <td className="px-3 py-2 text-gray-600">{p.equipment || "-"}</td>
@@ -435,6 +632,9 @@ export default function AdminParticipantsPage() {
                       <td className="px-3 py-2 text-gray-600">{p.signal || "-"}</td>
                       <td className="px-3 py-2 text-gray-600">{p.report || "-"}</td>
                       <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{p.remarks || "-"}</td>
+                      <td className={`px-3 py-2 text-xs tabular-nums whitespace-nowrap ${lic.className}`}>
+                        {lic.text}
+                      </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1">
                           <button
@@ -458,10 +658,49 @@ export default function AdminParticipantsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))
+                    )
+                  })
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* 分页 */}
+        <div className="mt-3 flex flex-col md:flex-row md:items-center justify-between gap-3 px-1">
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            每页
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-800"
+            >
+              {[20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            条 · 共 {filteredParticipants.length} 条
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setPage(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 disabled:opacity-40 hover:bg-gray-50"
+            >
+              上一页
+            </button>
+            <span className="px-2 text-xs text-gray-600 tabular-nums">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 disabled:opacity-40 hover:bg-gray-50"
+            >
+              下一页
+            </button>
           </div>
         </div>
 

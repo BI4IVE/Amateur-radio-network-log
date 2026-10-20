@@ -1,7 +1,8 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { getAuthUser } from "@/lib/auth"
+import { checkPermission } from "@/lib/permissions-server"
 
 // POST - 恢复软删除的会话
 export async function POST(
@@ -10,7 +11,7 @@ export async function POST(
 ) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "recycle.restore")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }

@@ -1,5 +1,5 @@
-// @version v1.5.28
-import { pgTable, varchar, text, timestamp, boolean, integer } from "drizzle-orm/pg-core"
+// @version v2.0.0
+import { pgTable, varchar, text, timestamp, boolean, integer, date } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { createSchemaFactory } from "drizzle-zod"
 import { z } from "zod"
@@ -17,7 +17,9 @@ export const users = pgTable(
     equipment: varchar("equipment", { length: 255 }),
     antenna: varchar("antenna", { length: 255 }),
     qth: varchar("qth", { length: 255 }),
-    role: varchar("role", { length: 20 }).notNull().default("user"), // admin or user
+    role: varchar("role", { length: 20 }).notNull().default("user"), // user | admin | superadmin
+    // [v1.5.29 权限] 权限点 JSON 数组；为空表示沿用角色默认模板
+    permissions: text("permissions"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -183,6 +185,15 @@ export const participants = pgTable("participants", {
   signal: varchar("signal", { length: 50 }),
   report: varchar("report", { length: 255 }),
   remarks: text("remarks"),
+  // [个人中心] 会员编号与电台执照信息（用户可自助维护，管理员可在设备库覆盖）
+  // member_no 纯数字最长 5 位；执照日期用 date（仅日期，不带时区），便于直接比较到期天数
+  memberNo: varchar("member_no", { length: 10 }),
+  licenseNo: varchar("license_no", { length: 50 }),
+  licenseType: varchar("license_type", { length: 20 }),
+  operatorClass: varchar("operator_class", { length: 30 }),
+  licenseIssuer: varchar("license_issuer", { length: 100 }),
+  licenseIssueDate: date("license_issue_date"),
+  licenseExpireDate: date("license_expire_date"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }),
 })
@@ -224,6 +235,7 @@ export const insertUserSchema = createCoercedInsertSchema(users).pick({
   antenna: true,
   qth: true,
   role: true,
+  permissions: true,
 })
 
 export const updateUserSchema = createCoercedInsertSchema(users)
@@ -234,6 +246,7 @@ export const updateUserSchema = createCoercedInsertSchema(users)
     qth: true,
     password: true,
     role: true,
+    permissions: true,
   })
   .partial()
 
@@ -348,6 +361,13 @@ export const updateParticipantSchema = createCoercedInsertSchema(participants)
     signal: true,
     report: true,
     remarks: true,
+    memberNo: true,
+    licenseNo: true,
+    licenseType: true,
+    operatorClass: true,
+    licenseIssuer: true,
+    licenseIssueDate: true,
+    licenseExpireDate: true,
   })
   .partial()
 

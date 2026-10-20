@@ -1,7 +1,8 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, equipmentManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { getAuthUser } from "@/lib/auth"
+import { checkPermission } from "@/lib/permissions-server"
 
 // GET - 获取会话的所有记录
 export async function GET(
@@ -10,7 +11,7 @@ export async function GET(
 ) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "logs.view")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }
@@ -43,7 +44,7 @@ export async function POST(
 ) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "logs.edit")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }

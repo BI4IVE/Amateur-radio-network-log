@@ -1,6 +1,7 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { getAuthUser } from "@/lib/auth"
+import { checkPermission } from "@/lib/permissions-server"
 import { wechatBindCodesManager } from "@/storage/database"
 import { getWechatSettings } from "@/lib/wechat/settings"
 
@@ -15,7 +16,7 @@ import { getWechatSettings } from "@/lib/wechat/settings"
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "bindcode.manage")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "bindcode.manage")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
+    const adminError = await checkPermission(request, "bindcode.manage")
     if (adminError.error) {
       return NextResponse.json({ error: adminError.error }, { status: 403 })
     }

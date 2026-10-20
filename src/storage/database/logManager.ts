@@ -1,5 +1,5 @@
-// @version v1.5.28
-import { eq, and, SQL, like, desc, gte, sql, isNull } from "drizzle-orm"
+// @version v2.0.0
+import { eq, and, SQL, like, desc, gte, sql, isNull, inArray } from "drizzle-orm"
 import { getDb } from "./db"
 import {
   logSessions,
@@ -453,6 +453,149 @@ export class LogManager {
       .orderBy(desc(logRecords.createdAt))
   }
 
+  /**
+   * [个人中心] 某呼号的通联记录：JOIN 台网场次带出台网日期与名称，按场次时间倒序分页。
+   * 只返回未软删的记录与场次，避免个人中心出现「已删除」的幽灵数据。
+   */
+  async getRecordsByCallsign(
+    callsign: string,
+    options: { limit?: number; offset?: number } = {}
+  ): Promise<{
+    items: {
+      id: string
+      callsign: string
+      qth: string | null
+      equipment: string | null
+      antenna: string | null
+      power: string | null
+      signal: string | null
+      report: string | null
+      remarks: string | null
+      createdAt: Date
+      sessionId: string
+      sessionTime: Date
+      sessionTitle: string | null
+    }[]
+    total: number
+  }> {
+    const { limit = 20, offset = 0 } = options
+    const db = await getDb()
+    const where = and(
+      eq(logRecords.callsign, callsign),
+      isNull(logRecords.deletedAt),
+      isNull(logSessions.deletedAt)
+    )
+
+    const items = await db
+      .select({
+        id: logRecords.id,
+        callsign: logRecords.callsign,
+        qth: logRecords.qth,
+        equipment: logRecords.equipment,
+        antenna: logRecords.antenna,
+        power: logRecords.power,
+        signal: logRecords.signal,
+        report: logRecords.report,
+        remarks: logRecords.remarks,
+        createdAt: logRecords.createdAt,
+        sessionId: logSessions.id,
+        sessionTime: logSessions.sessionTime,
+        sessionTitle: logSessions.title,
+      })
+      .from(logRecords)
+      .innerJoin(logSessions, eq(logRecords.sessionId, logSessions.id))
+      .where(where)
+      .orderBy(desc(logSessions.sessionTime))
+      .limit(limit)
+      .offset(offset)
+
+    const [agg] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(logRecords)
+      .innerJoin(logSessions, eq(logRecords.sessionId, logSessions.id))
+      .where(where)
+
+    return { items, total: agg?.count ?? 0 }
+  }
+
+  /**
+   * [个人中心] 某呼号的参与统计：累计/本年度场次、首次与最近参与时间。
+   * 按北京时间切年，避免 UTC 跨年把 12-31 的场次算到上一年。
+   */
+  async getCallsignStats(callsign: string): Promise<{
+    sessions: number
+    yearSessions: number
+    firstTime: Date | null
+    lastTime: Date | null
+  }> {
+    const db = await getDb()
+    const result = await db.execute(sql`
+      select
+        count(distinct r.session_id)::int as sessions,
+        count(distinct case
+          when date_trunc('year', s.session_time at time zone 'Asia/Shanghai')
+             = date_trunc('year', now() at time zone 'Asia/Shanghai')
+          then r.session_id end)::int as year_sessions,
+        min(s.session_time) as first_time,
+        max(s.session_time) as last_time
+      from log_records r
+      join log_sessions s on s.id = r.session_id
+      where r.callsign = ${callsign}
+        and r.deleted_at is null
+        and s.deleted_at is null
+    `)
+    const row = ((result as unknown as { rows?: Record<string, unknown>[] }).rows ?? [])[0] ?? {}
+    const num = (v: unknown) => Number(v ?? 0) || 0
+    const time = (v: unknown) => (v ? new Date(String(v)) : null)
+    return {
+      sessions: num(row.sessions),
+      yearSessions: num(row.year_sessions),
+      firstTime: time(row.first_time),
+      lastTime: time(row.last_time),
+    }
+  }
+
+  /** [个人中心] 最常出现的信号值（用于概览卡片） */
+  async getCallsignTopSignal(callsign: string): Promise<string | null> {
+    const db = await getDb()
+    const [row] = await db
+      .select({ signal: logRecords.signal, count: sql<number>`count(*)::int` })
+      .from(logRecords)
+      .where(
+        and(
+          eq(logRecords.callsign, callsign),
+          isNull(logRecords.deletedAt),
+          sql`${logRecords.signal} is not null and ${logRecords.signal} <> ''`
+        )
+      )
+      .groupBy(logRecords.signal)
+      .orderBy(sql`count(*) desc`)
+      .limit(1)
+    return row?.signal ?? null
+  }
+
+  /** [个人中心] 台网参与次数排名（同次数并列，按人次算 1 起） */
+  async getCallsignRank(callsign: string): Promise<{ rank: number; total: number }> {
+    const db = await getDb()
+    const result = await db.execute(sql`
+      with stats as (
+        select r.callsign, count(distinct r.session_id)::int as c
+        from log_records r
+        join log_sessions s on s.id = r.session_id
+        where r.deleted_at is null and s.deleted_at is null
+        group by r.callsign
+      )
+      select
+        (select count(*) + 1 from stats where c > coalesce((select c from stats where callsign = ${callsign}), 0))::int as rank,
+        (select count(*) from stats)::int as total
+    `)
+    const row = ((result as unknown as { rows?: Record<string, unknown>[] }).rows ?? [])[0] ?? {}
+    return {
+      rank: Number(row.rank ?? 0) || 0,
+      total: Number(row.total ?? 0) || 0,
+    }
+  }
+
   // 写入一条审计日志
   async writeAudit(data: {
     userId?: string
@@ -471,6 +614,26 @@ export class LogManager {
       entityId: data.entityId,
       detail: data.detail ?? null,
     })
+  }
+
+  // 查询某个参与者的审计日志（档案/执照修改留痕）
+  async getParticipantAuditLogs(
+    entityIds: string[],
+    limit = 50
+  ): Promise<AuditLog[]> {
+    if (entityIds.length === 0) return []
+    const db = await getDb()
+    return db
+      .select()
+      .from(auditLogs)
+      .where(
+        and(
+          inArray(auditLogs.entityId, entityIds),
+          eq(auditLogs.entityType, "participant")
+        )
+      )
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limit)
   }
 
   // 查询审计日志（按时间倒序）

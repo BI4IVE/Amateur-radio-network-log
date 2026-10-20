@@ -1,15 +1,15 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions-server"
 
 export const dynamic = "force-dynamic"
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getAuthUser(req)
-  const authCheck = requireAdmin(user)
-  if (authCheck.error) {
-    return NextResponse.json({ success: false, error: authCheck.error }, { status: 401 })
+  // [v1.5.29 权限] 主控可管理台网预告
+  const auth = await requirePermission(req, "ops.schedule")
+  if ("error" in auth) {
+    return NextResponse.json({ success: false, error: "无此操作权限" }, { status: 403 })
   }
   const { id } = await params
   try {
@@ -42,10 +42,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getAuthUser(req)
-  const authCheck = requireAdmin(user)
-  if (authCheck.error) {
-    return NextResponse.json({ success: false, error: authCheck.error }, { status: 401 })
+  // [v1.5.29 权限] 主控可管理台网预告
+  const auth = await requirePermission(req, "ops.schedule")
+  if ("error" in auth) {
+    return NextResponse.json({ success: false, error: "无此操作权限" }, { status: 403 })
   }
   const { id } = await params
   try {

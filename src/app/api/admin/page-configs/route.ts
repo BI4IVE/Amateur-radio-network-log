@@ -1,16 +1,14 @@
-// @version v1.5.28
+// @version v2.0.0
 import { NextRequest, NextResponse } from "next/server"
 import { pageConfigManager } from "@/storage/database"
-import { getAuthUser, requireAdmin } from "@/lib/auth"
+import { requirePermission } from "@/lib/permissions-server"
 
 // GET /api/admin/page-configs - 获取所有配置（需要管理员权限）
 export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
-    if (adminError.error) {
-      return NextResponse.json({ error: adminError.error }, { status: 403 })
-    }
+    // [v1.5.29 权限] 页面配置仅超管可改
+    const auth = await requirePermission(request, "pageconfig.manage")
+    if ("error" in auth) return auth.error
 
     let configs = await pageConfigManager.getAllConfigs()
 
@@ -39,11 +37,9 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/page-configs - 创建或更新配置（需要管理员权限）
 export async function POST(request: NextRequest) {
   try {
-    const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
-    if (adminError.error) {
-      return NextResponse.json({ error: adminError.error }, { status: 403 })
-    }
+    // [v1.5.29 权限] 页面配置仅超管可改
+    const auth = await requirePermission(request, "pageconfig.manage")
+    if ("error" in auth) return auth.error
 
     const body = await request.json()
     const { key, value, category, description } = body
@@ -75,11 +71,9 @@ export async function POST(request: NextRequest) {
 // PUT /api/admin/page-configs - 批量更新配置
 export async function PUT(request: NextRequest) {
   try {
-    const user = await getAuthUser(request)
-    const adminError = requireAdmin(user)
-    if (adminError.error) {
-      return NextResponse.json({ error: adminError.error }, { status: 403 })
-    }
+    // [v1.5.29 权限] 页面配置仅超管可改
+    const auth = await requirePermission(request, "pageconfig.manage")
+    if ("error" in auth) return auth.error
 
     const body = await request.json()
     const { configs } = body

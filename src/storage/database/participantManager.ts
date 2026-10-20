@@ -1,4 +1,4 @@
-// @version v1.5.28
+// @version v2.0.0
 import { eq, and, SQL, like, sql } from "drizzle-orm"
 import { getDb } from "./db"
 import {
@@ -8,8 +8,57 @@ import {
 } from "./shared/schema"
 import type { Participant, InsertParticipant, UpdateParticipant } from "./shared/schema"
 
+/**
+ * [个人中心] participants 是早期就存在的表，项目用 tar 覆盖部署、没有 db:push 步骤，
+ * 因此新增的「会员编号 / 执照」列必须在这里幂等补齐，否则线上查询会报列不存在。
+ */
+let ensurePromise: Promise<void> | null = null
+
+async function ensureTable(): Promise<void> {
+  if (!ensurePromise) {
+    ensurePromise = (async () => {
+      const db = await getDb()
+      await db.execute(sql`
+        CREATE TABLE IF NOT EXISTS participants (
+          id varchar(36) PRIMARY KEY DEFAULT gen_random_uuid(),
+          callsign varchar(20) NOT NULL UNIQUE,
+          name varchar(100),
+          qth varchar(255),
+          equipment varchar(255),
+          antenna varchar(255),
+          power varchar(50),
+          signal varchar(50),
+          report varchar(255),
+          remarks text,
+          created_at timestamp with time zone DEFAULT now() NOT NULL,
+          updated_at timestamp with time zone
+        )
+      `)
+      const columns = [
+        "member_no varchar(10)",
+        "license_no varchar(50)",
+        "license_type varchar(20)",
+        "operator_class varchar(30)",
+        "license_issuer varchar(100)",
+        "license_issue_date date",
+        "license_expire_date date",
+      ]
+      for (const column of columns) {
+        await db.execute(
+          sql`ALTER TABLE participants ADD COLUMN IF NOT EXISTS ${sql.raw(column)}`
+        )
+      }
+    })().catch((error) => {
+      ensurePromise = null
+      throw error
+    })
+  }
+  return ensurePromise
+}
+
 export class ParticipantManager {
   async createParticipant(data: InsertParticipant): Promise<Participant> {
+    await ensureTable()
     const db = await getDb()
     const validated = insertParticipantSchema.parse(data)
     const [participant] = await db.insert(participants).values(validated).returning()
@@ -17,6 +66,7 @@ export class ParticipantManager {
   }
 
   async getParticipantByCallsign(callsign: string): Promise<Participant | null> {
+    await ensureTable()
     const db = await getDb()
     const [participant] = await db
       .select()
@@ -26,6 +76,7 @@ export class ParticipantManager {
   }
 
   async getParticipantById(id: string): Promise<Participant | null> {
+    await ensureTable()
     const db = await getDb()
     const [participant] = await db
       .select()
@@ -40,6 +91,7 @@ export class ParticipantManager {
     filters?: Partial<Pick<Participant, "callsign" | "name">>
   } = {}): Promise<Participant[]> {
     const { skip = 0, limit = 100, filters = {} } = options
+    await ensureTable()
     const db = await getDb()
 
     const conditions: SQL[] = []
@@ -66,6 +118,7 @@ export class ParticipantManager {
     id: string,
     data: UpdateParticipant
   ): Promise<Participant | null> {
+    await ensureTable()
     const db = await getDb()
     const validated = updateParticipantSchema.parse(data)
     const [participant] = await db
@@ -77,6 +130,7 @@ export class ParticipantManager {
   }
 
   async deleteParticipant(id: string): Promise<boolean> {
+    await ensureTable()
     const db = await getDb()
     const result = await db.delete(participants).where(eq(participants.id, id))
     return (result.rowCount ?? 0) > 0
@@ -85,6 +139,7 @@ export class ParticipantManager {
   async getParticipantOptions(): Promise<
     { id: string; callsign: string; name: string | null; equipment: string | null }[]
   > {
+    await ensureTable()
     const db = await getDb()
     return db
       .select({
@@ -97,6 +152,7 @@ export class ParticipantManager {
       .orderBy(participants.callsign)
   }
   async upsertParticipant(data: InsertParticipant): Promise<Participant> {
+    await ensureTable()
     const db = await getDb()
     const validated = insertParticipantSchema.parse(data)
     const existing = await db.select().from(participants).where(eq(participants.callsign, validated.callsign)).limit(1)

@@ -1,10 +1,17 @@
-// @version v1.5.28
+// @version v2.0.0
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import AdminLayout from "@/components/AdminLayout"
 import { formatDateTimeCN } from "@/utils/dateFormat"
+import {
+  ALL_PERMISSIONS,
+  PERMISSION_GROUPS,
+  ROLE_DEFAULTS,
+  isAdminRole,
+  type Role,
+} from "@/lib/permissions"
 
 interface User {
   id: string
@@ -14,7 +21,26 @@ interface User {
   antenna: string | null
   qth: string | null
   role: string
+  /** [v1.5.29 权限] 最终生效的权限点集合（接口已解析） */
+  permissions?: string[]
   createdAt: string
+}
+
+/** [v1.5.29 权限] 三级角色文案与配色 */
+const ROLE_LABEL: Record<string, string> = {
+  user: "主控",
+  admin: "管理员",
+  superadmin: "超级管理员",
+}
+
+function roleLabel(role: string): string {
+  return ROLE_LABEL[role] ?? role
+}
+
+function roleBadgeClass(role: string): string {
+  if (role === "superadmin") return "bg-purple-100 text-purple-800"
+  if (role === "admin") return "bg-indigo-100 text-indigo-800"
+  return "bg-blue-100 text-blue-800"
 }
 
 export default function AdminPage() {
@@ -55,9 +81,12 @@ export default function AdminPage() {
     antenna: "",
     qth: "",
     role: "user",
+    // [v1.5.29 权限] 勾选后的完整权限点集合
+    permissions: [] as string[],
   })
   const [passwordFormData, setPasswordFormData] = useState({
     userId: "",
+    oldPassword: "",
     newPassword: "",
     confirmPassword: "",
   })
@@ -69,7 +98,8 @@ export default function AdminPage() {
       return
     }
     const user = JSON.parse(userStr)
-    if (user.role !== "admin") {
+    // [v1.5.29 权限] 管理员与超管都可进入；能否操作由接口的 user.manage 权限决定
+    if (!isAdminRole(user.role) && user.role !== "superadmin") {
       router.push("/")
       return
     }
@@ -217,6 +247,7 @@ export default function AdminPage() {
       antenna: user.antenna || "",
       qth: user.qth || "",
       role: user.role,
+      permissions: user.permissions ?? [],
     })
     setShowEditModal(true)
   }
@@ -258,25 +289,36 @@ export default function AdminPage() {
       }
     }
 
+    // [v1.5.29 修复] 改「自己」的密码时后端要求旧密码，
+    // 之前弹窗没有旧密码输入框，导致管理员改自己密码必然失败。
+    const isSelf = currentUser?.id === passwordFormData.userId
+    if (isSelf && !passwordFormData.oldPassword) {
+      alert("修改自己的密码需要输入当前密码")
+      return
+    }
+
     try {
       const response = await fetch(`/api/users/${passwordFormData.userId}/password`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           password: passwordFormData.newPassword,
+          ...(isSelf ? { oldPassword: passwordFormData.oldPassword } : {}),
         }),
       })
 
+      const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new Error("修改密码失败")
+        // 把后端的真实原因透出来（旧密码错误 / 密码太短等），不再一律显示"修改密码失败"
+        throw new Error(data.error || "修改密码失败")
       }
 
       alert("密码已修改")
       setShowPasswordModal(false)
-      setPasswordFormData({ userId: "", newPassword: "", confirmPassword: "" })
+      setPasswordFormData({ userId: "", oldPassword: "", newPassword: "", confirmPassword: "" })
     } catch (error) {
       console.error("Change password error:", error)
-      alert("修改密码失败")
+      alert(error instanceof Error ? error.message : "修改密码失败")
     }
   }
 
@@ -337,7 +379,7 @@ export default function AdminPage() {
     }
 
     if (
-      !confirm(`确定要将选中的 ${selectedUsers.size} 个用户更改为${newRole === "admin" ? "管理员" : "主控"}吗？`)
+      !confirm(`确定要将选中的 ${selectedUsers.size} 个用户更改为${roleLabel(newRole)}吗？`)
     ) {
       return
     }
@@ -368,7 +410,7 @@ export default function AdminPage() {
     const data = filteredAndSortedUsers.map((user) => ({
       用户名: user.username,
       姓名: user.name,
-      角色: user.role === "admin" ? "管理员" : "主控",
+      角色: roleLabel(user.role),
       设备: user.equipment || "",
       天线: user.antenna || "",
       QTH: user.qth || "",
@@ -413,6 +455,7 @@ export default function AdminPage() {
         antenna: editFormData.antenna,
         qth: editFormData.qth,
         role: editFormData.role,
+        permissions: editFormData.permissions,
       }
 
       const response = await fetch(`/api/users/${editingUser.id}`, {
@@ -441,7 +484,12 @@ export default function AdminPage() {
   }
 
   const openPasswordModal = (user: User) => {
-    setPasswordFormData({ userId: user.id, newPassword: "", confirmPassword: "" })
+    setPasswordFormData({
+      userId: user.id,
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    })
     setShowPasswordModal(true)
   }
 
@@ -518,6 +566,7 @@ export default function AdminPage() {
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                   >
                     <option value="all">所有角色</option>
+                    <option value="superadmin">超级管理员</option>
                     <option value="admin">管理员</option>
                     <option value="user">主控</option>
                   </select>
@@ -648,13 +697,11 @@ export default function AdminPage() {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span
-                              className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                user.role === "admin"
-                                  ? "bg-purple-100 text-purple-800"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}
+                              className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${roleBadgeClass(
+                                user.role
+                              )}`}
                             >
-                              {user.role === "admin" ? "管理员" : "主控"}
+                              {roleLabel(user.role)}
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
@@ -723,8 +770,35 @@ export default function AdminPage() {
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 className="text-lg font-semibold mb-4">修改密码</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              修改密码
+              <span className="ml-2 text-sm font-normal text-gray-500">
+                {users.find((u) => u.id === passwordFormData.userId)?.username || ""}
+              </span>
+            </h3>
             <form onSubmit={handlePasswordChange} className="space-y-4">
+              {currentUser?.id === passwordFormData.userId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    当前密码 *
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordFormData.oldPassword}
+                    onChange={(e) =>
+                      setPasswordFormData({
+                        ...passwordFormData,
+                        oldPassword: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    修改自己的密码需要验证当前密码
+                  </p>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   新密码 *
@@ -791,6 +865,7 @@ export default function AdminPage() {
                     setShowPasswordModal(false)
                     setPasswordFormData({
                       userId: "",
+                      oldPassword: "",
                       newPassword: "",
                       confirmPassword: "",
                     })
@@ -834,13 +909,11 @@ export default function AdminPage() {
                   <h4 className="text-xl font-bold text-gray-900">{detailUser.name}</h4>
                   <p className="text-sm text-gray-500">@{detailUser.username}</p>
                   <span
-                    className={`mt-1 inline-block px-2 py-1 text-xs rounded-full ${
-                      detailUser.role === "admin"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
+                    className={`mt-1 inline-block px-2 py-1 text-xs rounded-full ${roleBadgeClass(
+                      detailUser.role
+                    )}`}
                   >
-                    {detailUser.role === "admin" ? "管理员" : "主控"}
+                    {roleLabel(detailUser.role)}
                   </span>
                 </div>
               </div>
@@ -1033,6 +1106,7 @@ export default function AdminPage() {
                 >
                   <option value="user">主控人员</option>
                   <option value="admin">管理员</option>
+                  <option value="superadmin">超级管理员</option>
                 </select>
               </div>
 
@@ -1142,7 +1216,65 @@ export default function AdminPage() {
                 >
                   <option value="user">主控人员</option>
                   <option value="admin">管理员</option>
+                  <option value="superadmin">超级管理员</option>
                 </select>
+              </div>
+
+              {/* [v1.5.29 权限] 权限点矩阵：角色只决定默认值，最终以勾选为准 */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700">
+                    权限点
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditFormData({
+                        ...editFormData,
+                        permissions: [
+                          ...(ROLE_DEFAULTS[editFormData.role as Role] || []),
+                        ],
+                      })
+                    }
+                    className="text-xs text-indigo-600 hover:underline"
+                  >
+                    按角色默认值重置
+                  </button>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-3 max-h-72 overflow-y-auto space-y-3">
+                  {PERMISSION_GROUPS.map((group) => (
+                    <div key={group.id}>
+                      <p className="text-xs font-semibold text-gray-500 mb-1.5">
+                        {group.label}
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {group.items.map((item) => (
+                          <label
+                            key={item.key}
+                            className="flex items-center gap-2 text-xs text-gray-700"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={editFormData.permissions.includes(item.key)}
+                              onChange={(e) => {
+                                const next = e.target.checked
+                                  ? [...editFormData.permissions, item.key]
+                                  : editFormData.permissions.filter(
+                                      (k) => k !== item.key
+                                    )
+                                setEditFormData({ ...editFormData, permissions: next })
+                              }}
+                            />
+                            {item.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  已勾选 {editFormData.permissions.length} / {ALL_PERMISSIONS.length} 项
+                </p>
               </div>
               <div className="flex gap-3 pt-2">
                 <button

@@ -1,4 +1,4 @@
-// @version v1.5.28
+// @version v2.0.0
 import { desc, eq, and, sql, type SQL } from "drizzle-orm"
 import { getDb } from "./db"
 import { wechatBindings, insertWechatBindingSchema } from "./shared/schema"
@@ -117,6 +117,17 @@ export class WechatBindingsManager {
           eq(wechatBindings.status, "active")
         )
       )
+  }
+
+  /** 按呼号精确查全部绑定（含 pending/inactive，后台用户详情用） */
+  async listByCallsign(callsign: string): Promise<WechatBinding[]> {
+    await ensureTable()
+    const db = await getDb()
+    return db
+      .select()
+      .from(wechatBindings)
+      .where(eq(wechatBindings.callsign, callsign))
+      .orderBy(desc(wechatBindings.createdAt))
   }
 
   /**
