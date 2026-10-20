@@ -333,6 +333,23 @@ pnpm db:push
   4. 迁移后同步版本号（`page_configs.version` 回写为 `1.5.13`，方法同坑 9 步骤三）。
 - 若 `pnpm db:push` 可用，唯一索引也可由 Drizzle 自动创建，但仍建议先手动清理重复数据。
 
+**坑 11：v2.0.0 新增会员档案与权限字段（正常无需手工迁移）**
+- 变更内容：`participants` 新增 `member_no`（会员编号）与执照 6 列（`license_no` / `license_type` / `operator_class` / `license_issuer` / `license_issue_date` / `license_expire_date`）；`users` 新增 `permissions`（权限点 JSON 数组）。
+- 处理方式：代码内置幂等 `ADD COLUMN IF NOT EXISTS`，**首次访问相关页面时自动补列**，正常升级不需要任何手工操作。
+- 例外情况：若数据库账号没有 DDL 权限（报 `permission denied for schema public`），需手动执行一次：
+  ```bash
+  /www/server/pgsql/bin/psql "$DATABASE_URL" -c "
+    ALTER TABLE participants ADD COLUMN IF NOT EXISTS member_no varchar(10);
+    ALTER TABLE participants ADD COLUMN IF NOT EXISTS license_no varchar(50);
+    ALTER TABLE participants ADD COLUMN IF NOT EXISTS license_type varchar(20);
+    ALTER TABLE participants ADD COLUMN IF NOT EXISTS operator_class varchar(30);
+    ALTER TABLE participants ADD COLUMN IF NOT EXISTS license_issuer varchar(100);
+    ALTER TABLE participants ADD COLUMN IF NOT EXISTS license_issue_date date;
+    ALTER TABLE participants ADD COLUMN IF NOT EXISTS license_expire_date date;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions text;"
+  ```
+- 全部为**可空新增字段**，不删列、不改类型、不影响既有数据；升级后可按坑 9 的方法把 `page_configs.version` 同步为 `2.0.0`。
+
 ---
 
 ## 方式三：传统 Linux 服务器部署
