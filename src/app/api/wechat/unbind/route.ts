@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { codeToOpenid } from "@/lib/wechat/oauth"
 import { getWechatSettings } from "@/lib/wechat/settings"
+import { getMemberIdentity } from "@/lib/me/identity"
 import { wechatBindingsManager } from "@/storage/database"
 
 /**
@@ -19,6 +20,20 @@ export async function POST(request: NextRequest) {
         { error: "当前不允许自助解绑，请联系管理员" },
         { status: 403 }
       )
+    }
+
+    // [v2.0.0] 优先用个人中心的签名会话识别身份，避免依赖前端传 openid；
+    // 旧绑定页仍走 code / openid 兼容路径。
+    const identity = await getMemberIdentity(request)
+    if (identity) {
+      if (identity.status === "none") {
+        return NextResponse.json({ error: "未找到该用户的绑定" }, { status: 404 })
+      }
+      const ok = await wechatBindingsManager.unbind(identity.openid)
+      if (!ok) {
+        return NextResponse.json({ error: "未找到该用户的绑定" }, { status: 404 })
+      }
+      return NextResponse.json({ ok: true })
     }
 
     const body = (await request.json().catch(() => ({}))) as {

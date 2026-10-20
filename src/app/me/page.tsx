@@ -81,7 +81,7 @@ type PushLog = {
   createdAt: string
 }
 
-type TabKey = "log" | "profile" | "push"
+type TabKey = "log" | "profile" | "bind" | "push"
 
 const WEEKDAY = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
 
@@ -169,6 +169,7 @@ export default function MePage() {
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [unbinding, setUnbinding] = useState(false)
 
   const loadOverview = useCallback(async () => {
     setLoading(true)
@@ -263,6 +264,23 @@ export default function MePage() {
       setSaveError(e instanceof Error ? e.message : "保存失败")
     } finally {
       setSaving(false)
+    }
+  }
+
+  // [v2.0.0] 个人中心内自助解绑（身份取自会话，不再依赖前端传 openid）
+  const handleUnbind = async () => {
+    if (!confirm("确认解除微信绑定？解绑后将不再收到台网回执。")) return
+    setUnbinding(true)
+    try {
+      const res = await fetch("/api/wechat/unbind", { method: "POST" })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error || "解绑失败")
+      alert("已解除绑定")
+      await loadOverview()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "解绑失败")
+    } finally {
+      setUnbinding(false)
     }
   }
 
@@ -438,6 +456,7 @@ export default function MePage() {
             [
               ["log", "我的记录"],
               ["profile", "档案"],
+              ["bind", "绑定"],
               ["push", "推送"],
             ] as [TabKey, string][]
           ).map(([key, label]) => (
@@ -620,6 +639,52 @@ export default function MePage() {
               <br />
               设备与 QTH 会作为主控台录入你记录时的默认值。
             </p>
+          </div>
+        ) : null}
+
+        {/* 绑定 */}
+        {tab === "bind" ? (
+          <div className="px-4 pb-6">
+            <p className="text-xs font-extrabold text-black/55 mb-2 pl-1">微信绑定</p>
+            <div className="bg-white rounded-2xl overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
+              <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">
+                <span className="text-[13px] text-black/60">绑定状态</span>
+                <span className="text-[11px] font-bold flex items-center gap-1.5 text-emerald-600">
+                  <i className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  已生效
+                </span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">
+                <span className="text-[13px] text-black/60">绑定呼号</span>
+                <span className="text-sm font-bold text-black">
+                  {data.binding.callsign || "-"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3.5">
+                <span className="text-[13px] text-black/60">绑定时间</span>
+                <span className="text-sm font-bold text-black">
+                  {fmtDate(data.binding.boundAt)}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-black/45 leading-6 mt-3 px-1">
+              绑定后，主控提交你的参与记录时会自动收到微信回执。解绑后不再接收，可随时重新绑定。
+            </p>
+
+            <button
+              onClick={handleUnbind}
+              disabled={unbinding}
+              className="mt-4 w-full h-12 rounded-xl border border-red-200 bg-white text-red-600 text-[15px] font-bold disabled:opacity-60"
+            >
+              {unbinding ? "解绑中..." : "解除绑定"}
+            </button>
+            <a
+              href="/wechat/bind"
+              className="mt-3 block text-center h-12 leading-[48px] rounded-xl bg-indigo-600 text-white text-[15px] font-bold"
+            >
+              重新绑定 / 更换呼号
+            </a>
           </div>
         ) : null}
 
