@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 "use client"
 
 import { isAdminRole } from "@/lib/permissions"
@@ -128,7 +128,9 @@ export default function AdminParticipantsPage() {
   const loadParticipants = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/participants?limit=500&includeBinding=1")
+      // [v2.0.2 修复] 原来写死 500 条，会员涨到 540 后排序靠后的会员（如 BA4IGG）
+      // 根本没被加载，搜索自然搜不到。提高到 2000，超过时需改服务端分页。
+      const res = await fetch("/api/participants?limit=2000&includeBinding=1")
       const data = await res.json()
       if (data.participants) setParticipants(data.participants)
       setMissingProfiles(Array.isArray(data.missingProfiles) ? data.missingProfiles : [])

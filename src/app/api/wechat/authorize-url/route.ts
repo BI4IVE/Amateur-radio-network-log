@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 import { NextRequest, NextResponse } from "next/server"
 import { buildAuthorizeUrl } from "@/lib/wechat/oauth"
 

@@ -1,6 +1,6 @@
 "use client"
 
-// @version v2.0.1
+// @version v2.0.2
 import { useEffect, useState } from "react"
 import AdminLayout from "@/components/AdminLayout"
 import { formatDateTimeCN } from "@/utils/dateFormat"

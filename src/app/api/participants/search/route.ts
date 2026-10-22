@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 import { NextRequest, NextResponse } from "next/server"
 import { participantManager } from "@/storage/database"
 import { getAuthUser, requireLogin } from "@/lib/auth"
@@ -20,8 +20,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all participants and filter by callsign (contains)
+    // [v2.0.2 修复] 与会员档案列表一致，避免会员超过 1000 后联想搜不到
     const allParticipants = await participantManager.getParticipants({
-      limit: 1000,
+      limit: 2000,
     })
 
     const filtered = allParticipants.filter((p) =>

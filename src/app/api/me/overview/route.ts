@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 import { NextRequest, NextResponse } from "next/server"
 import { getMemberIdentity, isActiveMember } from "@/lib/me/identity"
 import { computeLicenseInfo, LICENSE_STATE_LABEL } from "@/lib/me/license"
@@ -6,9 +6,19 @@ import { getDefaultLicenseIssuer } from "@/lib/me/defaults"
 import { getWechatSettings } from "@/lib/wechat/settings"
 import {
   logManager,
+  pageConfigManager,
   participantManager,
   wechatBindingsManager,
 } from "@/storage/database"
+
+/** 会员规则默认文案：配置项 member_rules 为空时兜底，避免首次弹窗空白 */
+const DEFAULT_MEMBER_RULES = [
+  "台网活动时间：每周四 20:30 开台，节假日另行预告。",
+  "参与方式：主控点名时按顺序应答，报呼号、QTH、设备与信号。",
+  "执照要求：需持有效电台执照，执照信息可在「档案」中自行维护。",
+  "到场确认：参与后会自动收到微信回执，点开可查看本次记录。",
+  "联系方式：如需变更呼号、补录历史场次、恢复误删记录，请联系值班主控。",
+].join("\n")
 
 /**
  * [个人中心] GET /api/me/overview
@@ -42,15 +52,33 @@ export async function GET(request: NextRequest) {
 
     const callsign = identity.callsign
 
-    const [participant, stats, topSignal, rank, binding, defaultLicenseIssuer] =
-      await Promise.all([
-        participantManager.getParticipantByCallsign(callsign),
-        logManager.getCallsignStats(callsign),
-        logManager.getCallsignTopSignal(callsign),
-        logManager.getCallsignRank(callsign),
-        wechatBindingsManager.getByOpenid(identity.openid),
-        getDefaultLicenseIssuer(),
-      ])
+    const [
+      participant,
+      stats,
+      streak,
+      rank,
+      monthlyRank,
+      controller,
+      binding,
+      defaultLicenseIssuer,
+      rulesConfig,
+    ] = await Promise.all([
+      participantManager.getParticipantByCallsign(callsign),
+      logManager.getCallsignStats(callsign),
+      logManager.getCallsignStreak(callsign),
+      logManager.getCallsignRank(callsign),
+      logManager.getCallsignMonthlyRank(callsign),
+      logManager.getControllerStats(callsign),
+      wechatBindingsManager.getByOpenid(identity.openid),
+      getDefaultLicenseIssuer(),
+      pageConfigManager.getConfigByKey("member_rules"),
+    ])
+
+    // 名次变化：正数 = 上升（名次数字变小），任一月无数据则为 null
+    const rankTrend =
+      monthlyRank.current !== null && monthlyRank.previous !== null
+        ? monthlyRank.previous - monthlyRank.current
+        : null
 
     const license = computeLicenseInfo(
       participant?.licenseIssueDate ?? null,
@@ -95,10 +123,25 @@ export async function GET(request: NextRequest) {
         yearSessions: stats.yearSessions,
         firstTime: stats.firstTime,
         lastTime: stats.lastTime,
-        topSignal,
+        // [v2.0.2] 连续参与周数与本年度本月出席次数
+        streakWeeks: streak.weeks,
+        thisMonth: streak.thisMonth,
         rank: rank.rank,
-        // 不返回全站活跃人数：这是服务器侧统计，不应暴露给普通会员
+        // [v2.0.2] 本月名次与较上月变化；不含全站总人数
+        rankCurrent: monthlyRank.current,
+        rankTrend,
       },
+      // [v2.0.2] 主控卡：没有主控过场次时返回 null，前端不显示
+      controller:
+        controller.sessions > 0
+          ? {
+              sessions: controller.sessions,
+              records: controller.records,
+              lastTime: controller.lastTime,
+            }
+          : null,
+      // [v2.0.2] 台网规则：首次进入弹前 3 行，点更多查看全部
+      rules: rulesConfig?.value?.trim() || DEFAULT_MEMBER_RULES,
     })
   } catch (error) {
     console.error("[me.overview] 获取个人中心数据失败:", error)

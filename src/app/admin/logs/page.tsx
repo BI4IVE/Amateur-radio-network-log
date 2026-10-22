@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 "use client"
 
 import { isAdminRole } from "@/lib/permissions"
@@ -145,16 +145,42 @@ export default function AdminLogsPage() {
     try {
       const userStr = localStorage.getItem("user")
       const u = userStr ? JSON.parse(userStr) : null
-      const res = await fetch(`/api/admin/sessions/${selectedSession.id}/records`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userRole: u?.role, ...recordForm }),
-      })
-      const data = await res.json()
+
+      const submit = async (allowDuplicate: boolean) => {
+        const res = await fetch(`/api/admin/sessions/${selectedSession.id}/records`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userRole: u?.role, ...recordForm, allowDuplicate }),
+        })
+        const data = await res.json().catch(() => ({}))
+        return { res, data }
+      }
+
+      let { res, data } = await submit(false)
+
+      // [v2.0.2] 同场次同呼号查重：后台补录也会拦截，确认后可放行
+      if (res.status === 409 && data?.error === "duplicate") {
+        const info = data.existing ?? {}
+        const when = info.createdAt
+          ? new Date(info.createdAt).toLocaleString("zh-CN", { hour12: false, timeZone: "Asia/Shanghai" })
+          : ""
+        const detail = [info.signal ? `信号 ${info.signal}` : "", info.qth || ""].filter(Boolean).join(" · ")
+        const proceed = confirm(
+          `本呼号已参加过本次台网\n\n第 ${info.seq ?? "?"} 位` +
+            (detail ? ` · ${detail}` : "") +
+            (when ? `\n录入时间 ${when}` : "") +
+            `\n\n仍要再录一条吗？`
+        )
+        if (!proceed) return
+        ;({ res, data } = await submit(true))
+      }
+
       if (data.record) {
         setShowAddRecord(false)
         setRecordForm({ callsign: "", qth: "", equipment: "", antenna: "", power: "", signal: "", report: "", remarks: "" })
         await loadRecords(selectedSession.id)
+      } else {
+        alert(data.error && data.error !== "duplicate" ? data.error : "添加记录失败")
       }
     } catch (err) { console.error(err) }
   }

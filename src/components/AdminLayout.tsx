@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"

@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 import { isAdminRole } from "@/lib/permissions"
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, participantManager } from "@/storage/database"
@@ -47,12 +47,41 @@ export async function POST(
       )
     }
 
+    // [数据规范] 呼号统一大写入库。前端已做「输入法感知转大写」，但个别浏览器在
+    // 输入法组合提交后不再触发 input 事件，可能残留小写，这里做最后一道保证。
+    const normalizedCallsign = String(body.callsign ?? "").trim().toUpperCase()
+
+    // [v2.0.2] 同场次同呼号查重
+    // 多主控协作时两边可能同时录到同一个人。默认拦截并回报「已是第几位」，
+    // 主控确认后带 allowDuplicate 再提交一次即可放行（少数换设备重报的场景）。
+    if (!body.allowDuplicate && normalizedCallsign) {
+      const duplicate = await logManager.findDuplicateRecord(
+        sessionId,
+        normalizedCallsign
+      )
+      if (duplicate) {
+        return NextResponse.json(
+          {
+            error: "duplicate",
+            message: "本呼号已参加过本次台网",
+            existing: {
+              id: duplicate.record.id,
+              callsign: duplicate.record.callsign,
+              seq: duplicate.seq,
+              signal: duplicate.record.signal,
+              qth: duplicate.record.qth,
+              createdAt: duplicate.record.createdAt,
+            },
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     // Add record to session
     const record = await logManager.createLogRecord({
       sessionId,
-      // [数据规范] 呼号统一大写入库。前端已做「输入法感知转大写」，但个别浏览器在
-      // 输入法组合提交后不再触发 input 事件，可能残留小写，这里做最后一道保证。
-      callsign: String(body.callsign ?? "").trim().toUpperCase(),
+      callsign: normalizedCallsign,
       qth: body.qth || null,
       equipment: body.equipment || null,
       antenna: body.antenna || null,

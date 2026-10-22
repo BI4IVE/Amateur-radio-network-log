@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 "use client"
 
 import { isAdminRole } from "@/lib/permissions"
@@ -655,24 +655,63 @@ export default function HomePage() {
     }
 
     try {
-      const response = await fetch(`/api/sessions/${currentSession.id}/records/with-participant`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          callsign,
-          qth: qth || null,
-          equipment: equipment || null,
-          antenna: antenna || null,
-          power: power || null,
-          signal: signal || null,
-          report: report || null,
-          remarks: remarks || null,
-          userId: currentUser?.id,
-          userRole: currentUser?.role,
-        }),
-      })
+      const submitRecord = async (allowDuplicate: boolean) => {
+        const response = await fetch(
+          `/api/sessions/${currentSession.id}/records/with-participant`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              callsign,
+              qth: qth || null,
+              equipment: equipment || null,
+              antenna: antenna || null,
+              power: power || null,
+              signal: signal || null,
+              report: report || null,
+              remarks: remarks || null,
+              userId: currentUser?.id,
+              userRole: currentUser?.role,
+              allowDuplicate,
+            }),
+          }
+        )
+        const data = await response.json().catch(() => ({}))
+        return { response, data }
+      }
 
-      const data = await response.json()
+      let { response, data } = await submitRecord(false)
+
+      // [v2.0.2] 同场次同呼号：默认拦截，弹窗告知「已是第几位」，确认后可再录一条
+      if (response.status === 409 && data?.error === "duplicate") {
+        const info = data.existing ?? {}
+        const when = info.createdAt
+          ? new Date(info.createdAt).toLocaleString("zh-CN", {
+              hour12: false,
+              timeZone: "Asia/Shanghai",
+            })
+          : ""
+        const detail = [info.signal ? `信号 ${info.signal}` : "", info.qth || ""]
+          .filter(Boolean)
+          .join(" · ")
+        const proceed = confirm(
+          `本呼号已参加过本次台网\n\n第 ${info.seq ?? "?"} 位` +
+            (detail ? ` · ${detail}` : "") +
+            (when ? `\n录入时间 ${when}` : "") +
+            `\n\n仍要再录一条吗？`
+        )
+        if (!proceed) {
+          callsignRef.current?.focus()
+          return
+        }
+        ;({ response, data } = await submitRecord(true))
+      }
+
+      if (!response.ok || !data?.record) {
+        alert(data?.error && data.error !== "duplicate" ? data.error : "添加记录失败")
+        return
+      }
+
       // [v1.5.10] 按 id 兜底去重：与 SSE 回声合并时永不产生重复条目
       setRecords((prev) => dedupeRecords([...prev, data.record]))
 

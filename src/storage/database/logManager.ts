@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 import { eq, and, SQL, like, desc, gte, sql, isNull, inArray } from "drizzle-orm"
 import { getDb } from "./db"
 import {
@@ -329,6 +329,52 @@ export class LogManager {
       .orderBy(logRecords.createdAt)
   }
 
+  /**
+   * [v2.0.2] 同场次同呼号查重
+   *
+   * 多主控协作时，两个主控可能同时录到同一个人，导致同一场里出现两条相同呼号。
+   * 这里返回已存在的记录 + 它在当前场次里的序号（按录入时间升序，从 1 开始），
+   * 由接口决定是拦截（409）还是放行（allowDuplicate）。
+   *
+   * 序号按「当前剩余的未删记录」重排，与主控台列表里看到的行号一致。
+   */
+  async findDuplicateRecord(
+    sessionId: string,
+    callsign: string
+  ): Promise<{ record: LogRecord; seq: number } | null> {
+    const normalized = callsign.trim().toUpperCase()
+    if (!normalized) return null
+
+    const db = await getDb()
+    const [existing] = await db
+      .select()
+      .from(logRecords)
+      .where(
+        and(
+          eq(logRecords.sessionId, sessionId),
+          isNull(logRecords.deletedAt),
+          sql`upper(trim(${logRecords.callsign})) = ${normalized}`
+        )
+      )
+      .orderBy(logRecords.createdAt)
+      .limit(1)
+
+    if (!existing) return null
+
+    const [agg] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(logRecords)
+      .where(
+        and(
+          eq(logRecords.sessionId, sessionId),
+          isNull(logRecords.deletedAt),
+          sql`${logRecords.createdAt} <= ${existing.createdAt}`
+        )
+      )
+
+    return { record: existing, seq: agg?.count ?? 1 }
+  }
+
   async updateLogRecord(
     id: string,
     data: UpdateLogRecord
@@ -593,6 +639,137 @@ export class LogManager {
     return {
       rank: Number(row.rank ?? 0) || 0,
       total: Number(row.total ?? 0) || 0,
+    }
+  }
+
+  /**
+   * [v2.0.2 个人中心] 连续参与周数 + 本月出席次数
+   *
+   * 「连续」按北京时间自然周算：从最近一次参与所在周往前推，
+   * 每周都有参与才累加，中间断一周即停。至少返回 1（有参与记录时）。
+   */
+  async getCallsignStreak(callsign: string): Promise<{
+    weeks: number
+    thisMonth: number
+  }> {
+    const db = await getDb()
+    const result = await db.execute(sql`
+      select distinct date_trunc('week', s.session_time at time zone 'Asia/Shanghai')::date as w
+      from log_records r
+      join log_sessions s on s.id = r.session_id
+      where r.callsign = ${callsign}
+        and r.deleted_at is null
+        and s.deleted_at is null
+        and s.session_time > now() - interval '2 years'
+      order by w desc
+    `)
+    const rows = ((result as unknown as { rows?: { w: string }[] }).rows ?? [])
+
+    let weeks = 0
+    let prev: number | null = null
+    for (const row of rows) {
+      const time = new Date(`${String(row.w).slice(0, 10)}T00:00:00Z`).getTime()
+      if (Number.isNaN(time)) continue
+      if (prev === null) {
+        weeks = 1
+      } else if (Math.round((prev - time) / 86400000) === 7) {
+        weeks += 1
+      } else {
+        break
+      }
+      prev = time
+    }
+
+    const [agg] = await db
+      .select({ count: sql<number>`count(distinct ${logRecords.sessionId})::int` })
+      .from(logRecords)
+      .innerJoin(logSessions, eq(logRecords.sessionId, logSessions.id))
+      .where(
+        and(
+          eq(logRecords.callsign, callsign),
+          isNull(logRecords.deletedAt),
+          isNull(logSessions.deletedAt),
+          sql`date_trunc('month', ${logSessions.sessionTime} at time zone 'Asia/Shanghai')
+              = date_trunc('month', now() at time zone 'Asia/Shanghai')`
+        )
+      )
+
+    return { weeks, thisMonth: agg?.count ?? 0 }
+  }
+
+  /**
+   * [v2.0.2 个人中心] 本月与上月的参与排名（同场次并列）
+   *
+   * 只返回名次，不返回总人数 —— 个人中心不暴露全站规模。
+   */
+  async getCallsignMonthlyRank(callsign: string): Promise<{
+    current: number | null
+    previous: number | null
+  }> {
+    const db = await getDb()
+    const result = await db.execute(sql`
+      with cur as (
+        select r.callsign, count(distinct r.session_id)::int c
+        from log_records r
+        join log_sessions s on s.id = r.session_id
+        where r.deleted_at is null and s.deleted_at is null
+          and date_trunc('month', s.session_time at time zone 'Asia/Shanghai')
+              = date_trunc('month', now() at time zone 'Asia/Shanghai')
+        group by 1
+      ), prev as (
+        select r.callsign, count(distinct r.session_id)::int c
+        from log_records r
+        join log_sessions s on s.id = r.session_id
+        where r.deleted_at is null and s.deleted_at is null
+          and date_trunc('month', s.session_time at time zone 'Asia/Shanghai')
+              = date_trunc('month', (now() at time zone 'Asia/Shanghai') - interval '1 month')
+        group by 1
+      )
+      select
+        (select c from cur where callsign = ${callsign}) as cur_c,
+        (select count(*) + 1 from cur
+          where c > coalesce((select c from cur where callsign = ${callsign}), 0))::int as cur_rank,
+        (select c from prev where callsign = ${callsign}) as prev_c,
+        (select count(*) + 1 from prev
+          where c > coalesce((select c from prev where callsign = ${callsign}), 0))::int as prev_rank
+    `)
+    const row = ((result as unknown as { rows?: Record<string, unknown>[] }).rows ?? [])[0] ?? {}
+    const hasCurrent = row.cur_c !== null && row.cur_c !== undefined
+    const hasPrevious = row.prev_c !== null && row.prev_c !== undefined
+    return {
+      current: hasCurrent ? Number(row.cur_rank) || null : null,
+      previous: hasPrevious ? Number(row.prev_rank) || null : null,
+    }
+  }
+
+  /**
+   * [v2.0.2 个人中心] 主控统计：该呼号主控过的场次数与这些场次的记录条数
+   *
+   * 按 log_sessions.controller_name 匹配（主控账号用户名即呼号）。
+   * 没有任何主控记录时返回 sessions = 0，前端据此决定是否显示主控卡。
+   */
+  async getControllerStats(callsign: string): Promise<{
+    sessions: number
+    records: number
+    lastTime: Date | null
+  }> {
+    const db = await getDb()
+    const result = await db.execute(sql`
+      select
+        count(*)::int as sessions,
+        coalesce(sum((
+          select count(*) from log_records r
+          where r.session_id = s.id and r.deleted_at is null
+        )), 0)::int as records,
+        max(s.session_time) as last_time
+      from log_sessions s
+      where s.controller_name = ${callsign} and s.deleted_at is null
+    `)
+    const row = ((result as unknown as { rows?: Record<string, unknown>[] }).rows ?? [])[0] ?? {}
+    return {
+      sessions: Number(row.sessions ?? 0) || 0,
+      records: Number(row.records ?? 0) || 0,
+      lastTime: row.last_time ? new Date(String(row.last_time)) : null,
     }
   }
 

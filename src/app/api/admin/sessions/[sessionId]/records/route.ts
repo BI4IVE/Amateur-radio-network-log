@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, equipmentManager } from "@/storage/database"
 import { getAuthUser } from "@/lib/auth"
@@ -60,10 +60,38 @@ export async function POST(
       )
     }
 
+    // [数据规范] 呼号统一大写入库（前端可能因输入法组合残留小写）
+    const normalizedCallsign = String(body.callsign ?? "").trim().toUpperCase()
+    const { allowDuplicate, ...rest } = body
+
+    // [v2.0.2] 后台补录同样查重，避免历史场次被重复录入同一个人
+    if (!allowDuplicate && normalizedCallsign) {
+      const duplicate = await logManager.findDuplicateRecord(
+        sessionId,
+        normalizedCallsign
+      )
+      if (duplicate) {
+        return NextResponse.json(
+          {
+            error: "duplicate",
+            message: "本呼号已参加过本次台网",
+            existing: {
+              id: duplicate.record.id,
+              callsign: duplicate.record.callsign,
+              seq: duplicate.seq,
+              signal: duplicate.record.signal,
+              qth: duplicate.record.qth,
+              createdAt: duplicate.record.createdAt,
+            },
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     const record = await logManager.createLogRecord({
-      ...body,
-      // [数据规范] 呼号统一大写入库（前端可能因输入法组合残留小写）
-      callsign: String(body.callsign ?? "").trim().toUpperCase(),
+      ...rest,
+      callsign: normalizedCallsign,
       sessionId,
     })
 

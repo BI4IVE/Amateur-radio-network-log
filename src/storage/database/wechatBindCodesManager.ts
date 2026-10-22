@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 import { desc, eq, and, sql, type SQL } from "drizzle-orm"
 import { randomInt } from "crypto"
 import { getDb } from "./db"

@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 import { eq, ilike, desc } from "drizzle-orm"
 import { getDb } from "./db"
 import {

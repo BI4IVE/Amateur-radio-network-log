@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -21,6 +21,14 @@ type Overview = {
   profile?: Profile
   license?: License
   stats?: Stats
+  /** 主控卡：没有任何主控记录时为 null */
+  controller?: {
+    sessions: number
+    records: number
+    lastTime: string | null
+  } | null
+  /** 台网规则（后台配置项 member_rules，换行分隔） */
+  rules?: string
   /** 档案默认值（发证机关等，后台可配） */
   defaults?: { licenseIssuer: string }
 }
@@ -56,9 +64,15 @@ type Stats = {
   yearSessions: number
   firstTime: string | null
   lastTime: string | null
-  topSignal: string | null
+  /** 连续参与周数（自然周） */
+  streakWeeks: number
+  /** 本月出席次数 */
+  thisMonth: number
   rank: number
-  rankedTotal: number
+  /** 本月名次（用于名次变化），无数据为 null */
+  rankCurrent: number | null
+  /** 正数 = 较上月上升几位 */
+  rankTrend: number | null
 }
 
 type RecordItem = {
@@ -97,6 +111,48 @@ function fmtDate(value: string | null | undefined): string {
     month: "2-digit",
     day: "2-digit",
   }).format(d)
+}
+
+/** 只显示月-日，如 10-18（北京时间） */
+function fmtMonthDay(value: string | null | undefined): string {
+  if (!value) return "-"
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return "-"
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d)
+}
+
+/** 「4 天前」这类相对时间，超过 60 天直接显示日期 */
+function daysAgoText(value: string | null | undefined): string {
+  if (!value) return ""
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ""
+  const now = Date.now()
+  const diffDays = Math.floor((now - d.getTime()) / 86400000)
+  if (diffDays <= 0) return "今天"
+  if (diffDays === 1) return "昨天"
+  if (diffDays <= 60) return `${diffDays} 天前`
+  return fmtMonthDay(value)
+}
+
+/** 预告时间显示为「10-23 20:30」（北京时间） */
+function fmtScheduleTime(value: string | null | undefined): string {
+  if (!value) return ""
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ""
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .format(d)
+    .replace(", ", " ")
 }
 
 function fmtWeekday(value: string | null | undefined): string {
@@ -145,6 +201,20 @@ function licenseTone(state: License["state"]) {
   }
 }
 
+/**
+ * [v2.0.2] 台网排名勋章：按名次给颜色，50 名以后不显示
+ *
+ * 不给人人发勋章，否则失去意义；分档做目标感。
+ */
+function rankMedalColor(rank: number): string | null {
+  if (!rank || rank <= 0) return null
+  if (rank === 1) return "#fbbf24" // 金
+  if (rank <= 3) return "#e2e8f0" // 银
+  if (rank <= 10) return "#fb923c" // 铜
+  if (rank <= 50) return "rgba(255,255,255,0.72)" // 淡白
+  return null
+}
+
 /** 执照编号脱敏：保留前 3 位与后 3 位，中间用圆点代替 */
 function maskLicenseNo(value: string): string {
   const trimmed = value.trim()
@@ -181,6 +251,11 @@ export default function MePage() {
   const [unbinding, setUnbinding] = useState(false)
   // 执照编号默认脱敏，点小眼睛才显示完整
   const [showLicenseNo, setShowLicenseNo] = useState(false)
+  // [v2.0.2] 台网规则：首次自动弹（localStorage 记住），之后靠「更多服务」下方入口
+  const [rulesOpen, setRulesOpen] = useState(false)
+  const [rulesFull, setRulesFull] = useState(false)
+  // [v2.0.2] 下一场台网预告
+  const [nextSchedule, setNextSchedule] = useState<string | null>(null)
 
   const loadOverview = useCallback(async () => {
     setLoading(true)
@@ -212,6 +287,39 @@ export default function MePage() {
   useEffect(() => {
     loadOverview()
   }, [loadOverview])
+
+  // [v2.0.2] 下一场台网预告（公开接口，失败静默）
+  useEffect(() => {
+    let cancelled = false
+    fetch("/api/schedules", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (cancelled) return
+        const schedule = json?.schedule
+        if (schedule?.scheduledTime) setNextSchedule(schedule.scheduledTime)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // 台网规则：本机第一次进入时自动弹一次（换设备会再弹）
+  useEffect(() => {
+    if (!data?.bound || typeof window === "undefined") return
+    if (localStorage.getItem("me_rules_seen_v1")) return
+    setRulesFull(false)
+    setRulesOpen(true)
+  }, [data?.bound])
+
+  const ruleLines = useMemo(
+    () =>
+      (data?.rules || "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+    [data?.rules]
+  )
 
   // [v2.0.0] 我的记录每页 5 条，其余翻页查看
   const RECORD_PAGE_SIZE = 5
@@ -291,6 +399,14 @@ export default function MePage() {
     }
   }
 
+  // 关闭规则抽屉并记住已读（换设备会再弹一次）
+  const closeRules = () => {
+    setRulesOpen(false)
+    if (typeof window !== "undefined") {
+      localStorage.setItem("me_rules_seen_v1", "1")
+    }
+  }
+
   // [v2.0.0] 个人中心内自助解绑（身份取自会话，不再依赖前端传 openid）
   const handleUnbind = async () => {
     if (!confirm("确认解除微信绑定？解绑后将不再收到台网回执。")) return
@@ -359,12 +475,57 @@ export default function MePage() {
     )
   }
 
+  // 排名勋章颜色（50 名以后为 null，不显示）
+  const medalColor = rankMedalColor(data.stats?.rank ?? 0)
+
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
       <div className="max-w-md mx-auto bg-[#f7f8fb] min-h-screen">
         {/* 顶部 */}
         <div className="bg-gradient-to-b from-indigo-600 to-indigo-800 px-5 pt-7 pb-16 text-white relative overflow-hidden">
           <div className="absolute -right-8 -top-10 w-48 h-48 rounded-full bg-white/5" />
+
+          {/* [v2.0.2] 台网排名移到呼号右侧，带较上月变化 */}
+          {/* 台网排名徽章：标签左对齐、数字右对齐，避免右对齐时「上短下长」的台阶感 */}
+          {data.stats?.rank ? (
+            <div className="absolute right-4 top-3.5 bg-white/15 border border-white/25 rounded-2xl px-3.5 py-2.5">
+              <span className="flex items-center gap-1.5 text-[12px] tracking-[0.5px] text-white/80">
+                台网排名
+                {medalColor ? (
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-[22px] h-[22px] fill-none"
+                    stroke={medalColor}
+                    strokeWidth={2.2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="9" r="5" />
+                    <path d="M8.2 13.5 7 22l5-3 5 3-1.2-8.5" />
+                  </svg>
+                ) : null}
+              </span>
+              <span className="flex items-baseline justify-end gap-1 mt-0.5">
+                <b className="text-[32px] font-extrabold leading-none tabular-nums">
+                  {data.stats.rank}
+                </b>
+                <i className="not-italic text-sm font-semibold text-white/75">位</i>
+                {data.stats.rankTrend !== null && data.stats.rankTrend !== 0 ? (
+                  <em
+                    className={`not-italic text-xs font-extrabold ml-1 ${
+                      data.stats.rankTrend > 0 ? "text-emerald-200" : "text-rose-200"
+                    }`}
+                  >
+                    {data.stats.rankTrend > 0 ? "↑" : "↓"}
+                    {Math.abs(data.stats.rankTrend)}
+                  </em>
+                ) : data.stats.rankTrend === 0 ? (
+                  <em className="not-italic text-xs font-extrabold ml-1 text-white/50">—</em>
+                ) : null}
+              </span>
+            </div>
+          ) : null}
+
           <p className="text-[10.5px] tracking-[2px] text-white/70">
             BR4IN · {data.siteName}
           </p>
@@ -399,17 +560,17 @@ export default function MePage() {
             note="按北京时间切年"
             border
           />
+          {/* [v2.0.2] 最近一次与连续参与拆开；台网排名已移到顶部呼号右侧 */}
           <StatCell
-            value={data.stats?.topSignal ?? "-"}
-            label="最常信号"
-            note={data.stats?.lastTime ? `最近 ${fmtDate(data.stats.lastTime)}` : "暂无记录"}
+            value={data.stats?.lastTime ? fmtMonthDay(data.stats.lastTime) : "-"}
+            label="最近一次"
+            note={data.stats?.lastTime ? daysAgoText(data.stats.lastTime) : "暂无记录"}
           />
-          {/* [v2.0.0] 不再展示「共 N 位活跃」：会暴露服务器累计会员总数 */}
           <StatCell
-            value={data.stats?.rank ? `${data.stats.rank}` : "-"}
-            unit="位"
-            label="台网排名"
-            note=""
+            value={data.stats?.streakWeeks ?? 0}
+            unit="周"
+            label="连续参与"
+            note={data.stats?.thisMonth ? `本月已出席 ${data.stats.thisMonth} 次` : "本月还没来"}
           />
         </div>
 
@@ -513,18 +674,70 @@ export default function MePage() {
           )}
         </div>
 
-        {/* 更多服务：两格入口 */}
+        {/* [v2.0.2] 主控卡：只对主控过场次的账号显示 */}
+        {data.controller ? (
+          <div className="mx-4 mt-3 rounded-2xl px-3.5 py-3.5 bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-200 flex items-center gap-3">
+            <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-[0_2px_6px_rgba(124,58,237,0.12)]">
+              <svg
+                viewBox="0 0 24 24"
+                className="w-[17px] h-[17px] stroke-violet-600 fill-none"
+                strokeWidth={2}
+                strokeLinecap="round"
+              >
+                <path d="M12 12a2 2 0 1 0 0 .01" />
+                <path d="M16.5 7.5a6.36 6.36 0 0 1 0 9" />
+                <path d="M7.5 7.5a6.36 6.36 0 0 0 0 9" />
+              </svg>
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-extrabold text-violet-900">
+                我主控过 {data.controller.sessions} 场台网
+              </p>
+              <p className="text-[11px] text-violet-700/80 mt-0.5 truncate">
+                最近一场 {fmtMonthDay(data.controller.lastTime)} · 累计录入{" "}
+                {data.controller.records} 条记录
+              </p>
+            </div>
+            <a
+              href="/admin/stats"
+              className="text-[11px] font-extrabold text-violet-700 shrink-0"
+            >
+              运营中心 ›
+            </a>
+          </div>
+        ) : null}
+
+        {/* 更多服务：证书 / 查询 / 预告 */}
         <div className="mx-4 mt-3.5">
           <p className="text-xs font-extrabold text-black/50 mb-2 pl-1">更多服务</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2.5">
             <a
               href={`/query?callsign=${encodeURIComponent(data.binding.callsign || "")}`}
-              className="bg-white rounded-2xl p-3.5 shadow-[0_6px_18px_rgba(24,24,60,0.06)] block"
+              className="bg-white rounded-2xl px-2.5 py-3 shadow-[0_6px_18px_rgba(24,24,60,0.06)] block text-center"
             >
-              <span className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center">
+              <span className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto">
                 <svg
                   viewBox="0 0 24 24"
-                  className="w-[17px] h-[17px] stroke-indigo-600 fill-none"
+                  className="w-[15px] h-[15px] stroke-emerald-600 fill-none"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                >
+                  <circle cx="12" cy="8" r="5" />
+                  <path d="M8.2 12.9 7 22l5-3 5 3-1.2-9.1" />
+                </svg>
+              </span>
+              <span className="block text-xs font-extrabold text-black mt-2">我的证书</span>
+              <span className="block text-[10px] text-black/45 mt-0.5">参与证明</span>
+            </a>
+
+            <a
+              href={`/query?callsign=${encodeURIComponent(data.binding.callsign || "")}`}
+              className="bg-white rounded-2xl px-2.5 py-3 shadow-[0_6px_18px_rgba(24,24,60,0.06)] block text-center"
+            >
+              <span className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center mx-auto">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-[15px] h-[15px] stroke-indigo-600 fill-none"
                   strokeWidth={2}
                   strokeLinecap="round"
                 >
@@ -532,31 +745,50 @@ export default function MePage() {
                   <path d="m20 20-3.5-3.5" />
                 </svg>
               </span>
-              <span className="block text-sm font-extrabold text-black mt-2.5">
-                台网查询
-              </span>
-              <span className="block text-[11px] text-black/45 mt-1">
-                查任意呼号历史记录
-              </span>
+              <span className="block text-xs font-extrabold text-black mt-2">台网查询</span>
+              <span className="block text-[10px] text-black/45 mt-0.5">任意呼号</span>
             </a>
 
-            {/* [v2.0.0] 台网预告暂未开放，先占位、不可点击 */}
-            <div className="bg-white rounded-2xl p-3.5 shadow-[0_6px_18px_rgba(24,24,60,0.06)] flex flex-col justify-center">
-              <span className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+            {/* [v2.0.2] 台网预告：直接显示下一场时间，不跳转 */}
+            <div className="bg-white rounded-2xl px-2.5 py-3 shadow-[0_6px_18px_rgba(24,24,60,0.06)] text-center">
+              <span className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center mx-auto">
                 <svg
                   viewBox="0 0 24 24"
-                  className="w-[17px] h-[17px] stroke-amber-500 fill-none"
-                  strokeWidth={1.9}
+                  className="w-[15px] h-[15px] stroke-amber-500 fill-none"
+                  strokeWidth={2}
                   strokeLinecap="round"
-                  strokeLinejoin="round"
                 >
-                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                  <rect x="3" y="5" width="18" height="16" rx="2" />
+                  <path d="M8 3v4M16 3v4M3 11h18" />
                 </svg>
               </span>
-              <span className="block text-sm font-extrabold text-black mt-2.5">
-                正在建设中
+              <span className="block text-xs font-extrabold text-black mt-2">台网预告</span>
+              <span className="block text-[10px] text-black/45 mt-0.5">
+                {nextSchedule ? fmtScheduleTime(nextSchedule) : "暂无预告"}
               </span>
             </div>
+          </div>
+
+          {/* [v2.0.2] 台网规则入口（首次进入会自动弹一次） */}
+          <div className="text-center mt-3">
+            <button
+              type="button"
+              onClick={() => {
+                setRulesFull(true)
+                setRulesOpen(true)
+              }}
+              className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-white border border-gray-200 text-[11.5px] text-black/45"
+            >
+              <span className="font-bold text-black/60">台网规则与帮助</span>
+              <svg
+                viewBox="0 0 24 24"
+                className="w-3 h-3 stroke-current fill-none"
+                strokeWidth={2.4}
+                strokeLinecap="round"
+              >
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -864,6 +1096,55 @@ export default function MePage() {
           </div>
         ) : null}
       </div>
+
+      {/* [v2.0.2] 台网规则抽屉：首次自动弹（只显示前 3 条），点底部入口看全部 */}
+      {rulesOpen ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-end"
+          onClick={closeRules}
+        >
+          <div
+            className="w-full max-w-md mx-auto bg-white rounded-t-3xl px-5 pt-2 pb-6 max-h-[78vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mt-1.5 mb-4" />
+            <p className="text-[17px] font-extrabold text-black">台网规则</p>
+            <p className="text-[11px] text-black/40 mt-1 mb-3.5">
+              {rulesFull ? "如需修改请联系管理员" : "第一次来，先花 30 秒了解一下"}
+            </p>
+
+            <ol className="space-y-2">
+              {(rulesFull ? ruleLines : ruleLines.slice(0, 3)).map((line, index) => (
+                <li
+                  key={index}
+                  className="flex gap-2 text-[12.5px] leading-6 text-black/75"
+                >
+                  <span className="text-black/30 font-bold tabular-nums">
+                    {index + 1}.
+                  </span>
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ol>
+
+            <button
+              onClick={closeRules}
+              className="mt-5 w-full h-11 rounded-xl bg-indigo-600 text-white text-sm font-bold"
+            >
+              我知道了
+            </button>
+
+            {!rulesFull && ruleLines.length > 3 ? (
+              <button
+                onClick={() => setRulesFull(true)}
+                className="mt-2.5 w-full h-11 rounded-xl border border-gray-200 text-black/70 text-[13.5px] font-semibold"
+              >
+                查看完整规则
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

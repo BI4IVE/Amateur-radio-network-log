@@ -1,4 +1,4 @@
-// @version v2.0.1
+// @version v2.0.2
 import { eq, and, SQL, like, sql } from "drizzle-orm"
 import { getDb } from "./db"
 import {
@@ -102,16 +102,25 @@ export class ParticipantManager {
       conditions.push(like(participants.name || "", `%${filters.name}%`))
     }
 
+    // [v2.0.2 修复] 必须显式排序：Postgres 无 ORDER BY 时返回顺序不确定，
+    // 更新过的行可能在物理位置上前后漂移，导致「limit 截断 + 前端本地搜索」时
+    // 同一个会员有时能搜到、有时搜不到（BA4IGG 就是这样丢的）。
     if (conditions.length > 0) {
       return db
         .select()
         .from(participants)
         .where(and(...conditions))
+        .orderBy(participants.callsign)
         .limit(limit)
         .offset(skip)
     }
 
-    return db.select().from(participants).limit(limit).offset(skip)
+    return db
+      .select()
+      .from(participants)
+      .orderBy(participants.callsign)
+      .limit(limit)
+      .offset(skip)
   }
 
   async updateParticipant(
