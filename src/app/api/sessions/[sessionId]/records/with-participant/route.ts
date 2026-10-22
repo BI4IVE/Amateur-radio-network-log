@@ -2,7 +2,6 @@
 import { isAdminRole } from "@/lib/permissions"
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, participantManager } from "@/storage/database"
-import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireLogin } from "@/lib/auth"
 import { pushRecordNotification } from "@/lib/wechat/pushService"
@@ -138,12 +137,6 @@ export async function POST(
         participantData
       )
     }
-
-    // 广播新记录
-    broadcastToSession(sessionId, {
-      type: "record_added",
-      record,
-    })
 
     return NextResponse.json({ record, participant: updatedParticipant }, { status: 201 })
   } catch (error) {

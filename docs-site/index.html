@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BR4INLOG · 济南黄河业余无线电台网主控日志系统</title>
-<meta name="description" content="业余无线电台网主控日志系统：SSE 实时协作、呼号联想录入、Excel 导出、实况大屏、参与证书与后台统计，开源、可自部署。" />
+<meta name="description" content="业余无线电台网主控日志系统：多主控实时协作、呼号联想录入、Excel 导出、实况大屏、参与证书与后台统计，开源、可自部署。" />
 <style>
   :root{
     --bg:#f4f6fb; --panel:#ffffff; --panel-2:#eef1f8; --text:#0e1526; --text-2:#525e78; --text-3:#8792ab;
@@ -405,7 +405,7 @@
     <div>
       <span class="hero-tag"><span class="dot"></span> v2.0.2 已发布 · 排名勋章 · 录入防重 · 台网规则</span>
       <h1>把每一次台网<br/>留在 <span class="accent">清晰的日志里</span></h1>
-      <p class="sub">面向业余无线电台网场景的现代化主控日志系统：一键开台网、<b>呼号联想快速录入</b>、SSE 多主控实时协作、实况大屏与参与证书；会员还能用微信查看自己的通联记录、排名勋章与执照到期。开源免费，<b>部署即用</b>。</p>
+      <p class="sub">面向业余无线电台网场景的现代化主控日志系统：一键开台网、<b>呼号联想快速录入</b>、多主控实时协作、实况大屏与参与证书；会员还能用微信查看自己的通联记录、排名勋章与执照到期。开源免费，<b>部署即用</b>。</p>
       <div class="hero-actions">
         <a class="btn-primary" href="manual.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
@@ -424,7 +424,7 @@
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>当前版本 v2.0.2</span>
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Next.js 16 · React 19</span>
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>PostgreSQL 14+</span>
-        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>SSE 实时协作</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>实时协作</span>
       </div>
     </div>
 
@@ -495,8 +495,8 @@
       <div class="fcard reveal">
         <span class="no">03</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>
-        <h3>SSE 多主控协作</h3>
-        <p>基于 Server-Sent Events，多主控同时录入即时互见，30 秒心跳保活，不怕断网丢记录。</p>
+        <h3>多主控实时协作</h3>
+        <p>多主控同时录入互见，页面每 3 秒自动同步，服务端数据为准不怕重复，CDN 环境照常可用。</p>
       </div>
       <div class="fcard reveal">
         <span class="no">04</span>
@@ -532,7 +532,7 @@
         <span class="no">09</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
         <h3>实况大屏投放</h3>
-        <p>/live 页面 SSE 实时滚动在网呼号与最新记录，支持电脑横屏与手机竖屏，直接投屏电视、会场大屏。</p>
+        <p>/live 页面实时滚动在网呼号与最新记录，支持电脑横屏与手机竖屏，直接投屏电视、会场大屏。</p>
       </div>
       <div class="fcard reveal">
         <span class="no">10</span>
@@ -577,7 +577,7 @@
         <h2>会场氛围，交给实况大屏</h2>
         <p>把当场上联滚动投到电视与会场，在场友台实时“上墙”，参与感直接拉满。</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>最新记录 <b>秒级 SSE 实时滚动</b>，不漏掉任何一位友台</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>最新记录 <b>秒级实时滚动</b>，不漏掉任何一位友台</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>电脑<b>横屏</b>、手机<b>竖屏</b>两套布局自动适配</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>QTH 匿名可开可关，<b>保护隐私</b>灵活可控</span></li>
         </ul>

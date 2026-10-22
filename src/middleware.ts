@@ -9,7 +9,6 @@ const protectedPaths = [
   "/api/participants",
   "/api/records",
   "/api/admin",
-  "/api/sse",
   "/api/page-configs",
   "/admin",
 ]

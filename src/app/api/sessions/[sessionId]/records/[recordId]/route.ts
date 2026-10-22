@@ -1,7 +1,6 @@
 // @version v2.0.2
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
-import { broadcastToSession } from "@/app/api/sse/session/[sessionId]/subscribe/route"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireLogin } from "@/lib/auth"
 
@@ -49,12 +48,6 @@ export async function PUT(
         { status: 404 }
       )
     }
-
-    // 广播记录更新
-    broadcastToSession(sessionId, {
-      type: "record_updated",
-      record,
-    })
 
     return NextResponse.json({ record })
   } catch (error) {
@@ -108,13 +101,6 @@ export async function DELETE(
         { status: 404 }
       )
     }
-
-    // 广播记录删除（软删，带 deletedAt 标记便于前端隐藏）
-    broadcastToSession(sessionId, {
-      type: "record_deleted",
-      recordId,
-      deletedAt: new Date().toISOString(),
-    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

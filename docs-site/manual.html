@@ -420,7 +420,7 @@ footer a{color:var(--text-2)}
       <div class="card"><b>👥 会员中心 <span class="path">/admin/participants</span></b><span>后台会员档案：编号、执照、微信绑定状态，可分页筛选、审核绑定、补建缺失档案。</span></div>
       <div class="card"><b>⚙️ 管理后台 <span class="path">/admin</span></b><span>四大分组：运营中心 / 会员中心 / 数据与日志 / 系统管理。</span></div>
       <div class="card"><b>🔐 登录 <span class="path">/login</span></b><span>用户名不区分大小写，登录态保存在 httpOnly Cookie，有效期 7 天。</span></div>
-      <div class="card"><b>🔄 实时协作</b><span>基于 SSE（Server-Sent Events），多主控同时录入即时互见，30 秒心跳保活。</span></div>
+      <div class="card"><b>🔄 实时协作</b><span>多主控同时录入，页面每 3 秒自动轮询互见，对 CDN / 反向代理环境友好。</span></div>
       <div class="card"><b>🧾 审计日志</b><span>台网删除与恢复、会员档案修改（区分用户自助与管理员）均留痕可查。</span></div>
     </div>
 
@@ -452,7 +452,7 @@ footer a{color:var(--text-2)}
         <tr><td>PostgreSQL</td><td>14.x 及以上</td><td>需有建表权限（public schema）</td></tr>
         <tr><td>内存</td><td>≥ 2 GB</td><td>构建期峰值较高</td></tr>
         <tr><td>磁盘</td><td>≥ 1 GB</td><td>不含数据库数据</td></tr>
-        <tr><td>浏览器</td><td>Chrome / Edge / Firefox 最新版</td><td>需支持 SSE 与 ES2020</td></tr>
+        <tr><td>浏览器</td><td>Chrome / Edge / Firefox 最新版</td><td>需支持 ES2020</td></tr>
       </tbody>
     </table>
 
@@ -497,7 +497,7 @@ pnpm install</code></pre>
     <div class="callout c-danger"><b>宝塔避坑：PM2 与宝塔「Node 项目」二选一</b>
       <p>两者都会监听同一端口导致 <code>EADDRINUSE</code>。推荐只用 PM2（本项目）或只用宝塔 Node 项目托管，不要并存。宝塔 Node 项目底层不是全局 pm2，<code>pm2 list</code> 看不到它。</p></div>
 
-    <h4>Nginx 反向代理（务必带 SSE 与真实 IP 头）</h4>
+    <h4>Nginx 反向代理（务必带真实 IP 头）</h4>
     <pre><code>server {
     listen 80;
     server_name your-domain.com;
@@ -515,7 +515,7 @@ pnpm install</code></pre>
         proxy_buffering off;
     }
 }</code></pre>
-    <div class="callout c-warn"><b>为什么必须加 X-Real-IP 与 proxy_buffering off</b><p>登录限流按 IP 统计，缺失会导致所有人被当成同一个 IP 而触发「登录尝试次数过多」；关闭缓冲才能保证 SSE 实时推送不被积压。</p></div>
+    <div class="callout c-warn"><b>为什么必须加 X-Real-IP</b><p>登录限流按 IP 统计，缺失会导致所有人被当成同一个 IP 而触发「登录尝试次数过多」。<code>proxy_buffering off;</code> 保留自早期 SSE 长连接版本，对现在的轮询接口无副作用，可留可删。</p></div>
 
     <h3>方式二：传统 Linux</h3>
     <pre><code>cd /var/www/radio-log
@@ -709,9 +709,9 @@ UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-netw
   <section class="doc-section" id="coop">
     <h2><span class="num">8</span>实时协作 · 编辑删除 · 导出<a class="top-link" href="#overview">↑ 顶部</a></h2>
 
-    <h3>多主控实时协作（SSE）</h3>
-    <p>进入会话后浏览器建立 <code>/api/sse/session/{会话ID}/subscribe</code> 长连接，服务端每 30 秒发送心跳保活。任一主控新增 / 修改 / 删除记录，其他主控页面<b>无需刷新</b>即时同步（事件类型：<code>record_added</code>、<code>record_updated</code>、<code>record_deleted</code>）。</p>
-    <div class="callout c-warn"><b>实时同步失效排查</b><p>多为反向代理缓冲了 SSE。请确认 Nginx 配置中含有 <code>proxy_buffering off;</code> 与 <code>proxy_http_version 1.1;</code>。</p></div>
+    <h3>多主控实时协作（自动轮询）</h3>
+    <p>进入会话后，页面每 <b>3 秒</b>自动向服务端拉取一次记录列表（服务端返回权威数据）。任一主控新增 / 修改 / 删除记录，其他主控页面最迟 3 秒内自动同步，<b>无需手动刷新</b>。该方案不依赖长连接，前置 CDN / 反向代理均可正常工作。</p>
+    <div class="callout c-info"><b>同步延迟排查</b><p>在浏览器开发者工具「网络」面板确认每 3 秒有一次 <code>/api/sessions/{会话ID}/records</code> 请求且返回 200；若返回 401 请重新登录，返回 5xx 请查看服务端 PM2 日志。</p></div>
 
     <h3>可编辑时限</h3>
     <p>后台「页面配置」中的 <code>session_edit_hours</code> 控制台网可编辑时长，<b>默认 6 小时，填 0 表示不限制</b>。前端每 60 秒复检一次，过期后记录列表顶部出现红色提示条：</p>
@@ -769,7 +769,7 @@ UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-netw
       <li><b>最近记录列表</b>：按时间倒序，超出高度自动滚动。</li>
       <li><b>模拟频谱 + 日期 ticker</b>：动态装饰效果。</li>
     </ul>
-    <p>数据每 <b>3 秒</b>轮询刷新一次（大屏不依赖 SSE，兼容性更好）。暂无记录时显示「等待主控录入记录…」；连接异常显示「连接服务器失败」。</p>
+    <p>数据每 <b>3 秒</b>轮询刷新一次（不依赖长连接，兼容性更好）。暂无记录时显示「等待主控录入记录…」；连接异常显示「连接服务器失败」。</p>
 
     <h3>对外开放与 QTH 脱敏</h3>
     <table>
@@ -1059,9 +1059,9 @@ kill -9 &lt;PID&gt;</code></pre>
 
     <h3>多主控录入不同步</h3>
     <ul>
-      <li>确认 Nginx 含 <code>proxy_buffering off;</code> 与 <code>proxy_http_version 1.1;</code>。</li>
-      <li>确认中间 CDN / WAF 没有缓冲 <code>text/event-stream</code>。</li>
-      <li>SSE 端点为 <span class="path">/api/sse/session/{id}/subscribe</span>，30 秒心跳，需登录。</li>
+      <li>在浏览器「网络」面板确认每 3 秒有一次 <code>/api/sessions/{id}/records</code> 请求且返回 200。</li>
+      <li>确认双方进入的是<b>同一场</b>台网（同一天只允许一场，日期不同即不是同一会话）。</li>
+      <li>返回 401 请重新登录；返回 5xx 请查看服务端 <code>pm2 logs radio-log</code>。</li>
     </ul>
 
     <h3>会话无法编辑 / 提示已过期</h3>
