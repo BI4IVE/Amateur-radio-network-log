@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>BR4INLOG · 济南黄河业余无线电台网主控日志系统</title>
-<meta name="description" content="业余无线电台网主控日志系统：SSE 实时协作、呼号联想录入、Excel 导出、实况大屏、参与证书与后台统计，开源、可自部署。" />
+<meta name="description" content="业余无线电台网主控日志系统：多主控实时协作、呼号联想录入、Excel 导出、实况大屏、参与证书与后台统计，开源、可自部署。" />
 <style>
   :root{
     --bg:#f4f6fb; --panel:#ffffff; --panel-2:#eef1f8; --text:#0e1526; --text-2:#525e78; --text-3:#8792ab;
@@ -403,9 +403,9 @@
 <div class="hero">
   <div class="wrap">
     <div>
-      <span class="hero-tag"><span class="dot"></span> v1.5.28 已发布 · MIT 开源 · 输入法修复 · 长 QTH 自动换行</span>
+      <span class="hero-tag"><span class="dot"></span> v2.0.2 已发布 · 排名勋章 · 录入防重 · 台网规则</span>
       <h1>把每一次台网<br/>留在 <span class="accent">清晰的日志里</span></h1>
-      <p class="sub">面向业余无线电台网场景的现代化主控日志系统：一键开台网、<b>呼号联想快速录入</b>、SSE 多主控实时协作、实况大屏与参与证书。开源免费，<b>部署即用</b>。</p>
+      <p class="sub">面向业余无线电台网场景的现代化主控日志系统：一键开台网、<b>呼号联想快速录入</b>、多主控实时协作、实况大屏与参与证书；会员还能用微信查看自己的通联记录、排名勋章与执照到期。开源免费，<b>部署即用</b>。</p>
       <div class="hero-actions">
         <a class="btn-primary" href="manual.html">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
@@ -421,10 +421,10 @@
         </a>
       </div>
       <div class="hero-badges">
-        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>当前版本 v1.5.28</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>当前版本 v2.0.2</span>
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Next.js 16 · React 19</span>
         <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>PostgreSQL 14+</span>
-        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>SSE 实时协作</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>实时协作</span>
       </div>
     </div>
 
@@ -463,9 +463,9 @@
 <div class="stats">
   <div class="wrap">
     <div class="grid">
-      <div class="cell"><div class="num">v1.5.28</div><div class="lbl">持续迭代的当前版本</div></div>
-      <div class="cell"><div class="num">12+</div><div class="lbl">覆盖台网闭环的核心功能</div></div>
-      <div class="cell"><div class="num">15 章</div><div class="lbl">在线使用说明书 · 全文搜索</div></div>
+      <div class="cell"><div class="num">v2.0.2</div><div class="lbl">持续迭代的当前版本</div></div>
+      <div class="cell"><div class="num">14</div><div class="lbl">覆盖台网闭环的核心功能</div></div>
+      <div class="cell"><div class="num">17 章</div><div class="lbl">在线使用说明书 · 全文搜索</div></div>
       <div class="cell"><div class="num">4 种</div><div class="lbl">部署路线 · 含 Docker</div></div>
     </div>
   </div>
@@ -495,8 +495,8 @@
       <div class="fcard reveal">
         <span class="no">03</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>
-        <h3>SSE 多主控协作</h3>
-        <p>基于 Server-Sent Events，多主控同时录入即时互见，30 秒心跳保活，不怕断网丢记录。</p>
+        <h3>多主控实时协作</h3>
+        <p>多主控同时录入互见，页面每 3 秒自动同步，服务端数据为准不怕重复，CDN 环境照常可用。</p>
       </div>
       <div class="fcard reveal">
         <span class="no">04</span>
@@ -532,13 +532,13 @@
         <span class="no">09</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
         <h3>实况大屏投放</h3>
-        <p>/live 页面 SSE 实时滚动在网呼号与最新记录，支持电脑横屏与手机竖屏，直接投屏电视、会场大屏。</p>
+        <p>/live 页面实时滚动在网呼号与最新记录，支持电脑横屏与手机竖屏，直接投屏电视、会场大屏。</p>
       </div>
       <div class="fcard reveal">
         <span class="no">10</span>
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
         <h3>权限与审计安全</h3>
-        <p>管理员 / 主控双角色分级，后台按角色自动过滤菜单；登录态加密 Cookie，操作均有审计留痕，回收站可恢复。</p>
+        <p>超级管理员 / 管理员 / 主控三级角色，26 项权限点可逐项勾选、改完立即生效；登录态加密 Cookie，操作审计留痕，回收站可恢复。</p>
       </div>
       <div class="fcard reveal">
         <span class="no">11</span>
@@ -551,6 +551,18 @@
         <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
         <h3>台网历史管理</h3>
         <p>管理员可补录与修正任意历史场次，支持指定日期整场新增、Excel/CSV 批量导入，历史数据一键迁移入库。</p>
+      </div>
+      <div class="fcard reveal">
+        <span class="no">13</span>
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <h3>微信个人中心</h3>
+        <p>会员用微信静默授权进入 /me，90 天免登；查看通联记录、排名勋章、连续参与、档案与执照到期，可自助维护资料与查看台网规则。</p>
+      </div>
+      <div class="fcard reveal">
+        <span class="no">14</span>
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <h3>会员中心</h3>
+        <p>会员档案分页与状态筛选（已绑定 / 待审核 / 未绑定 / 执照临期），微信绑定审核、绑定码、推送日志一屏管理。</p>
       </div>
     </div>
   </div>
@@ -565,7 +577,7 @@
         <h2>会场氛围，交给实况大屏</h2>
         <p>把当场上联滚动投到电视与会场，在场友台实时“上墙”，参与感直接拉满。</p>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>最新记录 <b>秒级 SSE 实时滚动</b>，不漏掉任何一位友台</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>最新记录 <b>秒级实时滚动</b>，不漏掉任何一位友台</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>电脑<b>横屏</b>、手机<b>竖屏</b>两套布局自动适配</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>QTH 匿名可开可关，<b>保护隐私</b>灵活可控</span></li>
         </ul>
@@ -639,7 +651,7 @@ pnpm dev
     <div class="docgrid">
       <a class="dlink reveal" href="manual.html">
         <span class="t"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>在线使用说明书</span>
-        <span class="d">覆盖部署、主控台操作、实况大屏、呼号查询、后台 12 页、页面配置全表与 FAQ 的 15 章完整指南，支持全文搜索与深色模式。</span>
+        <span class="d">覆盖部署、主控台操作、实况大屏、呼号查询、微信个人中心、会员中心、页面配置全表与 FAQ 的 17 章完整指南，支持全文搜索与深色模式。</span>
         <span class="go">打开手册 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </a>
       <a class="dlink reveal" href="https://github.com/BI4IVE/Amateur-radio-network-log/blob/main/docs/05-deployment.md" target="_blank" rel="noopener">
@@ -654,7 +666,7 @@ pnpm dev
       </a>
       <a class="dlink reveal" href="https://github.com/BI4IVE/Amateur-radio-network-log/releases" target="_blank" rel="noopener">
         <span class="t"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>版本与更新日志</span>
-        <span class="d">从 v1.0.0 到 v1.5.28 的全部变更记录：后台菜单分组重构、实况大屏、设备库、台网历史管理等版本亮点。</span>
+        <span class="d">从 v1.0.0 到 v2.0.2 的全部变更记录：微信个人中心与执照档案、三级角色与逐项权限、会员中心与审计日志等版本亮点。</span>
         <span class="go">查看 Releases <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
       </a>
     </div>

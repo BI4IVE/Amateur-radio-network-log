@@ -359,7 +359,7 @@ footer a{color:var(--text-2)}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
       <span class="t">项目首页</span>
     </a>
-    <span class="ver-chip" id="verChip">v1.5.28</span>
+    <span class="ver-chip" id="verChip">v2.0.2</span>
     <button class="icon-btn" id="themeBtn" title="切换深浅色" aria-label="切换深浅色">
       <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -369,7 +369,7 @@ footer a{color:var(--text-2)}
 
 <div class="layout">
   <nav class="sidebar" id="sidebar">
-    <div class="side-title">目录 · 16 频道</div>
+    <div class="side-title">目录 · 18 频道</div>
     <a href="#overview">系统概览</a>
     <a href="#roles">角色与权限</a>
     <a href="#prepare">环境准备</a>
@@ -381,6 +381,8 @@ footer a{color:var(--text-2)}
     <a href="#coop">协作 / 编辑 / 导出</a>
     <a href="#live">实况大屏</a>
     <a href="#query">呼号查询</a>
+    <a href="#me">微信个人中心</a>
+    <a href="#member-center">会员中心</a>
     <a href="#admin">管理后台</a>
     <a href="#config">页面配置项</a>
     <a href="#upgrade">版本升级与回滚</a>
@@ -390,12 +392,12 @@ footer a{color:var(--text-2)}
 
   <main class="content" id="content">
   <section class="doc-section hero" id="overview">
-    <span class="kicker">NET-CONTROL · OPERATING MANUAL · v1.5.28</span>
+    <span class="kicker">NET-CONTROL · OPERATING MANUAL · v2.0.2</span>
     <h1 class="doc-title">济南黄河业余无线电台网主控日志系统<span class="accent"> 使用说明书</span></h1>
     <p>本说明书面向<strong>台网主控、管理员与部署运维人员</strong>，覆盖从「零开始部署」到「日常开台网、录入、导出、大屏、统计、升级」的全部操作流程。</p>
     <div class="badges">
       <span>Next.js 16</span><span>React 19</span><span>Node.js 24</span><span>PostgreSQL 14+</span>
-      <span>MIT 协议</span><span>当前版本 v1.5.28</span>
+      <span>MIT 协议</span><span>当前版本 v2.0.2</span>
     </div>
     <p class="lead-note">
       典型一天的使用路径：<code>预告倒计时</code> → <code>创建台网会话</code> → <code>呼号联想快速录入</code> →
@@ -408,32 +410,36 @@ footer a{color:var(--text-2)}
 
   <section class="doc-section" id="roles">
     <h2><span class="num">1</span>系统概览与角色权限<a class="top-link" href="#overview">↑ 顶部</a></h2>
-    <p class="lead">系统采用「管理员 + 主控」双角色模型。所有后台页面均受中间件保护，未登录会被重定向到 <span class="path">/login</span>；非管理员访问管理员页面会被重定向回首页。</p>
+    <p class="lead">v2.0.0 起角色分三级：<b>超级管理员 / 管理员 / 主控</b>。所有后台页面均受中间件保护，未登录会被重定向到 <span class="path">/login</span>；每项功能按「权限点」校验，默认权限由角色决定，超级管理员可逐项调整。</p>
 
     <div class="grid g3">
       <div class="card"><b>🌐 主页 / 主控台 <span class="path">/</span></b><span>创建台网会话、录入记录、导出 Excel，是主控每天唯一需要停留的页面。</span></div>
       <div class="card"><b>📡 实况大屏 <span class="path">/live</span></b><span>实时滚动在网呼号与最新记录，可投屏电视 / 拼接屏，支持电脑版与竖屏手机版。</span></div>
-      <div class="card"><b>🔍 呼号查询 <span class="path">/query</span></b><span>查询某呼号近一年的参与记录与参与次数，可生成参与证书。</span></div>
-      <div class="card"><b>⚙️ 管理后台 <span class="path">/admin</span></b><span>三大分组：运营中心 / 数据与日志 / 系统管理，共 12 个功能页面。</span></div>
+      <div class="card"><b>🔍 呼号查询 <span class="path">/query</span></b><span>查询某呼号历史参与记录与参与次数，可生成参与证书。</span></div>
+      <div class="card"><b>🪪 微信个人中心 <span class="path">/me</span></b><span>会员用微信静默授权进入，查看自己的记录、档案、执照与推送，90 天免登。</span></div>
+      <div class="card"><b>👥 会员中心 <span class="path">/admin/participants</span></b><span>后台会员档案：编号、执照、微信绑定状态，可分页筛选、审核绑定、补建缺失档案。</span></div>
+      <div class="card"><b>⚙️ 管理后台 <span class="path">/admin</span></b><span>四大分组：运营中心 / 会员中心 / 数据与日志 / 系统管理。</span></div>
       <div class="card"><b>🔐 登录 <span class="path">/login</span></b><span>用户名不区分大小写，登录态保存在 httpOnly Cookie，有效期 7 天。</span></div>
-      <div class="card"><b>🔄 实时协作</b><span>基于 SSE（Server-Sent Events），多主控同时录入即时互见，30 秒心跳保活。</span></div>
+      <div class="card"><b>🔄 实时协作</b><span>多主控同时录入，页面每 3 秒自动轮询互见，对 CDN / 反向代理环境友好。</span></div>
+      <div class="card"><b>🧾 审计日志</b><span>台网删除与恢复、会员档案修改（区分用户自助与管理员）均留痕可查。</span></div>
     </div>
 
-    <h3>角色权限矩阵</h3>
+    <h3>角色与默认权限</h3>
     <table>
-      <thead><tr><th>能力</th><th>管理员 admin</th><th>主控 user</th></tr></thead>
+      <thead><tr><th>能力</th><th>超级管理员</th><th>管理员</th><th>主控</th></tr></thead>
       <tbody>
-        <tr><td>进入管理后台</td><td class="yes">全部页面</td><td>仅「运营中心」分组</td></tr>
-        <tr><td>创建台网会话</td><td class="yes">可指定任意主控</td><td class="yes">仅能创建自己的</td></tr>
-        <tr><td>录入台网记录</td><td class="yes">✔</td><td class="yes">✔（限自己主控的会话）</td></tr>
-        <tr><td>编辑记录</td><td class="yes">✔（含已过期会话）</td><td class="yes">✔（自己主控 + 未过期）</td></tr>
-        <tr><td>删除记录 / 会话</td><td class="yes">✔（软删除，可恢复）</td><td class="no">✘</td></tr>
-        <tr><td>台网历史管理、回收站、登录日志</td><td class="yes">✔</td><td class="no">✘</td></tr>
-        <tr><td>用户管理、设备库、页面配置、版本更新</td><td class="yes">✔</td><td class="no">✘</td></tr>
-        <tr><td>呼号查询、实况大屏</td><td class="yes">✔</td><td class="yes">✔</td></tr>
+        <tr><td>进入管理后台</td><td class="yes">全部</td><td class="yes">会员 / 数据 / 系统（部分）</td><td>仅「运营中心」</td></tr>
+        <tr><td>创建台网会话</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">仅自己的</td></tr>
+        <tr><td>录入 / 编辑记录</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔（自己主控 + 未过期）</td></tr>
+        <tr><td>删除记录 / 会话</td><td class="yes">✔（软删除）</td><td class="yes">✔（软删除）</td><td class="no">✘</td></tr>
+        <tr><td>会员中心（档案 / 绑定审核）</td><td class="yes">✔</td><td class="yes">✔</td><td class="no">✘</td></tr>
+        <tr><td>台网历史、回收站、登录日志</td><td class="yes">✔</td><td class="yes">✔</td><td class="no">✘</td></tr>
+        <tr><td>页面配置、版本更新、审计日志</td><td class="yes">✔</td><td class="no">✘</td><td class="no">✘</td></tr>
+        <tr><td>用户管理与权限分配</td><td class="yes">✔</td><td class="no">✘</td><td class="no">✘</td></tr>
+        <tr><td>呼号查询、实况大屏、个人中心</td><td class="yes">✔</td><td class="yes">✔</td><td class="yes">✔</td></tr>
       </tbody>
     </table>
-    <div class="callout c-info"><b>说明</b><p>后台菜单会按角色自动过滤：主控登录后只会看到「运营中心」一组（台网统计、数据看板、主控轮值、台网预告）。</p></div>
+    <div class="callout c-info"><b>说明</b><p>菜单按「最终生效的权限点」渲染，而不是只看角色：超管给某人单独加/减权限后，对方刷新即变；没有权限的页面即使手输地址也会被弹回首页。</p></div>
   </section>
 
   <section class="doc-section" id="prepare">
@@ -446,7 +452,7 @@ footer a{color:var(--text-2)}
         <tr><td>PostgreSQL</td><td>14.x 及以上</td><td>需有建表权限（public schema）</td></tr>
         <tr><td>内存</td><td>≥ 2 GB</td><td>构建期峰值较高</td></tr>
         <tr><td>磁盘</td><td>≥ 1 GB</td><td>不含数据库数据</td></tr>
-        <tr><td>浏览器</td><td>Chrome / Edge / Firefox 最新版</td><td>需支持 SSE 与 ES2020</td></tr>
+        <tr><td>浏览器</td><td>Chrome / Edge / Firefox 最新版</td><td>需支持 ES2020</td></tr>
       </tbody>
     </table>
 
@@ -491,7 +497,7 @@ pnpm install</code></pre>
     <div class="callout c-danger"><b>宝塔避坑：PM2 与宝塔「Node 项目」二选一</b>
       <p>两者都会监听同一端口导致 <code>EADDRINUSE</code>。推荐只用 PM2（本项目）或只用宝塔 Node 项目托管，不要并存。宝塔 Node 项目底层不是全局 pm2，<code>pm2 list</code> 看不到它。</p></div>
 
-    <h4>Nginx 反向代理（务必带 SSE 与真实 IP 头）</h4>
+    <h4>Nginx 反向代理（务必带真实 IP 头）</h4>
     <pre><code>server {
     listen 80;
     server_name your-domain.com;
@@ -509,7 +515,7 @@ pnpm install</code></pre>
         proxy_buffering off;
     }
 }</code></pre>
-    <div class="callout c-warn"><b>为什么必须加 X-Real-IP 与 proxy_buffering off</b><p>登录限流按 IP 统计，缺失会导致所有人被当成同一个 IP 而触发「登录尝试次数过多」；关闭缓冲才能保证 SSE 实时推送不被积压。</p></div>
+    <div class="callout c-warn"><b>为什么必须加 X-Real-IP</b><p>登录限流按 IP 统计，缺失会导致所有人被当成同一个 IP 而触发「登录尝试次数过多」。<code>proxy_buffering off;</code> 保留自早期 SSE 长连接版本，对现在的轮询接口无副作用，可留可删。</p></div>
 
     <h3>方式二：传统 Linux</h3>
     <pre><code>cd /var/www/radio-log
@@ -682,15 +688,30 @@ UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-netw
     </ol>
     <div class="callout c-info"><b>参与人员库自动维护</b><p>每次录入都会 upsert 参与人员：已存在则更新设备 / QTH 等资料，不存在则新建。这就是呼号联想越用越好用的原因。</p></div>
 
+    <h3>重复录入拦截（v2.0.2）</h3>
+    <p>同一场台网里同一个呼号只能录一次。再次录入会弹出提示：</p>
+    <pre><code>本呼号已参加过本次台网
+
+第 7 位 · 信号 59 · 历下区
+录入时间 2026/10/23 20:35:12
+
+仍要再录一条吗？</code></pre>
+    <ul>
+      <li>点「取消」：停在表单，不写入，光标回到呼号框</li>
+      <li>点「确定」：允许再录一条（少数换设备重报的场景）</li>
+      <li>序号按当场剩余记录重排，与右侧列表行号一致；被拦截的记录<b>不会触发微信推送</b></li>
+      <li>后台「台网历史」补录记录同样会被拦截</li>
+    </ul>
+
     <h3>必填校验提示原文</h3>
     <p>缺少必填项时依次弹出：<code>请输入呼号</code>、<code>请输入QTH</code>、<code>请输入天馈</code>、<code>请输入功率</code>、<code>请输入信号</code>。未创建会话就录入会提示 <code>请先创建台网会话</code>。</p>
   </section>
   <section class="doc-section" id="coop">
     <h2><span class="num">8</span>实时协作 · 编辑删除 · 导出<a class="top-link" href="#overview">↑ 顶部</a></h2>
 
-    <h3>多主控实时协作（SSE）</h3>
-    <p>进入会话后浏览器建立 <code>/api/sse/session/{会话ID}/subscribe</code> 长连接，服务端每 30 秒发送心跳保活。任一主控新增 / 修改 / 删除记录，其他主控页面<b>无需刷新</b>即时同步（事件类型：<code>record_added</code>、<code>record_updated</code>、<code>record_deleted</code>）。</p>
-    <div class="callout c-warn"><b>实时同步失效排查</b><p>多为反向代理缓冲了 SSE。请确认 Nginx 配置中含有 <code>proxy_buffering off;</code> 与 <code>proxy_http_version 1.1;</code>。</p></div>
+    <h3>多主控实时协作（自动轮询）</h3>
+    <p>进入会话后，页面每 <b>3 秒</b>自动向服务端拉取一次记录列表（服务端返回权威数据）。任一主控新增 / 修改 / 删除记录，其他主控页面最迟 3 秒内自动同步，<b>无需手动刷新</b>。该方案不依赖长连接，前置 CDN / 反向代理均可正常工作。</p>
+    <div class="callout c-info"><b>同步延迟排查</b><p>在浏览器开发者工具「网络」面板确认每 3 秒有一次 <code>/api/sessions/{会话ID}/records</code> 请求且返回 200；若返回 401 请重新登录，返回 5xx 请查看服务端 PM2 日志。</p></div>
 
     <h3>可编辑时限</h3>
     <p>后台「页面配置」中的 <code>session_edit_hours</code> 控制台网可编辑时长，<b>默认 6 小时，填 0 表示不限制</b>。前端每 60 秒复检一次，过期后记录列表顶部出现红色提示条：</p>
@@ -748,7 +769,7 @@ UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-netw
       <li><b>最近记录列表</b>：按时间倒序，超出高度自动滚动。</li>
       <li><b>模拟频谱 + 日期 ticker</b>：动态装饰效果。</li>
     </ul>
-    <p>数据每 <b>3 秒</b>轮询刷新一次（大屏不依赖 SSE，兼容性更好）。暂无记录时显示「等待主控录入记录…」；连接异常显示「连接服务器失败」。</p>
+    <p>数据每 <b>3 秒</b>轮询刷新一次（不依赖长连接，兼容性更好）。暂无记录时显示「等待主控录入记录…」；连接异常显示「连接服务器失败」。</p>
 
     <h3>对外开放与 QTH 脱敏</h3>
     <table>
@@ -780,8 +801,74 @@ UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-netw
     <div class="callout c-warn"><b>统计口径</b><p>为<b>精确匹配</b>（不做模糊查询），统计区间为<b>最近 1 年</b>，以台网时间 <code>session_time</code> 为准并排除已删除记录。无结果时显示「暂无参与记录」。</p></div>
     <p>查询页还支持生成 / 保存 / 打印<b>参与证书</b>，签发单位与机构由后台配置 <code>cert_sign_unit</code>、<code>cert_sign_org</code> 控制。</p>
   </section>
+  <section class="doc-section" id="me">
+    <h2><span class="num">11</span>微信个人中心 <span class="path">/me</span><a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <p class="lead">面向台网会员（不是主控）。入口有两个：公众号自定义菜单，或点开台网回执消息（消息本身可点击跳转）。首次进入会走一次微信静默授权，<b>90 天免登</b>。</p>
+
+    <h3>四个页签</h3>
+    <table>
+      <thead><tr><th>页签</th><th>内容</th><th>能否修改</th></tr></thead>
+      <tbody>
+        <tr><td>我的记录</td><td>历次参与场次、收/报信号、QTH、设备、天线；每页 5 条可翻页</td><td>不可</td></tr>
+        <tr><td>档案</td><td>编号、姓名、QTH、设备、天线、功率；执照编号、类别、操作证书、发证机关、发证日期、到期日期</td><td class="yes">可自助修改</td></tr>
+        <tr><td>绑定</td><td>绑定状态、绑定呼号、绑定时间；可自助解绑或重新绑定</td><td class="yes">可解绑</td></tr>
+        <tr><td>推送</td><td>本人近 20 条模板消息送达记录</td><td>不可</td></tr>
+      </tbody>
+    </table>
+
+    <h3>概览区</h3>
+    <ul>
+      <li><b>排名徽章</b>：右上角显示台网排名与较上月名次变化（↑ / ↓ / 持平）；按名次配勋章——第 1 名金、2–3 名银、4–10 名铜、11–50 名淡白，50 名以后不显示</li>
+      <li><b>四格数据</b>：累计参与、本年度场次、最近一次（附几天前）、连续参与周数（附本月出席次数）</li>
+      <li><b>主控记录卡</b>：主控过台网的账号会多一张紫色卡片，显示主控场次与累计录入条数，可直接进运营中心</li>
+      <li><b>电台执照卡</b>：默认脱敏显示为 <span class="path">BR4••••186</span>，点右侧小眼睛显示完整编号；到期状态 >90 天绿色、31–90 天黄色、≤30 天红色、已过显示「已过期」</li>
+      <li><b>更多服务</b>：我的证书 / 台网查询 / 台网预告（有预告时直接显示下一场时间，无预告显示「暂无预告」）</li>
+    </ul>
+
+    <h3>台网规则</h3>
+    <ul>
+      <li>首次进入个人中心会自动弹出规则的前 3 条，点「我知道了」后本机不再自动弹（换设备会再弹一次）</li>
+      <li>之后可随时从「更多服务」下方的「台网规则与帮助」打开完整内容</li>
+      <li>内容由后台「页面配置」的 <code>member_rules</code> 维护，<b>一行一条</b>，改完即时生效</li>
+    </ul>
+
+    <div class="callout c-tip"><b>填写建议</b><p>执照信息由会员本人填写，管理员不代录。填了才能在到期前收到提醒，不填则在个人中心看不到倒计时。</p></div>
+
+    <h3>不可修改的字段</h3>
+    <p>呼号是身份标识，会员<b>不能</b>自助修改；如需更改请联系管理员，避免出现「A 把呼号改成 B 从而看到 B 的记录」。</p>
+  </section>
+
+  <section class="doc-section" id="member-center">
+    <h2><span class="num">12</span>会员中心（后台）<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <p class="lead">后台顶部菜单「会员中心」，包含会员档案、微信绑定、会员对照表、绑定码、推送日志五个页面。</p>
+
+    <h3>会员档案 <span class="path">/admin/participants</span></h3>
+    <ul>
+      <li>列表列：呼号、绑定状态、编号、姓名、QTH、设备、天线、功率、信号、报告、备注、执照到期</li>
+      <li>顶部状态标签带数量：全部 / 已绑定 / 待审核 / 未绑定 / 执照临期，点击即筛选</li>
+      <li>分页：每页 20 / 50 / 100 可选，切换筛选自动回第一页</li>
+      <li>点呼号进入会员详情；支持 Excel 导入导出、新增、编辑、删除</li>
+    </ul>
+
+    <div class="callout c-warn"><b>「已绑定但无档案」</b><p>微信绑定表与会员档案是两张表。有人只绑了微信、从未参与过台网，就会出现「微信绑定 54 条、会员档案已绑定 45 条」的差异。列表顶部会提示差多少、差哪几个呼号，可点「补建会员档案」一键创建空档案。</p></div>
+
+    <h3>会员详情 <span class="path">/admin/participants/[呼号]</span></h3>
+    <table>
+      <thead><tr><th>区块</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>档案 + 执照</td><td>可直接编辑并保存；发证机关为空时按后台配置的默认值预填</td></tr>
+        <tr><td>参与情况</td><td>累计场次、本年度、台网排名、最近参与时间、最常信号</td></tr>
+        <tr><td>微信绑定</td><td>openid、绑定时间、状态；待审核可直接「通过 / 拒绝」，已生效可「解绑」</td></tr>
+        <tr><td>修改记录</td><td>按时间倒序列出字段级变更（旧值 → 新值），并标注是「用户自助」还是「管理员」</td></tr>
+      </tbody>
+    </table>
+
+    <h3>权限要求</h3>
+    <p>会员模块的读写按权限点分开：列表 <span class="path">member.view</span>、详情 <span class="path">member.detail</span>、保存 <span class="path">member.edit.profile</span>、绑定审核 <span class="path">binding.review</span>。超管在「用户管理」里取消勾选后，对应用户立即失去入口与接口权限。</p>
+  </section>
+
   <section class="doc-section" id="admin">
-    <h2><span class="num">11</span>管理后台<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <h2><span class="num">13</span>管理后台<a class="top-link" href="#overview">↑ 顶部</a></h2>
     <p class="lead">后台采用「顶部横向主分组 + 左侧二级菜单」两级导航。点击顶部切换分组，左侧显示该组下的功能页，可点「收缩菜单」折叠为图标模式。</p>
 
     <h3>菜单结构</h3>
@@ -885,7 +972,7 @@ UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-netw
     <div class="callout c-warn"><b>全新库显示 v1.1.0 兜底值？</b><p>用管理员身份依次调用 <code>POST /api/admin/migrate/page-configs</code> 与 <code>POST /api/admin/upgrade/check</code> 即可同步为真实版本。</p></div>
   </section>
   <section class="doc-section" id="config">
-    <h2><span class="num">12</span>页面配置项全表<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <h2><span class="num">14</span>页面配置项全表<a class="top-link" href="#overview">↑ 顶部</a></h2>
     <p>「系统管理 → 页面配置」可在线修改，保存即生效。</p>
     <table>
       <thead><tr><th>Key</th><th>默认值</th><th>分类</th><th>说明</th></tr></thead>
@@ -907,13 +994,16 @@ UPGRADE_MANIFEST_URL=https://raw.githubusercontent.com/BI4IVE/Amateur-radio-netw
         <tr><td><code>screen_tx_freq</code></td><td>434.110</td><td>大屏</td><td>发射频率</td></tr>
         <tr><td><code>screen_tone</code></td><td>88.5</td><td>大屏</td><td>亚音</td></tr>
         <tr><td><code>screen_public</code></td><td><b>false</b></td><td>大屏</td><td>大屏是否对外开放。true = 任何人可看（QTH 脱敏），false = 仅登录用户</td></tr>
+        <tr><td><code>license_issuer_default</code></td><td>济南市工业和信息化局</td><td>会员</td><td>个人中心执照「发证机关」的默认值，会员仍可自行修改</td></tr>
+        <tr><td><code>analytics_51la_id</code></td><td>（空）</td><td>通用</td><td>51LA 访问统计站点 ID，<b>留空则不加载任何统计脚本</b></td></tr>
+        <tr><td><code>analytics_51la_ck</code></td><td>（空）</td><td>通用</td><td>51LA 访问统计 CK，与 ID 配套填写</td></tr>
       </tbody>
     </table>
     <div class="callout c-tip"><b>缺失自愈</b><p>系统会检测默认配置项，缺失的会自动补齐，不必担心升级后少配置。</p></div>
   </section>
 
   <section class="doc-section" id="upgrade">
-    <h2><span class="num">13</span>版本升级与回滚<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <h2><span class="num">15</span>版本升级与回滚<a class="top-link" href="#overview">↑ 顶部</a></h2>
 
     <h3>一、纯代码更新（最常见）</h3>
     <pre><code>cd /项目目录
@@ -950,7 +1040,7 @@ pnpm install &amp;&amp; pnpm build &amp;&amp; pm2 restart radio-log</code></pre>
     <div class="callout c-danger"><b>回滚不回退表结构</b><p>若之前执行过 <code>db:push</code>，回滚代码后表结构<b>不会自动回退</b>，需用升级前的 <code>pg_dump</code> 备份用 <code>pg_restore</code> 恢复。所以表变更前备份极其重要。</p></div>
   </section>
   <section class="doc-section" id="faq">
-    <h2><span class="num">14</span>故障排查 FAQ<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <h2><span class="num">16</span>故障排查 FAQ<a class="top-link" href="#overview">↑ 顶部</a></h2>
 
     <h3>数据库连接失败</h3>
     <ul>
@@ -969,9 +1059,9 @@ kill -9 &lt;PID&gt;</code></pre>
 
     <h3>多主控录入不同步</h3>
     <ul>
-      <li>确认 Nginx 含 <code>proxy_buffering off;</code> 与 <code>proxy_http_version 1.1;</code>。</li>
-      <li>确认中间 CDN / WAF 没有缓冲 <code>text/event-stream</code>。</li>
-      <li>SSE 端点为 <span class="path">/api/sse/session/{id}/subscribe</span>，30 秒心跳，需登录。</li>
+      <li>在浏览器「网络」面板确认每 3 秒有一次 <code>/api/sessions/{id}/records</code> 请求且返回 200。</li>
+      <li>确认双方进入的是<b>同一场</b>台网（同一天只允许一场，日期不同即不是同一会话）。</li>
+      <li>返回 401 请重新登录；返回 5xx 请查看服务端 <code>pm2 logs radio-log</code>。</li>
     </ul>
 
     <h3>会话无法编辑 / 提示已过期</h3>
@@ -1001,7 +1091,7 @@ kill -9 &lt;PID&gt;</code></pre>
   </section>
 
   <section class="doc-section" id="appendix">
-    <h2><span class="num">15</span>附录速查<a class="top-link" href="#overview">↑ 顶部</a></h2>
+    <h2><span class="num">17</span>附录速查<a class="top-link" href="#overview">↑ 顶部</a></h2>
 
     <h3>A. 常用命令</h3>
     <table>
@@ -1059,7 +1149,7 @@ kill -9 &lt;PID&gt;</code></pre>
     </ul>
 
     <footer>
-      <p>济南黄河业余无线电台网主控日志系统 · 使用说明书 · v1.5.28<br />
+      <p>济南黄河业余无线电台网主控日志系统 · 使用说明书 · v2.0.2<br />
       项目主页：<a href="https://github.com/BI4IVE/Amateur-radio-network-log" target="_blank" rel="noopener">github.com/BI4IVE/Amateur-radio-network-log</a> · 联系邮箱：bi4ive@br4in.cn · MIT 协议</p>
       <p>73！73 是业余无线电界的祝福与告别，意为「Best Regards」。</p>
     </footer>
