@@ -1,19 +1,26 @@
 {
-  "latest": "2.0.3",
+  "latest": "2.0.4",
   "minRequired": "1.0.0",
   "releaseDate": "2026-10-24",
-  "title": "v2.0.3 安全加固 · 月度统计口径",
-  "summary": "微信绑定/解绑改用签名会话并补 state 校验，登录账号锁定覆盖不存在账号，公开搜索 QTH 匿名脱敏；个人中心统计口径改为月度。",
+  "title": "v2.0.4 历史数据访问控制",
+  "summary": "历史会话匿名越权读取与备注脱敏绕过已修复；源站 Nginx 启用 real_ip 还原真实客户端 IP，登录 IP 限流恢复。",
   "changelog": [
-    "微信绑定/解绑身份改用签名会话识别，不再接受客户端传入 openid，并补齐网页授权 state 校验（修复匿名解绑、冒绑、授权 CSRF）",
-    "登录爆破限流加固：账号级锁定对「不存在的账号」同样生效，统一锁定提示不泄露账号是否存在",
-    "记录公开搜索接口对 QTH 匿名访问脱敏（保留前 4 字），防止通配符枚举精确地址",
-    "个人中心统计口径改为月度：四格为「本月排名 / 本月台网（附台网率）/ 最近一次 / 连续参与天数」，排名徽章与勋章分级改用月度名次",
-    "连续参与由「周」改为按开台场次计算的天数；后台会员详情从「本年度」改为「本月」"
+    "修复历史会话匿名越权读取：/api/sessions/{id} 与 /records 增加过期校验，匿名仅可读当前活跃会话（6 小时内），切断经 callsign-stats 泄露 sessionId 枚举历史全量数据的链路",
+    "修复 QTH 脱敏被备注绕过：匿名模式下 remarks 一并隐藏，避免备注中的完整地址泄露",
+    "修复登录 IP 限流失效：站点前置 CDN 时源站只能看到回源节点 IP，现由 Nginx real_ip 从 X-Forwarded-For 还原真实客户端 IP，限流按真实 IP 计数"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "2.0.4",
+      "releaseDate": "2026-10-24",
+      "title": "历史数据访问控制",
+      "summary": "修复历史会话匿名越权读取与备注脱敏绕过；源站 Nginx 启用 real_ip 还原真实客户端 IP，登录 IP 限流恢复。",
+      "dbSchema": "same-as-2.0.3",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v2.0.4",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v2.0.4.tar.gz"
+    },
     {
       "version": "2.0.3",
       "releaseDate": "2026-10-24",

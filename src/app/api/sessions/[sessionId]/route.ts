@@ -1,6 +1,7 @@
 // @version v2.0.2
 import { NextRequest, NextResponse } from "next/server"
 import { logManager } from "@/storage/database"
+import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { screenReadAuth, maskQthValue } from "@/lib/screenAccess"
 
 // 获取单个会话详情（含记录），供"主控加入进行中台网"使用；开放模式或已登录方可读取
@@ -27,15 +28,24 @@ export async function GET(
       )
     }
 
+    // [v2.0.4 安全] 匿名公开访问只允许读取「当前活跃会话」（与 /api/sessions 列表过期口径一致）。
+    // 历史会话仅登录用户可读，切断「callsign-stats 泄露 sessionId → 匿名枚举历史全量数据」的越权链。
+    if (access.maskQth && (await isSessionExpired(session.sessionTime))) {
+      return NextResponse.json(
+        { error: "会话不存在" },
+        { status: 404 }
+      )
+    }
+
     // 获取会话的所有记录
     const records = await logManager.getLogRecordsBySessionId(sessionId)
 
-    // 「匿名 + 公开」组合下对 QTH 做服务端脱敏
+    // 「匿名 + 公开」组合下脱敏：QTH 保留前 4 字；备注常含完整地址，直接隐藏
     const maskedSession = access.maskQth
       ? { ...session, controllerQth: maskQthValue(session.controllerQth) }
       : session
     const maskedRecords = access.maskQth
-      ? records.map((r) => ({ ...r, qth: maskQthValue(r.qth) }))
+      ? records.map((r) => ({ ...r, qth: maskQthValue(r.qth), remarks: "" }))
       : records
     return NextResponse.json({
       session: maskedSession,
