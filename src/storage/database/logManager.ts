@@ -565,12 +565,19 @@ export class LogManager {
   }
 
   /**
-   * [个人中心] 某呼号的参与统计：累计/本年度场次、首次与最近参与时间。
-   * 按北京时间切年，避免 UTC 跨年把 12-31 的场次算到上一年。
+   * [个人中心] 某呼号的参与统计：累计/本月/上月场次、首次与最近参与时间。
+   *
+   * [v2.0.3] 台网自 2026 年 7 月下旬起改为每日开台，今年 1 月仅 4 场、7 月 11 场，
+   * 年度对比没有可比性，统计口径改为**月度**：本月出席 + 本月开台总数（算月度台网率）
+   * + 上月出席（算环比）。仍保留 yearSessions 供其他调用方兼容。
    */
   async getCallsignStats(callsign: string): Promise<{
     sessions: number
     yearSessions: number
+    monthSessions: number
+    prevMonthSessions: number
+    monthTotal: number
+    prevMonthTotal: number
     firstTime: Date | null
     lastTime: Date | null
   }> {
@@ -582,6 +589,14 @@ export class LogManager {
           when date_trunc('year', s.session_time at time zone 'Asia/Shanghai')
              = date_trunc('year', now() at time zone 'Asia/Shanghai')
           then r.session_id end)::int as year_sessions,
+        count(distinct case
+          when date_trunc('month', s.session_time at time zone 'Asia/Shanghai')
+             = date_trunc('month', now() at time zone 'Asia/Shanghai')
+          then r.session_id end)::int as month_sessions,
+        count(distinct case
+          when date_trunc('month', s.session_time at time zone 'Asia/Shanghai')
+             = date_trunc('month', now() at time zone 'Asia/Shanghai') - interval '1 month'
+          then r.session_id end)::int as prev_month_sessions,
         min(s.session_time) as first_time,
         max(s.session_time) as last_time
       from log_records r
@@ -590,12 +605,27 @@ export class LogManager {
         and r.deleted_at is null
         and s.deleted_at is null
     `)
+    // 本月/上月全站开台总场次（分母），与个人出席分开统计，避免个人无记录时拿不到分母
+    const totalResult = await db.execute(sql`
+      select
+        count(*) filter (where date_trunc('month', session_time at time zone 'Asia/Shanghai')
+          = date_trunc('month', now() at time zone 'Asia/Shanghai'))::int as month_total,
+        count(*) filter (where date_trunc('month', session_time at time zone 'Asia/Shanghai')
+          = date_trunc('month', now() at time zone 'Asia/Shanghai') - interval '1 month')::int as prev_month_total
+      from log_sessions
+      where deleted_at is null
+    `)
     const row = ((result as unknown as { rows?: Record<string, unknown>[] }).rows ?? [])[0] ?? {}
+    const totalRow = ((totalResult as unknown as { rows?: Record<string, unknown>[] }).rows ?? [])[0] ?? {}
     const num = (v: unknown) => Number(v ?? 0) || 0
     const time = (v: unknown) => (v ? new Date(String(v)) : null)
     return {
       sessions: num(row.sessions),
       yearSessions: num(row.year_sessions),
+      monthSessions: num(row.month_sessions),
+      prevMonthSessions: num(row.prev_month_sessions),
+      monthTotal: num(totalRow.month_total),
+      prevMonthTotal: num(totalRow.prev_month_total),
       firstTime: time(row.first_time),
       lastTime: time(row.last_time),
     }
@@ -643,41 +673,60 @@ export class LogManager {
   }
 
   /**
-   * [v2.0.2 个人中心] 连续参与周数 + 本月出席次数
+   * [个人中心] 连续参与天数 + 本月出席次数
    *
-   * 「连续」按北京时间自然周算：从最近一次参与所在周往前推，
-   * 每周都有参与才累加，中间断一周即停。至少返回 1（有参与记录时）。
+   * [v2.0.3] 台网改为每日开台后，「连续周」失去意义，改按**开台场次**计算连续天数：
+   * 取最近 120 天的全部开台场次，从最新一场往前数，用户每场都参加则 +1，缺一场即停。
+   * 这样「某天没开台」不会误判为中断；「今天」的场次若用户尚未参加（台网还没开始）
+   * 会自动跳过，避免白天打开页面时连续数被清零。
    */
   async getCallsignStreak(callsign: string): Promise<{
-    weeks: number
+    days: number
     thisMonth: number
   }> {
     const db = await getDb()
-    const result = await db.execute(sql`
-      select distinct date_trunc('week', s.session_time at time zone 'Asia/Shanghai')::date as w
-      from log_records r
-      join log_sessions s on s.id = r.session_id
-      where r.callsign = ${callsign}
-        and r.deleted_at is null
-        and s.deleted_at is null
-        and s.session_time > now() - interval '2 years'
-      order by w desc
-    `)
-    const rows = ((result as unknown as { rows?: { w: string }[] }).rows ?? [])
+    const [sessResult, mineResult, todayResult] = await Promise.all([
+      db.execute(sql`
+        select distinct to_char(session_time at time zone 'Asia/Shanghai', 'YYYY-MM-DD') as d
+        from log_sessions
+        where deleted_at is null and session_time > now() - interval '120 days'
+        order by d asc
+      `),
+      db.execute(sql`
+        select distinct to_char(s.session_time at time zone 'Asia/Shanghai', 'YYYY-MM-DD') as d
+        from log_records r
+        join log_sessions s on s.id = r.session_id
+        where r.callsign = ${callsign}
+          and r.deleted_at is null
+          and s.deleted_at is null
+          and s.session_time > now() - interval '120 days'
+      `),
+      db.execute(sql`select to_char(now() at time zone 'Asia/Shanghai', 'YYYY-MM-DD') as d`),
+    ])
 
-    let weeks = 0
-    let prev: number | null = null
-    for (const row of rows) {
-      const time = new Date(`${String(row.w).slice(0, 10)}T00:00:00Z`).getTime()
-      if (Number.isNaN(time)) continue
-      if (prev === null) {
-        weeks = 1
-      } else if (Math.round((prev - time) / 86400000) === 7) {
-        weeks += 1
-      } else {
-        break
+    const allDates = ((sessResult as unknown as { rows?: { d: string }[] }).rows ?? []).map((r) =>
+      String(r.d).slice(0, 10)
+    )
+    const mine = new Set(
+      ((mineResult as unknown as { rows?: { d: string }[] }).rows ?? []).map((r) =>
+        String(r.d).slice(0, 10)
+      )
+    )
+    const today =
+      String(
+        ((todayResult as unknown as { rows?: { d: string }[] }).rows ?? [{}])[0]?.d ?? ""
+      ).slice(0, 10) || ""
+
+    let days = 0
+    for (let i = allDates.length - 1; i >= 0; i--) {
+      const d = allDates[i]
+      if (mine.has(d)) {
+        days += 1
+        continue
       }
-      prev = time
+      // 今天的场次尚未参加属正常（台网 20:30 才开始），跳过继续往前数
+      if (d === today) continue
+      break
     }
 
     const [agg] = await db
@@ -694,7 +743,7 @@ export class LogManager {
         )
       )
 
-    return { weeks, thisMonth: agg?.count ?? 0 }
+    return { days, thisMonth: agg?.count ?? 0 }
   }
 
   /**

@@ -1,6 +1,5 @@
 // @version v2.0.2
 import { NextRequest, NextResponse } from "next/server"
-import { codeToOpenid } from "@/lib/wechat/oauth"
 import { getWechatSettings } from "@/lib/wechat/settings"
 import { getMemberIdentity } from "@/lib/me/identity"
 import { wechatBindingsManager } from "@/storage/database"
@@ -11,6 +10,9 @@ import { wechatBindingsManager } from "@/storage/database"
  * 用户自助解绑。是否允许由后台设置 wechat_allow_self_unbind 控制
  * （关闭后只能由管理员在后台解绑）。
  * 解绑采用「置为失效」而非物理删除，便于追溯，重新绑定会覆盖回对应状态。
+ *
+ * [v2.0.2 安全] 身份只来自签名会话（wx_session），不接受客户端传入的 openid/code，
+ * 杜绝「知道任意 openid 即可解绑其绑定」的高危漏洞。
  */
 export async function POST(request: NextRequest) {
   try {
@@ -22,38 +24,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // [v2.0.0] 优先用个人中心的签名会话识别身份，避免依赖前端传 openid；
-    // 旧绑定页仍走 code / openid 兼容路径。
     const identity = await getMemberIdentity(request)
-    if (identity) {
-      if (identity.status === "none") {
-        return NextResponse.json({ error: "未找到该用户的绑定" }, { status: 404 })
-      }
-      const ok = await wechatBindingsManager.unbind(identity.openid)
-      if (!ok) {
-        return NextResponse.json({ error: "未找到该用户的绑定" }, { status: 404 })
-      }
-      return NextResponse.json({ ok: true })
+    if (!identity || identity.status === "none") {
+      return NextResponse.json(
+        { error: "未找到该用户的绑定" },
+        { status: 404 }
+      )
     }
 
-    const body = (await request.json().catch(() => ({}))) as {
-      code?: string
-      openid?: string
-    }
-
-    let openid = body.openid?.trim() || ""
-    if (!openid && body.code) {
-      const result = await codeToOpenid(body.code)
-      openid = result.openid
-    }
-
-    if (!openid) {
-      return NextResponse.json({ error: "无法识别用户身份" }, { status: 400 })
-    }
-
-    const ok = await wechatBindingsManager.unbind(openid)
+    const ok = await wechatBindingsManager.unbind(identity.openid)
     if (!ok) {
-      return NextResponse.json({ error: "未找到该用户的绑定" }, { status: 404 })
+      return NextResponse.json(
+        { error: "未找到该用户的绑定" },
+        { status: 404 }
+      )
     }
 
     return NextResponse.json({ ok: true })

@@ -64,10 +64,15 @@ type Stats = {
   yearSessions: number
   firstTime: string | null
   lastTime: string | null
-  /** 连续参与周数（自然周） */
-  streakWeeks: number
+  /** [v2.0.3] 连续参与天数（按开台场次计算） */
+  streakDays: number
   /** 本月出席次数 */
   thisMonth: number
+  /** [v2.0.3] 月度口径：本月/上月出席，本月/上月开台总场次 */
+  monthSessions: number
+  prevMonthSessions: number
+  monthTotal: number
+  prevMonthTotal: number
   rank: number
   /** 本月名次（用于名次变化），无数据为 null */
   rankCurrent: number | null
@@ -475,8 +480,8 @@ export default function MePage() {
     )
   }
 
-  // 排名勋章颜色（50 名以后为 null，不显示）
-  const medalColor = rankMedalColor(data.stats?.rank ?? 0)
+  // 排名勋章颜色（50 名以后为 null，不显示）；[v2.0.3] 徽章显示本月排名，勋章分级随之改用月度名次
+  const medalColor = rankMedalColor(data.stats?.rankCurrent ?? 0)
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
@@ -485,12 +490,12 @@ export default function MePage() {
         <div className="bg-gradient-to-b from-indigo-600 to-indigo-800 px-5 pt-7 pb-16 text-white relative overflow-hidden">
           <div className="absolute -right-8 -top-10 w-48 h-48 rounded-full bg-white/5" />
 
-          {/* [v2.0.2] 台网排名移到呼号右侧，带较上月变化 */}
-          {/* 台网排名徽章：标签左对齐、数字右对齐，避免右对齐时「上短下长」的台阶感 */}
-          {data.stats?.rank ? (
+          {/* [v2.0.3] 全部改月度口径：徽章显示本月排名，累计排名留到年度报告 */}
+          {/* 本月排名徽章：标签左对齐、数字右对齐，避免右对齐时「上短下长」的台阶感 */}
+          {data.stats?.rankCurrent ? (
             <div className="absolute right-4 top-3.5 bg-white/15 border border-white/25 rounded-2xl px-3.5 py-2.5">
               <span className="flex items-center gap-1.5 text-[12px] tracking-[0.5px] text-white/80">
-                台网排名
+                本月排名
                 {medalColor ? (
                   <svg
                     viewBox="0 0 24 24"
@@ -507,7 +512,7 @@ export default function MePage() {
               </span>
               <span className="flex items-baseline justify-end gap-1 mt-0.5">
                 <b className="text-[32px] font-extrabold leading-none tabular-nums">
-                  {data.stats.rank}
+                  {data.stats.rankCurrent}
                 </b>
                 <i className="not-italic text-sm font-semibold text-white/75">位</i>
                 {data.stats.rankTrend !== null && data.stats.rankTrend !== 0 ? (
@@ -546,18 +551,30 @@ export default function MePage() {
 
         {/* 四格 */}
         <div className="mx-4 -mt-10 bg-white rounded-2xl shadow-[0_12px_30px_rgba(24,24,60,0.12)] grid grid-cols-2 overflow-hidden relative z-10">
+          {/* [v2.0.3] 累计次数不再上首页，改成本月排名；累计数据只在年度报告里出现 */}
           <StatCell
-            value={data.stats?.sessions ?? 0}
-            unit="场"
-            label="累计参与"
-            note={data.stats?.firstTime ? `首次 ${fmtDate(data.stats.firstTime)}` : "暂无记录"}
+            value={data.stats?.rankCurrent ?? "-"}
+            unit={data.stats?.rankCurrent ? "位" : undefined}
+            label="本月排名"
+            note={
+              data.stats?.rankTrend != null
+                ? `较上月 ${data.stats.rankTrend > 0 ? "↑" : "↓"}${Math.abs(data.stats.rankTrend)} 位`
+                : "本月暂无排名"
+            }
             border
           />
+          {/* [v2.0.3] 台网每日开台、数据自 7 月下旬起才完整，年度对比无意义，改月度口径 */}
           <StatCell
-            value={data.stats?.yearSessions ?? 0}
-            unit="场"
-            label="本年度"
-            note="按北京时间切年"
+            value={data.stats?.monthSessions ?? 0}
+            unit={`/ ${data.stats?.monthTotal ?? 0} 场`}
+            label="本月台网"
+            note={
+              data.stats?.monthTotal
+                ? `台网率 ${Math.round(
+                    ((data.stats.monthSessions ?? 0) / data.stats.monthTotal) * 100
+                  )}%`
+                : "本月还没开台"
+            }
             border
           />
           {/* [v2.0.2] 最近一次与连续参与拆开；台网排名已移到顶部呼号右侧 */}
@@ -567,10 +584,16 @@ export default function MePage() {
             note={data.stats?.lastTime ? daysAgoText(data.stats.lastTime) : "暂无记录"}
           />
           <StatCell
-            value={data.stats?.streakWeeks ?? 0}
-            unit="周"
+            value={data.stats?.streakDays ?? 0}
+            unit="天"
             label="连续参与"
-            note={data.stats?.thisMonth ? `本月已出席 ${data.stats.thisMonth} 次` : "本月还没来"}
+            note={
+              data.stats
+                ? `较上月 ${(data.stats.monthSessions ?? 0) - (data.stats.prevMonthSessions ?? 0) >= 0 ? "+" : ""}${
+                    (data.stats.monthSessions ?? 0) - (data.stats.prevMonthSessions ?? 0)
+                  } 场`
+                : "暂无对比"
+            }
           />
         </div>
 

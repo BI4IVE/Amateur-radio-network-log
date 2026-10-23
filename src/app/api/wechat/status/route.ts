@@ -1,7 +1,7 @@
 // @version v2.0.2
 import { NextRequest, NextResponse } from "next/server"
-import { codeToOpenid } from "@/lib/wechat/oauth"
 import { getWechatSettings } from "@/lib/wechat/settings"
+import { getMemberIdentity } from "@/lib/me/identity"
 import { wechatBindingsManager } from "@/storage/database"
 
 /**
@@ -9,33 +9,24 @@ import { wechatBindingsManager } from "@/storage/database"
  *
  * 除绑定状态外，一并返回 H5 页面渲染所需的配置：
  * bindMode（决定显示哪种表单）、siteName、bindNotice、allowSelfUnbind。
+ *
+ * [v2.0.2 安全] 身份只来自签名会话（wx_session），不接受客户端传入的 openid/code，
+ * 否则任何人拿到 openid 就能查绑定信息。
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl
-    const code = searchParams.get("code")
-    const openidParam = searchParams.get("openid")
-
-    let openid = openidParam?.trim() || ""
-    if (!openid && code) {
-      const result = await codeToOpenid(code)
-      openid = result.openid
-    }
-
-    if (!openid) {
-      return NextResponse.json(
-        { error: "缺少 code 或 openid" },
-        { status: 400 }
-      )
+    const identity = await getMemberIdentity(request)
+    if (!identity) {
+      return NextResponse.json({ error: "未登录" }, { status: 401 })
     }
 
     const [binding, settings] = await Promise.all([
-      wechatBindingsManager.getByOpenid(openid),
+      wechatBindingsManager.getByOpenid(identity.openid),
       getWechatSettings(),
     ])
 
     return NextResponse.json({
-      openid,
+      openid: identity.openid,
       status: binding?.status ?? null, // active / pending / rejected / inactive / null(未绑定)
       callsign: binding?.callsign ?? null,
       bindMode: settings.bindMode,

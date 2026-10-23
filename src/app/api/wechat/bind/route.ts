@@ -1,7 +1,7 @@
 // @version v2.0.2
 import { NextRequest, NextResponse } from "next/server"
-import { codeToOpenid } from "@/lib/wechat/oauth"
 import { performBind } from "@/lib/wechat/bindService"
+import { getMemberIdentity } from "@/lib/me/identity"
 
 /**
  * [v1.5.21 微信推送] POST /api/wechat/bind
@@ -12,8 +12,10 @@ import { performBind } from "@/lib/wechat/bindService"
  *   manual   → 只传呼号，提交后进入待审核
  *
  * 安全要点：
+ * - [v2.0.2] 身份只来自签名会话（wx_session），不接受客户端传入的 openid/code，
+ *   避免伪造 openid 冒绑他人呼号、以及用可控 openid 绕过限频淹没审核队列。
  * - 认证失败统一返回「信息不匹配」，不提示哪一项错误
- * - 失败限频：同一 openid/IP 在 10 分钟内最多 5 次，防暴力尝试
+ * - 失败限频：同一 openid 在 10 分钟内最多 5 次，防暴力尝试
  */
 
 // 简易内存限频（多进程/集群下各进程独立计数，属降级防护，
@@ -37,32 +39,27 @@ function withinRateLimit(key: string): boolean {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json().catch(() => ({}))) as {
-      code?: string
-      openid?: string
       callsign?: string
       idLast6?: string
       bindCode?: string
     }
 
     const callsign = body.callsign?.trim() || ""
-
-    let openid = body.openid?.trim() || ""
-    if (!openid && body.code) {
-      const result = await codeToOpenid(body.code)
-      openid = result.openid
-    }
-    if (!openid) {
-      return NextResponse.json({ error: "无法识别用户身份" }, { status: 400 })
-    }
-
     if (!callsign) {
       return NextResponse.json({ error: "请填写呼号" }, { status: 400 })
     }
 
-    // 限频 key 优先用 openid，取不到时退回 IP
-    const rateKey =
-      openid || (request.headers.get("x-forwarded-for") ?? "unknown")
-    if (!withinRateLimit(rateKey)) {
+    // 身份只来自签名会话，不接受客户端传入的 openid/code
+    const identity = await getMemberIdentity(request)
+    if (!identity) {
+      return NextResponse.json(
+        { error: "无法识别用户身份，请重新授权" },
+        { status: 401 }
+      )
+    }
+
+    // 限频 key 用签名会话里的 openid（服务端签发、不可伪造）
+    if (!withinRateLimit(identity.openid)) {
       return NextResponse.json(
         { error: "尝试次数过多，请稍后再试" },
         { status: 429 }
@@ -70,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await performBind({
-      openid,
+      openid: identity.openid,
       callsign,
       idLast6: body.idLast6,
       bindCode: body.bindCode,

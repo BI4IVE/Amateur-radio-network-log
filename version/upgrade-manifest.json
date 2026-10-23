@@ -1,20 +1,28 @@
 {
-  "latest": "2.0.2",
+  "latest": "2.0.3",
   "minRequired": "1.0.0",
-  "releaseDate": "2026-10-23",
-  "title": "v2.0.2 排名勋章 · 主控记录 · 录入防重",
-  "summary": "个人中心新增排名勋章与主控记录，录入增加同呼号防重，修复会员档案搜索不全。",
+  "releaseDate": "2026-10-24",
+  "title": "v2.0.3 安全加固 · 月度统计口径",
+  "summary": "微信绑定/解绑改用签名会话并补 state 校验，登录账号锁定覆盖不存在账号，公开搜索 QTH 匿名脱敏；个人中心统计口径改为月度。",
   "changelog": [
-    "主控录入同一场台网的重复呼号时会提示「已参加过，第 X 位」，确认后可继续添加；后台补录同样生效",
-    "个人中心台网排名移到呼号右侧，按名次显示金 / 银 / 铜勋章（50 名后不显示）",
-    "四格调整为：累计参与 / 本年度 / 最近一次 / 连续参与",
-    "新增主控记录卡（仅主控可见）；「更多服务」加入我的证书与台网预告",
-    "新增台网规则：首次进入自动弹前 3 条，可在「更多服务」下查看全部，内容后台可改",
-    "修复会员超过 500 人后部分会员搜不到的问题"
+    "微信绑定/解绑身份改用签名会话识别，不再接受客户端传入 openid，并补齐网页授权 state 校验（修复匿名解绑、冒绑、授权 CSRF）",
+    "登录爆破限流加固：账号级锁定对「不存在的账号」同样生效，统一锁定提示不泄露账号是否存在",
+    "记录公开搜索接口对 QTH 匿名访问脱敏（保留前 4 字），防止通配符枚举精确地址",
+    "个人中心统计口径改为月度：四格为「本月排名 / 本月台网（附台网率）/ 最近一次 / 连续参与天数」，排名徽章与勋章分级改用月度名次",
+    "连续参与由「周」改为按开台场次计算的天数；后台会员详情从「本年度」改为「本月」"
   ],
   "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "detailUrl": "https://github.com/BI4IVE/Amateur-radio-network-log",
   "versions": [
+    {
+      "version": "2.0.3",
+      "releaseDate": "2026-10-24",
+      "title": "安全加固 · 月度统计口径",
+      "summary": "微信绑定/解绑改用签名会话并补 state 校验，登录账号锁定覆盖不存在账号，公开搜索 QTH 匿名脱敏；个人中心统计口径改为月度。",
+      "dbSchema": "same-as-2.0.2",
+      "downloadUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/releases/tag/v2.0.3",
+      "sourceUrl": "https://github.com/BI4IVE/Amateur-radio-network-log/archive/refs/tags/v2.0.3.tar.gz"
+    },
     {
       "version": "2.0.2",
       "releaseDate": "2026-10-23",

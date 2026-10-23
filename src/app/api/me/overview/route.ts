@@ -13,7 +13,7 @@ import {
 
 /** 会员规则默认文案：配置项 member_rules 为空时兜底，避免首次弹窗空白 */
 const DEFAULT_MEMBER_RULES = [
-  "台网活动时间：每周四 20:30 开台，节假日另行预告。",
+  "台网活动时间：每日 20:30--21:30，节假日另行预告。",
   "参与方式：主控点名时按顺序应答，报呼号、QTH、设备与信号。",
   "执照要求：需持有效电台执照，执照信息可在「档案」中自行维护。",
   "到场确认：参与后会自动收到微信回执，点开可查看本次记录。",
@@ -123,8 +123,14 @@ export async function GET(request: NextRequest) {
         yearSessions: stats.yearSessions,
         firstTime: stats.firstTime,
         lastTime: stats.lastTime,
-        // [v2.0.2] 连续参与周数与本年度本月出席次数
-        streakWeeks: streak.weeks,
+        // [v2.0.3] 台网改为每日开台、数据自 2026-07 下旬起才完整，
+        // 统计口径改为月度：本月出席 / 本月开台总数（月度台网率）/ 上月出席（环比）
+        monthSessions: stats.monthSessions,
+        prevMonthSessions: stats.prevMonthSessions,
+        monthTotal: stats.monthTotal,
+        prevMonthTotal: stats.prevMonthTotal,
+        // [v2.0.3] 连续参与由「周」改为按开台场次计算的天数
+        streakDays: streak.days,
         thisMonth: streak.thisMonth,
         rank: rank.rank,
         // [v2.0.2] 本月名次与较上月变化；不含全站总人数

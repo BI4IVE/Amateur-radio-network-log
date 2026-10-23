@@ -44,6 +44,8 @@ type Detail = {
   stats: {
     sessions: number
     yearSessions: number
+    /** [v2.0.3] 本月出席场次（台网每日开台，年度口径已无对比意义） */
+    monthSessions: number
     firstTime: string | null
     lastTime: string | null
     topSignal: string | null
@@ -352,7 +354,7 @@ export default function AdminParticipantDetailPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2.5 p-3.5">
                     <Kpi value={data.stats.sessions} label="累计场次" />
-                    <Kpi value={data.stats.yearSessions} label="本年度" />
+                    <Kpi value={data.stats.monthSessions} label="本月" />
                     <Kpi
                       value={data.stats.rank ? `#${data.stats.rank}` : "-"}
                       label="台网排名"

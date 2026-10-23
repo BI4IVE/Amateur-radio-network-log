@@ -68,7 +68,24 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       // 账号不存在：仍按账号名消耗锁定额度，避免攻击者探测哪些账号存在
-      try { await accountLimiter.consume(String(username).toLowerCase()) } catch { /* 锁定中 */ }
+      try {
+        await accountLimiter.consume(String(username).toLowerCase())
+      } catch {
+        // [安全] 账号不存在但连续失败达上限，同样返回 429（与存在账号完全一致），
+        // 既防「轮换 IP + 不存在账号」绕过账号锁定，也不泄露账号是否存在。
+        await loginLogManager.write({
+          userId: undefined,
+          username: String(username),
+          success: false,
+          reason: "LOCKED",
+          ip,
+          userAgent,
+        })
+        return NextResponse.json(
+          { error: "登录尝试次数过多，请稍后再试" },
+          { status: 429 }
+        )
+      }
       // 记录"账号不存在"的尝试：连续探测不同账号是必须能看见的攻击信号
       await loginLogManager.write({
         userId: undefined,
@@ -100,7 +117,7 @@ export async function POST(request: NextRequest) {
           userAgent,
         })
         return NextResponse.json(
-          { error: "该账号已被临时锁定，请 15 分钟后再试" },
+          { error: "登录尝试次数过多，请稍后再试" },
           { status: 429 }
         )
       }

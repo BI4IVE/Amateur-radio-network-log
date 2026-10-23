@@ -36,42 +36,31 @@ export default function WechatBindPage() {
 
   useEffect(() => {
     const init = async () => {
-      const params = new URLSearchParams(window.location.search)
-      const code = params.get("code")
-      // 微信 code 一次性有效，刷新页面后即失效，因此把 openid 缓存在会话中
-      const cachedOpenid = sessionStorage.getItem("wechat_openid")
-
-      const query = code
-        ? `code=${encodeURIComponent(code)}`
-        : cachedOpenid
-        ? `openid=${encodeURIComponent(cachedOpenid)}`
-        : null
-
-      if (!query) {
-        const redirectUri = window.location.origin + window.location.pathname
-        try {
-          const res = await fetch(
-            `/api/wechat/authorize-url?redirect_uri=${encodeURIComponent(redirectUri)}`
-          )
-          const data = await res.json()
-          if (data.url) {
-            window.location.href = data.url
-            return
-          }
-          setError(data.error || "无法发起微信授权")
-        } catch {
-          setError("无法发起微信授权，请稍后重试")
-        } finally {
-          setLoading(false)
+      // 授权回调带回的 error 参数（nocode/state/openid/login/authorize），
+      // 直接展示错误，避免「授权失败 → 回到本页 → 又跳授权」的死循环。
+      const oauthError = new URLSearchParams(window.location.search).get("error")
+      if (oauthError) {
+        const messages: Record<string, string> = {
+          nocode: "授权失败：未获取到授权码，请重试",
+          state: "授权校验失败，请重新进入绑定页",
+          openid: "获取微信身份失败，请重试",
+          login: "微信登录失败，请重试",
+          authorize: "无法发起微信授权，请稍后重试",
         }
+        setError(messages[oauthError] || "授权失败，请重试")
+        setLoading(false)
         return
       }
 
       try {
-        const res = await fetch(`/api/wechat/status?${query}`)
+        const res = await fetch("/api/wechat/status")
+        // 无签名会话 → 跳转授权；授权回调会签发 wx_session 并回到本页
+        if (res.status === 401) {
+          window.location.href = "/api/wechat/authorize"
+          return
+        }
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || "查询绑定状态失败")
-        if (data.openid) sessionStorage.setItem("wechat_openid", data.openid)
         setState({
           openid: data.openid,
           status: data.status ?? null,
@@ -82,8 +71,6 @@ export default function WechatBindPage() {
           allowSelfUnbind: Boolean(data.allowSelfUnbind),
         })
       } catch (e) {
-        // 缓存失效时清除，下次进入重新走授权流程
-        sessionStorage.removeItem("wechat_openid")
         setError(e instanceof Error ? e.message : "查询绑定状态失败")
       } finally {
         setLoading(false)
@@ -104,7 +91,6 @@ export default function WechatBindPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          openid: state?.openid,
           callsign: callsign.trim(),
           idLast6: idLast6.trim(),
           bindCode: bindCode.trim(),
@@ -138,11 +124,7 @@ export default function WechatBindPage() {
     setSubmitting(true)
     setMessage(null)
     try {
-      const res = await fetch("/api/wechat/unbind", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ openid: state?.openid }),
-      })
+      const res = await fetch("/api/wechat/unbind", { method: "POST" })
       const data = await res.json()
       if (data.ok) {
         setState((prev) => (prev ? { ...prev, status: "inactive", callsign: null } : prev))
