@@ -83,6 +83,8 @@ export default function QueryPage() {
   const [result, setResult] = useState<{
     callsign: string
     totalParticipations: number
+    /** [v2.0.3] 本月参与次数（证书用月度口径） */
+    monthParticipations: number
     participationTimes: ParticipationRecord[]
   } | null>(null)
   const [showCertificate, setShowCertificate] = useState(false)
@@ -179,6 +181,10 @@ export default function QueryPage() {
   const handleGenerateCertificate = async () => {
     if (!result || result.totalParticipations === 0) {
       setError("请先查询呼号记录")
+      return
+    }
+    if (result.monthParticipations === 0) {
+      setError("本月暂无参与记录，无法生成月度证书")
       return
     }
     setShowCertificate(true)
@@ -281,7 +287,7 @@ export default function QueryPage() {
 
     // 参与单位
     ctx.fillStyle = "#374151"; ctx.font = `22px ${cjk}`
-    ctx.fillText("在过去一年中积极参与", W / 2, 642)
+    ctx.fillText("本月积极参与", W / 2, 642)
     ctx.fillStyle = "#78350f"; ctx.font = `bold 30px ${cjk}`
     ctx.fillText(certSignUnit, W / 2, 690)
 
@@ -292,7 +298,7 @@ export default function QueryPage() {
     ctx.fillRect(W / 2 + 128, 732, 2, 86)
     ctx.fillStyle = "#78350f"
     ctx.font = `bold 100px ${serifCJK}`
-    const numStr = String(result.totalParticipations)
+    const numStr = String(result.monthParticipations)
     const numW = ctx.measureText(numStr).width
     ctx.fillText(numStr, W / 2, 820)
     ctx.fillStyle = "#374151"; ctx.font = `bold 34px ${cjk}`
@@ -564,7 +570,7 @@ export default function QueryPage() {
 
                       <div className="space-y-3">
                         <p className="text-gray-800 text-lg leading-relaxed">
-                          在过去一年中积极参与
+                          本月积极参与
                         </p>
                         <p className="text-yellow-900 text-2xl font-semibold tracking-wide">
                           {certSignUnit}
@@ -572,7 +578,7 @@ export default function QueryPage() {
                         <div className="flex items-center justify-center gap-6 py-6">
                           <div className="w-1 h-20 bg-gradient-to-b from-transparent via-yellow-700 to-transparent"></div>
                           <p className="text-8xl font-bold text-yellow-900 tracking-wider" style={{ fontFamily: "Georgia, serif" }}>
-                            {result.totalParticipations}
+                            {result.monthParticipations}
                           </p>
                           <div className="w-1 h-20 bg-gradient-to-b from-transparent via-yellow-700 to-transparent"></div>
                           <p className="text-3xl text-gray-700 font-semibold">次</p>
