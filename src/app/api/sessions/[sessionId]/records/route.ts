@@ -1,4 +1,4 @@
-// @version v2.0.2
+// @version v2.0.3
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, equipmentManager } from "@/storage/database"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
@@ -18,11 +18,21 @@ export async function GET(
     }
 
     const { sessionId } = await params
+
+    // [v2.0.4 安全] 匿名公开访问只允许读取「当前活跃会话」；
+    // 历史会话仅登录用户可读，切断匿名枚举历史记录的越权链。
+    if (access.maskQth) {
+      const session = await logManager.getLogSessionById(sessionId)
+      if (!session || session.deletedAt || (await isSessionExpired(session.sessionTime))) {
+        return NextResponse.json({ error: "会话不存在" }, { status: 404 })
+      }
+    }
+
     const records = await logManager.getLogRecordsBySessionId(sessionId)
 
-    // 「匿名 + 公开」组合下对 QTH 做服务端脱敏
+    // 「匿名 + 公开」组合下脱敏：QTH 保留前 4 字；备注常含完整地址，直接隐藏
     const result = access.maskQth
-      ? records.map((r) => ({ ...r, qth: maskQthValue(r.qth) }))
+      ? records.map((r) => ({ ...r, qth: maskQthValue(r.qth), remarks: "" }))
       : records
     return NextResponse.json({ records: result })
   } catch (error) {

@@ -1,13 +1,13 @@
-// @version v2.0.2
+// @version v2.0.3
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 /**
  * [个人中心] /me
  *
  * 身份来自微信静默授权（服务端 90 天签名 Cookie），页面本身不接收任何身份参数。
- * 三个 tab：我的记录 / 档案（可编辑） / 推送。
+ * [v2.0.6] 三个页签：首页（概览）/ 记录 / 我的（档案·执照·绑定·推送·证书·查询）。
  */
 
 type Overview = {
@@ -102,7 +102,10 @@ type PushLog = {
   createdAt: string
 }
 
-type TabKey = "log" | "profile" | "bind" | "push"
+type TabKey = "home" | "records" | "my"
+
+/** [v2.0.6] 「我的」页内的子视图：功能列表 / 档案 / 执照 / 绑定 / 推送 */
+type MyView = "menu" | "profile" | "license" | "bind" | "push"
 
 const WEEKDAY = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
 
@@ -227,12 +230,12 @@ function maskLicenseNo(value: string): string {
   return `${trimmed.slice(0, 3)}••••${trimmed.slice(-3)}`
 }
 
-/** 发证日期 + 5 年（YYYY-MM-DD） */
-function plusFiveYears(value: string): string {
+/** [v2.0.6] 发证日期 + N 年（YYYY-MM-DD） */
+function plusYears(value: string, years: number): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return ""
   const d = new Date(`${value}T00:00:00Z`)
   if (Number.isNaN(d.getTime())) return ""
-  d.setUTCFullYear(d.getUTCFullYear() + 5)
+  d.setUTCFullYear(d.getUTCFullYear() + years)
   return d.toISOString().slice(0, 10)
 }
 
@@ -240,7 +243,37 @@ export default function MePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<Overview | null>(null)
-  const [tab, setTab] = useState<TabKey>("log")
+  const [tab, setTab] = useState<TabKey>("home")
+  const [myView, setMyView] = useState<MyView>("menu")
+
+  // [v2.0.6] 三个页面各自独立，切页回到顶部（首页概览较长，避免停留在页面中部）
+  const contentRef = useRef<HTMLDivElement>(null)
+  const contentFirstRender = useRef(true)
+
+  // [v2.0.6] 「我的」子页压一条浏览历史，手机返回键即可回到功能列表（而不是直接退出页面）
+  const openMyView = useCallback((view: MyView) => {
+    window.history.pushState({ meSubView: view }, "")
+    setMyView(view)
+  }, [])
+  const backToMenu = useCallback(() => {
+    if (window.history.state?.meSubView) {
+      window.history.back()
+    } else {
+      setMyView("menu")
+    }
+  }, [])
+  useEffect(() => {
+    const onPop = () => setMyView("menu")
+    window.addEventListener("popstate", onPop)
+    return () => window.removeEventListener("popstate", onPop)
+  }, [])
+  useEffect(() => {
+    if (contentFirstRender.current) {
+      contentFirstRender.current = false
+      return
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [tab, myView])
 
   const [records, setRecords] = useState<RecordItem[]>([])
   const [recordTotal, setRecordTotal] = useState(0)
@@ -253,6 +286,8 @@ export default function MePage() {
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+  // [v2.0.6] 执照有效期年数：默认 5 年，可选 3 年
+  const [licenseYears, setLicenseYears] = useState(5)
   const [unbinding, setUnbinding] = useState(false)
   // 执照编号默认脱敏，点小眼睛才显示完整
   const [showLicenseNo, setShowLicenseNo] = useState(false)
@@ -361,10 +396,10 @@ export default function MePage() {
 
   useEffect(() => {
     if (!data?.bound) return
-    if (tab === "log" && records.length === 0) loadRecords(0)
-    if (tab === "push" && pushLogs.length === 0) loadPushLogs()
+    if (tab === "records" && records.length === 0) loadRecords(0)
+    if (tab === "my" && myView === "push" && pushLogs.length === 0) loadPushLogs()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.bound, tab])
+  }, [data?.bound, tab, myView])
 
   const license = data?.license
   const tone = useMemo(() => licenseTone(license?.state ?? "none"), [license?.state])
@@ -485,7 +520,10 @@ export default function MePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
-      <div className="max-w-md mx-auto bg-[#f7f8fb] min-h-screen">
+      <div className="max-w-md mx-auto bg-[#f7f8fb] min-h-screen pb-24">
+        {/* [v2.0.6] 首页：概览（Hero / 四格 / 下一场 / 执照 / 主控） */}
+        {tab === "home" ? (
+          <>
         {/* 顶部 */}
         <div className="bg-gradient-to-b from-indigo-600 to-indigo-800 px-5 pt-7 pb-16 text-white relative overflow-hidden">
           <div className="absolute -right-8 -top-10 w-48 h-48 rounded-full bg-white/5" />
@@ -597,6 +635,34 @@ export default function MePage() {
           />
         </div>
 
+        {/* [v2.0.6] 下一场台网提示条：合并原「更多服务」里的台网预告与规则入口 */}
+        <div className="mx-4 mt-3.5">
+          <div className="flex items-center gap-2 rounded-2xl bg-indigo-50 border border-indigo-100 px-3.5 py-3">
+            <svg
+              viewBox="0 0 24 24"
+              className="w-4 h-4 stroke-indigo-600 fill-none shrink-0"
+              strokeWidth={2}
+              strokeLinecap="round"
+            >
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M8 3v4M16 3v4M3 11h18" />
+            </svg>
+            <span className="text-[12px] text-indigo-900">
+              下一场台网：<b>{nextSchedule ? fmtScheduleTime(nextSchedule) : "暂无预告"}</b>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setRulesFull(true)
+                setRulesOpen(true)
+              }}
+              className="ml-auto text-[11px] font-extrabold text-indigo-600 shrink-0"
+            >
+              规则 ›
+            </button>
+          </div>
+        </div>
+
         {/* 执照 */}
         <div className="mx-4 mt-3.5 bg-white rounded-2xl p-4 relative overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
           <div className={`absolute left-0 top-0 bottom-0 w-1 ${tone.edge}`} />
@@ -692,7 +758,7 @@ export default function MePage() {
             </>
           ) : (
             <p className="text-[10.5px] text-black/45 mt-3">
-              在「档案」里填写执照信息后，这里会显示到期倒计时。
+              在「我的 · 执照信息」里填写后，这里会显示到期倒计时。
             </p>
           )}
         </div>
@@ -730,118 +796,120 @@ export default function MePage() {
           </div>
         ) : null}
 
-        {/* 更多服务：证书 / 查询 / 预告 */}
-        <div className="mx-4 mt-3.5">
-          <p className="text-xs font-extrabold text-black/50 mb-2 pl-1">更多服务</p>
-          <div className="grid grid-cols-3 gap-2.5">
-            <a
-              href={`/query?callsign=${encodeURIComponent(data.binding.callsign || "")}`}
-              className="bg-white rounded-2xl px-2.5 py-3 shadow-[0_6px_18px_rgba(24,24,60,0.06)] block text-center"
-            >
-              <span className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center mx-auto">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-[15px] h-[15px] stroke-emerald-600 fill-none"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                >
-                  <circle cx="12" cy="8" r="5" />
-                  <path d="M8.2 12.9 7 22l5-3 5 3-1.2-9.1" />
-                </svg>
-              </span>
-              <span className="block text-xs font-extrabold text-black mt-2">我的证书</span>
-              <span className="block text-[10px] text-black/45 mt-0.5">参与证明</span>
-            </a>
+          </>
+        ) : null}
 
-            <a
-              href={`/query?callsign=${encodeURIComponent(data.binding.callsign || "")}`}
-              className="bg-white rounded-2xl px-2.5 py-3 shadow-[0_6px_18px_rgba(24,24,60,0.06)] block text-center"
-            >
-              <span className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center mx-auto">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-[15px] h-[15px] stroke-indigo-600 fill-none"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                >
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-3.5-3.5" />
-                </svg>
-              </span>
-              <span className="block text-xs font-extrabold text-black mt-2">台网查询</span>
-              <span className="block text-[10px] text-black/45 mt-0.5">任意呼号</span>
-            </a>
+        {/* [v2.0.6] 页签在底部悬浮导航（首页 / 记录 / 我的） */}
 
-            {/* [v2.0.2] 台网预告：直接显示下一场时间，不跳转 */}
-            <div className="bg-white rounded-2xl px-2.5 py-3 shadow-[0_6px_18px_rgba(24,24,60,0.06)] text-center">
-              <span className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center mx-auto">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-[15px] h-[15px] stroke-amber-500 fill-none"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                >
-                  <rect x="3" y="5" width="18" height="16" rx="2" />
-                  <path d="M8 3v4M16 3v4M3 11h18" />
-                </svg>
-              </span>
-              <span className="block text-xs font-extrabold text-black mt-2">台网预告</span>
-              <span className="block text-[10px] text-black/45 mt-0.5">
-                {nextSchedule ? fmtScheduleTime(nextSchedule) : "暂无预告"}
-              </span>
+        <div ref={contentRef}>
+        {/* 记录：页头 */}
+        {tab === "records" ? (
+          <div className="px-5 pt-8 pb-1">
+            <p className="text-[10.5px] tracking-[2px] text-black/40">BR4IN · {data.siteName}</p>
+            <h1 className="text-2xl font-extrabold text-black mt-2 leading-none">我的记录</h1>
+          </div>
+        ) : null}
+
+        {/* 我的：页头 + 功能列表（子页显示返回） */}
+        {tab === "my" ? (
+          <>
+            <div className="bg-gradient-to-b from-indigo-600 to-indigo-800 px-5 pt-7 pb-6 text-white">
+              <p className="text-[10.5px] tracking-[2px] text-white/70">BR4IN · {data.siteName}</p>
+              <div className="flex items-center gap-3 mt-3">
+                <span className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-lg font-extrabold">
+                  {(data.binding.callsign || "?").slice(0, 2)}
+                </span>
+                <div>
+                  <p className="text-xl font-extrabold leading-none">{data.binding.callsign}</p>
+                  <p className="text-[11px] text-white/80 mt-1.5">
+                    {data.profile?.memberNo ? `编号 ${data.profile.memberNo} · ` : ""}
+                    {data.stats?.rankCurrent ? `本月第 ${data.stats.rankCurrent} 位` : "本月暂无排名"}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* [v2.0.2] 台网规则入口（首次进入会自动弹一次） */}
-          <div className="text-center mt-3">
-            <button
-              type="button"
-              onClick={() => {
-                setRulesFull(true)
-                setRulesOpen(true)
-              }}
-              className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-white border border-gray-200 text-[11.5px] text-black/45"
-            >
-              <span className="font-bold text-black/60">台网规则与帮助</span>
-              <svg
-                viewBox="0 0 24 24"
-                className="w-3 h-3 stroke-current fill-none"
-                strokeWidth={2.4}
-                strokeLinecap="round"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </button>
-          </div>
-        </div>
+            {myView === "menu" ? (
+              <div className="px-4 pt-3.5 pb-6">
+                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
+                  <button
+                    type="button"
+                    onClick={() => openMyView("profile")}
+                    className="w-full flex items-center px-4 py-3.5 border-b border-gray-100 text-left"
+                  >
+                    <span className="flex-1 text-[13.5px] font-bold text-black">我的档案</span>
+                    <span className="text-[11px] text-black/35">›</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openMyView("license")}
+                    className="w-full flex items-center px-4 py-3.5 border-b border-gray-100 text-left"
+                  >
+                    <span className="flex-1 text-[13.5px] font-bold text-black">执照信息</span>
+                    <span className="text-[11px] text-black/40 mr-1.5">
+                      {data.profile?.licenseNo ? maskLicenseNo(data.profile.licenseNo) : "未填写"}
+                    </span>
+                    <span className="text-[11px] text-black/35">›</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openMyView("bind")}
+                    className="w-full flex items-center px-4 py-3.5 border-b border-gray-100 text-left"
+                  >
+                    <span className="flex-1 text-[13.5px] font-bold text-black">微信绑定</span>
+                    <span className="text-[11px] text-emerald-600 font-bold mr-1.5">
+                      {data.binding.status === "active" ? "已绑定" : "未绑定"}
+                    </span>
+                    <span className="text-[11px] text-black/35">›</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openMyView("push")}
+                    className="w-full flex items-center px-4 py-3.5 text-left"
+                  >
+                    <span className="flex-1 text-[13.5px] font-bold text-black">推送记录</span>
+                    <span className="text-[11px] text-black/35">›</span>
+                  </button>
+                </div>
 
-        {/* tabs */}
-        <div className="flex gap-6 px-5 pt-5 pb-2">
-          {(
-            [
-              ["log", "我的记录"],
-              ["profile", "档案"],
-              ["bind", "绑定"],
-              ["push", "推送"],
-            ] as [TabKey, string][]
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`pb-2 text-sm relative ${
-                tab === key ? "font-extrabold text-black" : "font-semibold text-black/50"
-              }`}
-            >
-              {label}
-              {tab === key ? (
-                <span className="absolute left-0 right-0 bottom-0 h-[3px] rounded bg-indigo-600" />
-              ) : null}
-            </button>
-          ))}
-        </div>
+                <div className="bg-white rounded-2xl overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)] mt-3">
+                  <a
+                    href={`/query?callsign=${encodeURIComponent(data.binding.callsign || "")}`}
+                    className="flex items-center px-4 py-3.5 border-b border-gray-100"
+                  >
+                    <span className="flex-1 text-[13.5px] font-bold text-black">我的证书</span>
+                    <span className="text-[11px] text-black/35">›</span>
+                  </a>
+                  <a href="/query" className="flex items-center px-4 py-3.5">
+                    <span className="flex-1 text-[13.5px] font-bold text-black">台网查询</span>
+                    <span className="text-[11px] text-black/35">›</span>
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="px-4 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setMyView("menu")}
+                  className="inline-flex items-center gap-1 text-[12px] font-bold text-black/55"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="w-3.5 h-3.5 stroke-current fill-none"
+                    strokeWidth={2.4}
+                    strokeLinecap="round"
+                  >
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
+                  返回我的
+                </button>
+              </div>
+            )}
+          </>
+        ) : null}
 
         {/* 记录 */}
-        {tab === "log" ? (
+        {tab === "records" ? (
           <div className="px-4 pb-6">
             {records.length === 0 ? (
               <p className="text-xs text-black/45 py-10 text-center">
@@ -907,12 +975,16 @@ export default function MePage() {
         ) : null}
 
         {/* 档案 */}
-        {tab === "profile" && form ? (
+        {tab === "my" && (myView === "profile" || myView === "license") && form ? (
           <div className="px-4 pb-6">
             <div className="bg-indigo-50 rounded-xl px-3.5 py-3 text-[11.5px] leading-6 text-indigo-900">
-              档案由你自行维护，保存后立即生效；每次修改都会留痕，管理员可查看修改记录。
+              {myView === "license"
+                ? "执照信息可随时更新，保存后立即生效；到期倒计时按到期日期计算。"
+                : "档案由你自行维护，保存后立即生效；每次修改都会留痕，管理员可查看修改记录。"}
             </div>
 
+            {myView === "profile" ? (
+            <>
             <p className="text-xs font-extrabold text-black/55 mt-4 mb-2 pl-1">基本信息</p>
             <div className="bg-white rounded-2xl overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
               <ReadonlyRow label="呼号" value={form.callsign} note="不可改" />
@@ -956,8 +1028,12 @@ export default function MePage() {
                 onChange={(v) => setForm({ ...form, power: v })}
               />
             </div>
+            </>
+            ) : null}
 
-            <p className="text-xs font-extrabold text-black/55 mt-5 mb-2 pl-1">执照信息</p>
+            {myView === "license" ? (
+            <>
+            <p className="text-xs font-extrabold text-black/55 mt-4 mb-2 pl-1">执照信息</p>
             <div className="bg-white rounded-2xl overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
               <FieldRow
                 label="执照编号"
@@ -983,15 +1059,43 @@ export default function MePage() {
                 placeholder="发证机关"
                 onChange={(v) => setForm({ ...form, licenseIssuer: v })}
               />
+              <div className="flex items-center justify-between px-4 min-h-[50px] border-b border-gray-100">
+                <span className="text-[13px] text-black/60">有效期</span>
+                <span className="flex items-center gap-1.5">
+                  {[5, 3].map((y) => (
+                    <button
+                      key={y}
+                      type="button"
+                      onClick={() => {
+                        setLicenseYears(y)
+                        // 已填发证日期时，切到几年就按几年重算到期日期
+                        if (form.licenseIssueDate) {
+                          setForm({
+                            ...form,
+                            licenseExpireDate: plusYears(form.licenseIssueDate, y),
+                          })
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-full text-[11.5px] font-bold transition ${
+                        licenseYears === y
+                          ? "bg-indigo-600 text-white"
+                          : "bg-black/5 text-black/50"
+                      }`}
+                    >
+                      +{y} 年
+                    </button>
+                  ))}
+                </span>
+              </div>
               <DateRow
                 label="发证日期"
                 value={form.licenseIssueDate ?? ""}
                 onChange={(v) => {
-                  const auto = v ? plusFiveYears(v) : ""
+                  const auto = v ? plusYears(v, licenseYears) : ""
                   setForm({
                     ...form,
                     licenseIssueDate: v,
-                    // 选发证日期后到期日期自动 +5 年，用户仍可手改
+                    // 选发证日期后到期日期按所选年数自动填，用户仍可手改
                     licenseExpireDate: auto || form.licenseExpireDate,
                   })
                 }}
@@ -999,10 +1103,11 @@ export default function MePage() {
               <DateRow
                 label="到期日期"
                 value={form.licenseExpireDate ?? ""}
-                note="+5 年"
                 onChange={(v) => setForm({ ...form, licenseExpireDate: v })}
               />
             </div>
+            </>
+            ) : null}
 
             {saveError ? (
               <p className="text-xs text-red-600 mt-3 px-1">{saveError}</p>
@@ -1019,16 +1124,18 @@ export default function MePage() {
               {saving ? "保存中..." : "保存修改"}
             </button>
 
-            <p className="text-[11px] text-black/45 leading-6 mt-3 px-1">
-              呼号是身份标识，如需更改请提交申请由管理员处理。
-              <br />
-              设备与 QTH 会作为主控台录入你记录时的默认值。
-            </p>
+            {myView === "profile" ? (
+              <p className="text-[11px] text-black/45 leading-6 mt-3 px-1">
+                呼号是身份标识，如需更改请提交申请由管理员处理。
+                <br />
+                设备与 QTH 会作为主控台录入你记录时的默认值。
+              </p>
+            ) : null}
           </div>
         ) : null}
 
         {/* 绑定 */}
-        {tab === "bind" ? (
+        {tab === "my" && myView === "bind" ? (
           <div className="px-4 pb-6">
             <p className="text-xs font-extrabold text-black/55 mb-2 pl-1">微信绑定</p>
             <div className="bg-white rounded-2xl overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
@@ -1074,7 +1181,7 @@ export default function MePage() {
         ) : null}
 
         {/* 推送 */}
-        {tab === "push" ? (
+        {tab === "my" && myView === "push" ? (
           <div className="px-4 pb-6">
             <p className="text-xs font-extrabold text-black/55 mb-2 pl-1">近 20 条推送</p>
             <div className="bg-white rounded-2xl overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
@@ -1118,6 +1225,77 @@ export default function MePage() {
             </p>
           </div>
         ) : null}
+        </div>
+      </div>
+
+      {/* [v2.0.5] 底部悬浮导航：记录 / 绑定 / 推送 / 我的 */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-28px)] max-w-[420px] z-40">
+        <nav className="bg-white/90 backdrop-blur-xl border border-white/70 rounded-[26px] shadow-[0_16px_38px_rgba(24,24,60,0.22)] flex px-1.5 py-2">
+          {(
+            [
+              { key: "home", label: "首页" },
+              { key: "records", label: "记录" },
+              { key: "my", label: "我的" },
+            ] as { key: TabKey; label: string }[]
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => {
+                // 离开「我的」子页时清掉那条伪造历史，避免返回键空转
+                if (key !== "my" && window.history.state?.meSubView) {
+                  window.history.back()
+                }
+                setTab(key)
+                if (key === "my") setMyView("menu")
+              }}
+              className={`flex-1 flex flex-col items-center gap-1 py-1.5 rounded-[18px] transition ${
+                tab === key
+                  ? "bg-indigo-600/10 text-indigo-600 font-extrabold"
+                  : "text-gray-400 font-semibold"
+              }`}
+            >
+              {key === "home" ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.9}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-[23px] h-[23px]"
+                >
+                  <path d="M3 10.5 12 3l9 7.5" />
+                  <path d="M5 9.5V21h14V9.5" />
+                </svg>
+              ) : key === "records" ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.9}
+                  strokeLinecap="round"
+                  className="w-[23px] h-[23px]"
+                >
+                  <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                </svg>
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.9}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-[23px] h-[23px]"
+                >
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              )}
+              <span className="text-[10px]">{label}</span>
+            </button>
+          ))}
+        </nav>
       </div>
 
       {/* [v2.0.2] 台网规则抽屉：首次自动弹（只显示前 3 条），点底部入口看全部 */}

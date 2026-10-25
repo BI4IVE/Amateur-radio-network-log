@@ -1,4 +1,4 @@
-// @version v2.0.2
+// @version v2.0.3
 import { NextRequest, NextResponse } from "next/server"
 import { getMemberIdentity, isActiveMember } from "@/lib/me/identity"
 import { computeLicenseInfo, LICENSE_STATE_LABEL } from "@/lib/me/license"

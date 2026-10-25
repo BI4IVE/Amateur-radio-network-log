@@ -1,4 +1,4 @@
-// @version v2.0.2
+// @version v2.0.3
 "use client"
 
 import { isAdminRole } from "@/lib/permissions"

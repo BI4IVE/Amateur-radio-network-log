@@ -1,4 +1,4 @@
-// @version v2.0.2
+// @version v2.0.3
 import { eq, and, SQL, sql } from "drizzle-orm"
 import { getDb } from "./db"
 import { pageConfigs, insertPageConfigSchema, updatePageConfigSchema } from "./shared/schema"

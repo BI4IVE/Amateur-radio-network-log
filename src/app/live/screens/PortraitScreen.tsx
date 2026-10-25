@@ -1,6 +1,6 @@
 "use client";
 
-// @version v2.0.2
+// @version v2.0.3
 // 默认大屏 M 版（竖屏 / 手机）：在默认大屏基础上重排为单栏竖屏，适合手机观看
 
 import { useEffect, useRef } from "react";
