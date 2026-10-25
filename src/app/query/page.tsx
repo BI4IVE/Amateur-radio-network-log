@@ -7,6 +7,15 @@ export const dynamic = "force-dynamic"
 import { useState, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { formatDateTime } from "@/utils/dateFormat"
+
+/** [v2.0.3] 证书签发日期只显示到月份（北京时间） */
+function formatYearMonth(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+  }).format(d)
+}
 import { useCertConfig } from "./certConfig"
 import { useImeTracker, imeUpper } from "@/lib/ime"
 
@@ -314,7 +323,7 @@ export default function QueryPage() {
 
     // 页脚两栏
     drawField(ctx, W / 2 - 200, "签发机构", certSignOrg, cjk)
-    drawField(ctx, W / 2 + 200, "签发日期", formatDateTime(new Date().toISOString()), cjk)
+    drawField(ctx, W / 2 + 200, "签发日期", formatYearMonth(new Date()), cjk)
 
     // 导出下载
     canvas.toBlob((blob) => {
@@ -607,7 +616,7 @@ export default function QueryPage() {
                           <p className="text-gray-700 font-bold text-lg mb-3 tracking-wide">签发日期</p>
                           <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
                             <p className="text-yellow-900 font-semibold text-base">
-                              {formatDateTime(new Date().toISOString())}
+                              {formatYearMonth(new Date())}
                             </p>
                           </div>
                         </div>
