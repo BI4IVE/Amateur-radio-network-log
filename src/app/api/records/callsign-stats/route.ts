@@ -40,24 +40,30 @@ export async function GET(request: NextRequest) {
       return refTime >= oneYearAgo
     })
 
-    // [v2.0.3] 证书改用月度口径：统计「本月」参与次数（北京时间自然月）
+    // [v2.0.3] 查询口径改为「本月」（北京时间自然月）；显式传 range=year 时才退回近一年（兼容旧调用）
     const ymFmt = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Shanghai",
       year: "numeric",
       month: "2-digit",
     })
     const currentYm = ymFmt.format(new Date())
-    let monthParticipations = 0
-    recentRecords.forEach((record) => {
+
+    const withTime = recentRecords.map((record) => {
       const session = sessionMap.get(record.sessionId)
+      // 用台网时间归类（与后台历史一致）；无 session 时回退录入时间
       const refTime = session ? new Date(session.sessionTime) : new Date(record.createdAt)
-      if (ymFmt.format(refTime) === currentYm) monthParticipations++
+      return { record, session, refTime }
     })
+
+    const monthItems = withTime.filter((item) => ymFmt.format(item.refTime) === currentYm)
+    const monthParticipations = monthItems.length
+
+    const range = (searchParams.get("range") || "month").toLowerCase()
+    const scoped = range === "year" ? withTime : monthItems
 
     // Create a map of sessionId -> controller callsign
     const controllerMap = new Map()
-    recentRecords.forEach((record) => {
-      const session = sessionMap.get(record.sessionId)
+    scoped.forEach(({ record, session }) => {
       if (session) {
         controllerMap.set(record.sessionId, session.controllerName)
       }
@@ -65,18 +71,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       callsign,
-      totalParticipations: recentRecords.length,
+      range: range === "year" ? "year" : "month",
+      totalParticipations: scoped.length,
       monthParticipations,
-      participationTimes: recentRecords.map((record) => {
-        const session = sessionMap.get(record.sessionId)
-        // 用台网时间归类（与后台历史一致）；无 session 时回退录入时间
-        const time = session ? session.sessionTime : record.createdAt
-        return {
-          time,
-          sessionId: record.sessionId,
-          controllerCallsign: controllerMap.get(record.sessionId) || "未知",
-        }
-      }),
+      participationTimes: scoped.map(({ record, session }) => ({
+        time: session ? session.sessionTime : record.createdAt,
+        sessionId: record.sessionId,
+        controllerCallsign: controllerMap.get(record.sessionId) || "未知",
+      })),
     })
   } catch (error) {
     console.error("Search callsign error:", error)

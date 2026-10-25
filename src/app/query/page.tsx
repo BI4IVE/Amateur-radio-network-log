@@ -122,7 +122,10 @@ export default function QueryPage() {
     setLoading(true)
 
     try {
-      const response = await fetch(`/api/records/callsign-stats?callsign=${encodeURIComponent(target)}`)
+      // [v2.0.3] 只查本月：range=month，避免把历史记录一起算进证书与列表
+      const response = await fetch(
+        `/api/records/callsign-stats?callsign=${encodeURIComponent(target)}&range=month`
+      )
       const data = await response.json()
 
       if (!response.ok) {
@@ -405,7 +408,7 @@ export default function QueryPage() {
                   {result.totalParticipations}
                 </div>
                 <div className="text-sm text-blue-700">
-                  1年内参与总次数
+                  本月参与次数
                 </div>
               </div>
             </div>
