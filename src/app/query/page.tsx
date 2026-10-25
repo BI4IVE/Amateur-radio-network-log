@@ -408,7 +408,7 @@ export default function QueryPage() {
                   {result.totalParticipations}
                 </div>
                 <div className="text-sm text-blue-700">
-                  本月参与次数
+                  最近一个月参与次数
                 </div>
               </div>
             </div>
