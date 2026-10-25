@@ -8,12 +8,12 @@ import { useState, useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { formatDateTime } from "@/utils/dateFormat"
 
-/** [v2.0.3] 证书签发日期只显示到月份（北京时间） */
+/** [v2.0.3] 证书签发日期只显示到月份，形如「2026年10月」（北京时间） */
 function formatYearMonth(d: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
+  return new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Shanghai",
     year: "numeric",
-    month: "2-digit",
+    month: "long",
   }).format(d)
 }
 import { useCertConfig } from "./certConfig"
