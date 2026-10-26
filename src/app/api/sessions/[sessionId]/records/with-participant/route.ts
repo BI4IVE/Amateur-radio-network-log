@@ -1,4 +1,4 @@
-// @version v2.0.3
+// @version v2.0.4
 import { isAdminRole } from "@/lib/permissions"
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, participantManager } from "@/storage/database"

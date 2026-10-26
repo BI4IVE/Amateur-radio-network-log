@@ -1,4 +1,4 @@
-// @version v2.0.3
+// @version v2.0.4
 import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
 import * as schema from "./shared/schema"

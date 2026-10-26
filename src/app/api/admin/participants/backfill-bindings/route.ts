@@ -1,4 +1,4 @@
-// @version v2.0.3
+// @version v2.0.4
 import { NextRequest, NextResponse } from "next/server"
 import { checkPermission } from "@/lib/permissions-server"
 import { participantManager, wechatBindingsManager } from "@/storage/database"

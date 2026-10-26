@@ -1,4 +1,4 @@
-// @version v2.0.3
+// @version v2.0.4
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";

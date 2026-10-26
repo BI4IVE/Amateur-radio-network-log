@@ -1,6 +1,6 @@
 "use client";
 
-// @version v2.0.3
+// @version v2.0.4
 /**
  * 播控台画布
  *

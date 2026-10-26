@@ -1,4 +1,4 @@
-// @version v2.0.3
+// @version v2.0.4
 export { userManager } from "./userManager"
 export { participantManager } from "./participantManager"
 export { logManager } from "./logManager"

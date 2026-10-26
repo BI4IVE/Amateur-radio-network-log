@@ -1,4 +1,4 @@
-// @version v2.0.3
+// @version v2.0.4
 import { eq, and, SQL, like, desc, gte, sql, isNull, inArray } from "drizzle-orm"
 import { getDb } from "./db"
 import {
