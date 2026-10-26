@@ -220,6 +220,18 @@ const menuGroups: MenuGroup[] = [
         requiredRole: "admin",
       },
       {
+        id: "controller-tiers",
+        label: "主控等级",
+        path: "/admin/controller-tiers",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-14 0M12 18v3" />
+          </svg>
+        ),
+        requiredRole: "admin",
+      },
+      {
         id: "tools",
         label: "管理工具",
         path: "/admin/tools",

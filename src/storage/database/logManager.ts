@@ -812,7 +812,10 @@ export class LogManager {
         )), 0)::int as records,
         max(s.session_time) as last_time
       from log_sessions s
-      where s.controller_name = ${callsign} and s.deleted_at is null
+      where upper(trim(s.controller_name)) = upper(${callsign})
+        and s.deleted_at is null
+        -- [v2.0.4] 主控场次口径：只算已开台的台网，预告（未开场）不计
+        and s.status <> 'scheduled'
     `)
     const row = ((result as unknown as { rows?: Record<string, unknown>[] }).rows ?? [])[0] ?? {}
     return {

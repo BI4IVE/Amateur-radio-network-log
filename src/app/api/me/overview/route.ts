@@ -5,6 +5,11 @@ import { computeLicenseInfo, LICENSE_STATE_LABEL } from "@/lib/me/license"
 import { getDefaultLicenseIssuer } from "@/lib/me/defaults"
 import { getWechatSettings } from "@/lib/wechat/settings"
 import {
+  CONTROLLER_TIERS_KEY,
+  computeControllerLevel,
+  parseControllerTiers,
+} from "@/lib/me/controllerLevel"
+import {
   logManager,
   pageConfigManager,
   participantManager,
@@ -62,6 +67,7 @@ export async function GET(request: NextRequest) {
       binding,
       defaultLicenseIssuer,
       rulesConfig,
+      tiersConfig,
     ] = await Promise.all([
       participantManager.getParticipantByCallsign(callsign),
       logManager.getCallsignStats(callsign),
@@ -72,6 +78,8 @@ export async function GET(request: NextRequest) {
       wechatBindingsManager.getByOpenid(identity.openid),
       getDefaultLicenseIssuer(),
       pageConfigManager.getConfigByKey("member_rules"),
+      // [v2.0.4] 主控等级门槛：后台可改，缺失/写坏时回退默认
+      pageConfigManager.getConfigByKey(CONTROLLER_TIERS_KEY),
     ])
 
     // 名次变化：正数 = 上升（名次数字变小），任一月无数据则为 null
@@ -84,6 +92,12 @@ export async function GET(request: NextRequest) {
       participant?.licenseIssueDate ?? null,
       participant?.licenseExpireDate ?? null
     )
+
+    // [v2.0.4] 主控成长线：主控过才计算，非主控返回 null（前端不渲染该区块）
+    const controllerLevel =
+      controller.sessions > 0
+        ? computeControllerLevel(controller.sessions, parseControllerTiers(tiersConfig?.value))
+        : null
 
     return NextResponse.json({
       siteName,
@@ -144,6 +158,13 @@ export async function GET(request: NextRequest) {
               sessions: controller.sessions,
               records: controller.records,
               lastTime: controller.lastTime,
+              // 等级与进度（门槛由后台配置）
+              level: controllerLevel?.label ?? null,
+              levelMin: controllerLevel?.min ?? null,
+              nextLabel: controllerLevel?.nextLabel ?? null,
+              nextMin: controllerLevel?.nextMin ?? null,
+              remain: controllerLevel?.remain ?? null,
+              progress: controllerLevel?.progress ?? 0,
             }
           : null,
       // [v2.0.2] 台网规则：首次进入弹前 3 行，点更多查看全部

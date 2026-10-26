@@ -26,6 +26,13 @@ type Overview = {
     sessions: number
     records: number
     lastTime: string | null
+    /** [v2.0.4] 主控成长线：当前等级 / 下一级 / 进度（门槛由后台配置） */
+    level?: string | null
+    levelMin?: number | null
+    nextLabel?: string | null
+    nextMin?: number | null
+    remain?: number | null
+    progress?: number
   } | null
   /** 台网规则（后台配置项 member_rules，换行分隔） */
   rules?: string
@@ -763,36 +770,62 @@ export default function MePage() {
           )}
         </div>
 
-        {/* [v2.0.2] 主控卡：只对主控过场次的账号显示 */}
+        {/* [v2.0.4] 主控卡：只对主控过场次的账号显示；含等级徽章与升级进度 */}
         {data.controller ? (
-          <div className="mx-4 mt-3 rounded-2xl px-3.5 py-3.5 bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-200 flex items-center gap-3">
-            <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-[0_2px_6px_rgba(124,58,237,0.12)]">
-              <svg
-                viewBox="0 0 24 24"
-                className="w-[17px] h-[17px] stroke-violet-600 fill-none"
-                strokeWidth={2}
-                strokeLinecap="round"
+          <div className="mx-4 mt-3 rounded-2xl px-3.5 py-3.5 bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-200">
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-[0_2px_6px_rgba(124,58,237,0.12)]">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-[17px] h-[17px] stroke-violet-600 fill-none"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                >
+                  <path d="M12 12a2 2 0 1 0 0 .01" />
+                  <path d="M16.5 7.5a6.36 6.36 0 0 1 0 9" />
+                  <path d="M7.5 7.5a6.36 6.36 0 0 0 0 9" />
+                </svg>
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-extrabold text-violet-900 flex items-center gap-1.5">
+                  我主控过 {data.controller.sessions} 场台网
+                  {data.controller.level ? (
+                    <span className="px-1.5 py-[1px] rounded-full bg-violet-600 text-white text-[10px] font-bold">
+                      {data.controller.level}
+                    </span>
+                  ) : null}
+                </p>
+                <p className="text-[11px] text-violet-700/80 mt-0.5 truncate">
+                  最近一场 {fmtMonthDay(data.controller.lastTime)} · 累计录入{" "}
+                  {data.controller.records} 条记录
+                </p>
+              </div>
+              <a
+                href="/admin/stats"
+                className="text-[11px] font-extrabold text-violet-700 shrink-0"
               >
-                <path d="M12 12a2 2 0 1 0 0 .01" />
-                <path d="M16.5 7.5a6.36 6.36 0 0 1 0 9" />
-                <path d="M7.5 7.5a6.36 6.36 0 0 0 0 9" />
-              </svg>
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-extrabold text-violet-900">
-                我主控过 {data.controller.sessions} 场台网
-              </p>
-              <p className="text-[11px] text-violet-700/80 mt-0.5 truncate">
-                最近一场 {fmtMonthDay(data.controller.lastTime)} · 累计录入{" "}
-                {data.controller.records} 条记录
-              </p>
+                运营中心 ›
+              </a>
             </div>
-            <a
-              href="/admin/stats"
-              className="text-[11px] font-extrabold text-violet-700 shrink-0"
-            >
-              运营中心 ›
-            </a>
+
+            {data.controller.nextLabel && data.controller.nextMin ? (
+              <div className="mt-2.5">
+                <div className="h-1.5 rounded-full bg-white/80 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-600"
+                    style={{ width: `${data.controller.progress ?? 0}%` }}
+                  />
+                </div>
+                <p className="text-[10.5px] text-violet-700/80 mt-1">
+                  距「{data.controller.nextLabel}」还差 {data.controller.remain} 场 ·{" "}
+                  {data.controller.sessions} / {data.controller.nextMin} 场
+                </p>
+              </div>
+            ) : (
+              <p className="text-[10.5px] text-violet-700/80 mt-2.5">
+                已是最高等级 · 感谢你为台网长期压阵
+              </p>
+            )}
           </div>
         ) : null}
 
