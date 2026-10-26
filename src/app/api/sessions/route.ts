@@ -1,7 +1,6 @@
 // @version v2.0.3
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, userManager } from "@/storage/database"
-import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireAuth } from "@/lib/auth"
 import { isAdminRole } from "@/lib/permissions"
 import { screenReadAuth, maskQthValue } from "@/lib/screenAccess"
@@ -17,23 +16,38 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const controllerId = searchParams.get("controllerId") || undefined
 
+    // [v2.0.3] 大屏 / 「加入进行中台网」只看「指定日期」（默认今天，北京时间）的台网。
+    // 预告（status=scheduled）是未来场次，默认排除，避免被当成进行中会话（原实现按 6 小时过期过滤，
+    // 未来时间永不过期 + 倒序排序，导致大屏永远显示最后创建的那场预告）。
+    // date=YYYY-MM-DD 可指定日期（预留：以后做「按日期看历史大屏」）；
+    // includeScheduled=true 供排期类页面按需包含预告。
+    const dateParam = searchParams.get("date")
+    const includeScheduled = searchParams.get("includeScheduled") === "true"
+    const beijingDate = (value: Date | string) =>
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Shanghai",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(value))
+
+    const targetDate =
+      dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : beijingDate(new Date())
+
     const sessions = await logManager.getLogSessions({
       controllerId,
     })
 
-    // 过滤掉已过期的会话（时限由后台配置，默认 6 小时）
-    const activeSessions = []
-    for (const session of sessions) {
-      if (!(await isSessionExpired(session.sessionTime))) {
-        activeSessions.push(session)
-      }
-    }
+    const activeSessions = sessions.filter((session) => {
+      if (!includeScheduled && session.status === "scheduled") return false
+      return beijingDate(session.sessionTime) === targetDate
+    })
 
     // 「匿名 + 公开」组合下对 QTH 做服务端脱敏，防止直接调用 API 泄露完整位置
     const result = access.maskQth
       ? activeSessions.map((s) => ({ ...s, controllerQth: maskQthValue(s.controllerQth) }))
       : activeSessions
-    return NextResponse.json({ sessions: result })
+    return NextResponse.json({ sessions: result, date: targetDate })
   } catch (error) {
     console.error("Get sessions error:", error)
     return NextResponse.json(
