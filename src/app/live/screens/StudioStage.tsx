@@ -17,27 +17,40 @@ interface Props {
   height: number;
   /** 布局变体：st-land / st-port */
   variant: string;
+  /**
+   * 适配方式：
+   * - contain（默认）：完整显示画布，比例不符时留黑边；
+   * - cover：铺满屏幕，超出部分裁掉（手机竖屏用，避免缩得太小 + 大黑边）。
+   * cover 只在「视口本身是竖屏」时生效，横屏预览仍走 contain。
+   */
+  fit?: "contain" | "cover";
   children: ReactNode;
 }
 
-export default function StudioStage({ width, height, variant, children }: Props) {
+export default function StudioStage({ width, height, variant, fit = "contain", children }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    const fit = () => {
+    const layout = () => {
       const el = ref.current;
       if (!el) return;
-      const scale = Math.min(window.innerWidth / width, window.innerHeight / height);
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const portraitViewport = vh > vw;
+      const useCover = fit === "cover" && portraitViewport;
+      const scale = useCover
+        ? Math.max(vw / width, vh / height)
+        : Math.min(vw / width, vh / height);
       el.style.setProperty("--s", scale.toFixed(4));
     };
-    fit();
-    window.addEventListener("resize", fit);
-    window.addEventListener("orientationchange", fit);
+    layout();
+    window.addEventListener("resize", layout);
+    window.addEventListener("orientationchange", layout);
     return () => {
-      window.removeEventListener("resize", fit);
-      window.removeEventListener("orientationchange", fit);
+      window.removeEventListener("resize", layout);
+      window.removeEventListener("orientationchange", layout);
     };
-  }, [width, height]);
+  }, [width, height, fit]);
 
   const style = {
     width: `${width}px`,

@@ -98,14 +98,14 @@ export default function StudioPortraitScreen({
 
   if (!session) {
     return (
-      <StudioStage width={1080} height={1920} variant="st-port">
+      <StudioStage width={1080} height={1920} variant="st-port" fit="cover">
         <div className="st-empty">今日暂无台网</div>
       </StudioStage>
     );
   }
 
   return (
-    <StudioStage width={1080} height={1920} variant="st-port">
+    <StudioStage width={1080} height={1920} variant="st-port" fit="cover">
       {/* 顶部 */}
       <div className="st-top">
         <div className="st-live">
