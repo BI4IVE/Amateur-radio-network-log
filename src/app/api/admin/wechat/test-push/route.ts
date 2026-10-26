@@ -64,6 +64,9 @@ export async function POST(request: NextRequest) {
 
     const result = await sendTemplateMessage(openid, {
       callsign: callsign || "TEST",
+      // [v2.0.3] 测试推送也要带上主控与台网名称，否则映射了这两格的模板会显示「-」
+      controller: "BI4TEST",
+      title: "测试台网",
       qth: "测试 QTH",
       equipment: "测试设备",
       antenna: "测试天馈",

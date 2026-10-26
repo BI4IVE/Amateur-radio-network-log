@@ -115,6 +115,8 @@ export default function WechatConfigPage() {
   const [testCallsign, setTestCallsign] = useState("")
   const [pushing, setPushing] = useState(false)
   const [pushResult, setPushResult] = useState<string | null>(null)
+  // [v2.0.3] 模板 keyword 名不再写死：不同公众号模板用 thing40 / time11 这类名字
+  const [newKeyword, setNewKeyword] = useState("")
 
   useEffect(() => {
     const userStr = localStorage.getItem("user")
@@ -302,14 +304,22 @@ export default function WechatConfigPage() {
         <div className="bg-white rounded-lg shadow p-6 space-y-3">
           <h3 className="text-lg font-semibold text-black">3. 模板字段映射</h3>
           <p className="text-sm text-black">
-            按公众号模板实际的 keyword 顺序，选择每个 keyword 对应的数据字段；不用的选「（不使用）」。
+            左侧 key 必须与公众号模板里的 keyword 名称<b>完全一致</b>（如{" "}
+            <span className="font-mono">thing40</span>、<span className="font-mono">time11</span>
+            ），选右侧对应的数据字段；不用的选「（不使用）」。字段可写组合，如{" "}
+            <span className="font-mono">{"{callsign}/主控：{controller}"}</span>。
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {KEYWORDS.map((kw) => (
-              <div key={kw} className="flex items-center gap-3">
-                <span className="w-24 text-sm font-mono text-black">{kw}</span>
+            {(Object.keys(settings.keywordMap || {}).length > 0
+              ? Object.entries(settings.keywordMap || {})
+              : KEYWORDS.map((kw) => [kw, ""] as [string, string])
+            ).map(([kw, field]) => (
+              <div key={kw} className="flex items-center gap-2">
+                <span className="w-24 text-sm font-mono text-black truncate" title={kw}>
+                  {kw}
+                </span>
                 <select
-                  value={settings.keywordMap?.[kw] ?? ""}
+                  value={field ?? ""}
                   onChange={(e) => {
                     const next = { ...(settings.keywordMap || {}) }
                     if (e.target.value) next[kw] = e.target.value
@@ -323,9 +333,46 @@ export default function WechatConfigPage() {
                       {opt.label}
                     </option>
                   ))}
+                  {/* 自定义组合值（后台直接写过的）不在预设里时，保留原值避免被清空 */}
+                  {field && !FIELD_OPTIONS.some((o) => o.value === field) ? (
+                    <option value={field}>{field}</option>
+                  ) : null}
                 </select>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = { ...(settings.keywordMap || {}) }
+                    delete next[kw]
+                    patch("keywordMap", next)
+                  }}
+                  className="text-xs text-red-500 px-1"
+                  title="移除该 keyword"
+                >
+                  ×
+                </button>
               </div>
             ))}
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              value={newKeyword}
+              onChange={(e) => setNewKeyword(e.target.value)}
+              placeholder="新增 keyword，如 thing50"
+              className="px-3 py-2 border border-gray-300 rounded-lg outline-none font-mono text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const kw = newKeyword.trim()
+                if (!kw) return
+                patch("keywordMap", { ...(settings.keywordMap || {}), [kw]: "" })
+                setNewKeyword("")
+              }}
+              className="px-4 py-2 rounded-lg bg-gray-100 text-sm font-semibold text-black"
+            >
+              添加
+            </button>
           </div>
         </div>
 
