@@ -2,16 +2,19 @@
 
 // @version v2.0.3
 /**
- * 播控台大屏（竖屏 9:16）
+ * 播控台大屏（竖屏 9:16 · 竖屏直播用）
  *
- * 与横屏同一套视觉语言，但重排为上下叠层：
- *   顶部状态 → 信息条 → 当前报到者（频谱作背景）→ 字段卡 → 跑马灯 → 评论区
+ * 版式（自上而下）：
+ *   顶部状态 → 信息条 → 当前报到者（频谱作背景）→ 字段卡 → 跑马灯 → 参与者滚动播报
  *
- * 评论区为「系统播报」：谁签到就播一条，不接收外部输入（避免公网刷屏）。
+ * 底部滚动条只显示「呼号 / 设备 / 天馈 / 信号」四项，其余字段不上屏，
+ * 保证竖屏直播画面信息密度合适、单行不折行。
+ *
+ * 画布固定 1080×1920，等比缩放贴合推流画布，不做窗口自适应。
  * 仅登录可用：由 live/page.tsx 的 LOGIN_ONLY_SCREENS 白名单拦截。
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LiveRecord, SessionInfo, ScreenConfig } from "../liveData";
 import { fitCallSign, fitFieldText } from "./studioFit";
 import StudioStage from "./StudioStage";
@@ -76,30 +79,23 @@ export default function StudioPortraitScreen({
     return () => clearInterval(timer);
   }, []);
 
-  // 评论流：主控开场一条 + 最近 4 位签到播报（按时间正序，最新的在底部）
-  const comments = useMemo(() => {
-    const list: { key: string; by: string; text: string; host?: boolean }[] = [
-      { key: "host-intro", by: host, text: `开始台网 · ${total} 人已签到`, host: true },
-    ];
-    records
-      .slice(0, 7)
-      .reverse()
-      .forEach((r) => {
-        list.push({
-          key: r.id,
-          by: r.callsign,
-          text: `${r.qth ? `${r.qth} · ` : ""}信号 ${r.signal || "—"}`,
-        });
-      });
-    return list.slice(-8);
-  }, [records, host, total]);
-
   const timeText = (localTime || "--:--").slice(0, 5);
   const now = new Date();
   const week = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][now.getDay()];
   const dateText = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
     now.getDate()
   ).padStart(2, "0")} ${week}`;
+
+  // 底部滚动播报：只保留四项（呼号 / 设备 / 天馈 / 信号）
+  const rows = records.map((r) => ({
+    id: r.id,
+    callsign: r.callsign,
+    equipment: r.equipment || "—",
+    antenna: r.antenna || "—",
+    signal: r.signal || "—",
+  }));
+  // 滚动速度按行数换算，保证人多时也不会快到看不清
+  const rollDuration = Math.max(14, rows.length * 1.2);
 
   if (!session) {
     return (
@@ -160,7 +156,9 @@ export default function StudioPortraitScreen({
           <span className="n st-mono">{total > 0 ? `第 ${total} 位` : "等待报到"}</span>
           <span className="ln r" />
         </div>
-        <div ref={callRef} className={`st-call ${current ? "" : "empty"}`}>{current?.callsign || "—"}</div>
+        <div ref={callRef} className={`st-call ${current ? "" : "empty"}`}>
+          {current?.callsign || "—"}
+        </div>
       </div>
 
       {/* 字段卡 */}
@@ -198,17 +196,25 @@ export default function StudioPortraitScreen({
         </div>
       </div>
 
-      {/* 评论区（系统播报） */}
-      <div className="st-comments">
-        {comments.map((c) => (
-          <div className={`st-cm ${c.host ? "host" : ""}`} key={c.key}>
-            <span className="av">{[...c.by][0] || "·"}</span>
-            <span className="body">
-              <b>{c.by}</b>
-              {c.text}
-            </span>
+      {/* 底部：参与者滚动播报（呼号 / 设备 / 天馈 / 信号） */}
+      <div className="st-roll">
+        {rows.length === 0 ? (
+          <div className="st-roll-empty">暂无参与记录</div>
+        ) : (
+          <div
+            className="st-roll-inner"
+            style={{ animationDuration: `${rollDuration}s` }}
+          >
+            {[...rows, ...rows].map((r, i) => (
+              <div className="st-roll-row" key={`${r.id}-${i}`}>
+                <span className="cs">{r.callsign}</span>
+                <span className="eq">{r.equipment}</span>
+                <span className="ant">{r.antenna}</span>
+                <span className="sg st-mono">{r.signal}</span>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
     </StudioStage>
   );
