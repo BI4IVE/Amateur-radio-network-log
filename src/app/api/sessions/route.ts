@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { logManager, userManager } from "@/storage/database"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireAuth } from "@/lib/auth"
+import { isAdminRole } from "@/lib/permissions"
 import { screenReadAuth, maskQthValue } from "@/lib/screenAccess"
 
 export async function GET(request: NextRequest) {
@@ -60,7 +61,9 @@ export async function POST(request: NextRequest) {
     //  - 管理员：可显式指定 controllerId 代录，但必须校验该用户真实存在（拒绝伪造的 controllerId）。
     let controllerId: string
     let controllerName: string
-    if (user!.role === "admin" && body.controllerId) {
+    // [v2.0.3 修复] 原来只判断 role === "admin"，超管（superadmin）会掉进 else 分支，
+    // 导致选了主控也仍以自己的账号名写库（显示成「管理员」）。统一走 isAdminRole。
+    if (isAdminRole(user!.role) && body.controllerId) {
       const target = await userManager.getUserById(body.controllerId)
       if (!target) {
         return NextResponse.json({ error: "指定的主控用户不存在" }, { status: 400 })
