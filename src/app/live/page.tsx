@@ -13,7 +13,23 @@ import MinimalScreen from "./screens/MinimalScreen";
 import ArcadeScreen from "./screens/ArcadeScreen";
 import PortraitScreen from "./screens/PortraitScreen";
 
-export type ScreenType = "default" | "defaultM" | "minimal" | "arcade" | "portrait";
+export type ScreenType =
+  | "default"
+  | "defaultM"
+  | "minimal"
+  | "arcade"
+  | "portrait"
+  | "studio"
+  | "studioPortrait";
+
+/**
+ * [v2.0.3] 仅登录账号可用的模板。
+ *
+ * 与 screen_public 的区别：screen_public 是「整块大屏是否对外」的全局开关，
+ * 这里是「个别模板单独设卡」——即使大屏已对外开放，这些模板也强制要求登录。
+ * 新增受限模板时，只需把模板名加进这个数组。
+ */
+const LOGIN_ONLY_SCREENS: ScreenType[] = ["studio", "studioPortrait"];
 
 // 右上角下拉：仅电脑版模板
 const SCREEN_OPTIONS: { value: ScreenType; label: string }[] = [
@@ -63,14 +79,21 @@ export default function LivePage() {
   const [screen, setScreen] = useState<ScreenType>("default");
   const [localTime, setLocalTime] = useState("");
 
-  // 大屏设为私有且未登录时，显示「需登录」遮罩（不跳转）
-  const needLogin = screenConfig.public === false && !loggedIn;
+  // 大屏设为私有，或当前模板属于「仅登录可用」时，未登录显示登录遮罩（不跳转）
+  const screenLoginOnly = LOGIN_ONLY_SCREENS.includes(screen);
+  const needLogin = (screenConfig.public === false || screenLoginOnly) && !loggedIn;
 
   // 从 URL 读取模板，默认 default
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const s = params.get("screen") as ScreenType | null;
-    if (s && SCREEN_OPTIONS.some((o) => o.value === s)) {
+    // 允许通过 URL 直接访问受限模板（不在下拉里出现，但书签/现场投屏链接可用）
+    const allowed = [
+      ...SCREEN_OPTIONS.map((o) => o.value),
+      ...PORTRAIT_OPTIONS.map((o) => o.value),
+      ...LOGIN_ONLY_SCREENS,
+    ];
+    if (s && allowed.includes(s)) {
       setScreen(s);
     }
   }, []);
@@ -117,10 +140,15 @@ export default function LivePage() {
                 <circle cx="12" cy="15.5" r="1.4" fill="currentColor" stroke="none" />
               </svg>
             </div>
-            <h2 className="live-locked-title">大屏未到公开时间</h2>
+            <h2 className="live-locked-title">
+              {screenLoginOnly ? "该模板仅登录后可用" : "大屏未到公开时间"}
+            </h2>
             <p className="live-locked-desc">
-              当前大屏仅为内部使用。<br />
-              开放时间可以关注公众号。
+              {screenLoginOnly ? (
+                <>播控台模板仅对已登录账号开放。<br />登录后即可查看。</>
+              ) : (
+                <>当前大屏仅为内部使用。<br />开放时间可以关注公众号。</>
+              )}
             </p>
             <button className="live-locked-btn" onClick={() => router.push("/login")}>
               登录查看
@@ -161,6 +189,21 @@ export default function LivePage() {
       )}
       {screen === "minimal" && <MinimalScreen {...commonProps} />}
       {screen === "arcade" && <ArcadeScreen {...commonProps} />}
+      {/* 播控台模板：仅登录可用（未登录已被上方遮罩拦住），组件上线前给个占位 */}
+      {(screen === "studio" || screen === "studioPortrait") && (
+        <div className="live-locked-overlay">
+          <div className="live-locked-card">
+            <h2 className="live-locked-title">播控台模板建设中</h2>
+            <p className="live-locked-desc">
+              该模板仅登录账号可用。<br />
+              模板上线后，用 <code>?screen=studio</code> 或 <code>?screen=studioPortrait</code> 打开。
+            </p>
+            <button className="live-locked-btn" onClick={() => changeScreen("default")}>
+              返回默认大屏
+            </button>
+          </div>
+        </div>
+      )}
       </>
       )}
     </div>
