@@ -82,7 +82,7 @@ export default function StudioPortraitScreen({
       { key: "host-intro", by: host, text: `开始台网 · ${total} 人已签到`, host: true },
     ];
     records
-      .slice(0, 4)
+      .slice(0, 7)
       .reverse()
       .forEach((r) => {
         list.push({
@@ -91,7 +91,7 @@ export default function StudioPortraitScreen({
           text: `${r.qth ? `${r.qth} · ` : ""}信号 ${r.signal || "—"}`,
         });
       });
-    return list.slice(-5);
+    return list.slice(-8);
   }, [records, host, total]);
 
   const timeText = (localTime || "--:--").slice(0, 5);
@@ -103,14 +103,14 @@ export default function StudioPortraitScreen({
 
   if (!session) {
     return (
-      <StudioStage width={1080} height={1920} variant="st-port" fit="fill">
+      <StudioStage width={1080} height={1920} variant="st-port">
         <div className="st-empty">今日暂无台网</div>
       </StudioStage>
     );
   }
 
   return (
-    <StudioStage width={1080} height={1920} variant="st-port" fit="fill">
+    <StudioStage width={1080} height={1920} variant="st-port">
       {/* 顶部 */}
       <div className="st-top">
         <div className="st-live">

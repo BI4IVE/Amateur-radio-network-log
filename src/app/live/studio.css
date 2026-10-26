@@ -399,9 +399,9 @@
 /* ==================== 竖屏布局 ==================== */
 .st-port {
   display: grid;
-  /* 顶部条 / 信息条 / 呼号区 / 字段卡 / 跑马灯 / 评论区
-     呼号、字段、评论用 fr 分配剩余高度：屏幕多高都正好一屏，不留长条空档 */
-  grid-template-rows: calc(var(--u) * 9) calc(var(--u) * 12) 1.05fr 1.15fr calc(var(--u) * 5) 1fr;
+  /* 竖屏直播画布固定 1080×1920（9:16），行高按设计稿分配：
+     顶部条 / 信息条 / 呼号区 / 字段卡 / 跑马灯 / 评论区 */
+  grid-template-rows: calc(var(--u) * 9) calc(var(--u) * 12) calc(var(--u) * 44) auto calc(var(--u) * 5) 1fr;
   padding: 0 calc(var(--u) * 6);
 }
 
@@ -585,4 +585,18 @@
 }
 .st-port .st-rc .cs {
   font-size: clamp(12px, calc(var(--u) * 2.2), 26px);
+}
+
+/* ==================== 直播净屏 ====================
+ * 播控台用于竖屏直播时，模板切换下拉与「返回首页」按钮默认隐形，
+ * 鼠标移入或键盘聚焦才出现，避免被推流画面捕获。 */
+.live-clean .live-screen-switch,
+.live-clean .live-home-fab {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.live-clean .live-screen-switch:hover,
+.live-clean .live-screen-switch:focus-within,
+.live-clean .live-home-fab:hover {
+  opacity: 1;
 }

@@ -138,7 +138,7 @@ export default function LivePage() {
   };
 
   return (
-    <div className="live-shell">
+    <div className={`live-shell ${screenLoginOnly ? "live-clean" : ""}`}>
       {needLogin ? (
         <div className="live-locked-overlay">
           <div className="live-locked-card">
