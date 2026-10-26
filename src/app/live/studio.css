@@ -238,6 +238,12 @@
   line-height: 0.88;
   letter-spacing: 0.02em;
   color: var(--strong);
+  /* 长呼号不换行、不溢出：由 fitCallSign 缩字号兜底 */
+  white-space: nowrap;
+  max-width: 100%;
+  /* 竖屏时频谱是绝对定位的背景层，呼号必须压在其上，否则会被"糊"住 */
+  position: relative;
+  z-index: 1;
   transition: opacity 0.35s ease, transform 0.35s ease;
 }
 .st-call.empty { color: var(--muted); }

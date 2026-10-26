@@ -16,7 +16,7 @@ import {
   SessionInfo,
   ScreenConfig,
 } from "../liveData";
-import { fitFieldText } from "./studioFit";
+import { fitCallSign, fitFieldText } from "./studioFit";
 import StudioStage from "./StudioStage";
 
 interface Props {
@@ -42,6 +42,7 @@ export default function StudioScreen({
   const total = records.length;
   const recent = records.slice(0, 5);
   const qthRef = useRef<HTMLSpanElement>(null);
+  const callRef = useRef<HTMLDivElement>(null);
   const [bars, setBars] = useState<number[]>(() =>
     Array.from({ length: BAR_COUNT }, () => 0.15 + Math.random() * 0.3)
   );
@@ -49,10 +50,14 @@ export default function StudioScreen({
   // QTH 自适应（换人或换屏都重算）
   useEffect(() => {
     fitFieldText(qthRef.current, 2.6, 1.8);
-  }, [current?.id, current?.qth]);
+    fitCallSign(callRef.current, 19, 11);
+  }, [current?.id, current?.qth, current?.callsign]);
 
   useEffect(() => {
-    const onResize = () => fitFieldText(qthRef.current, 2.6, 1.8);
+    const onResize = () => {
+      fitFieldText(qthRef.current, 2.6, 1.8);
+      fitCallSign(callRef.current, 19, 11);
+    };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -126,7 +131,7 @@ export default function StudioScreen({
           <span className="ln r" />
         </div>
 
-        <div className={`st-call ${current ? "" : "empty"}`}>
+        <div ref={callRef} className={`st-call ${current ? "" : "empty"}`}>
           {current?.callsign || "—"}
         </div>
 

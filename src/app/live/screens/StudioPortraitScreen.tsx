@@ -13,7 +13,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LiveRecord, SessionInfo, ScreenConfig } from "../liveData";
-import { fitFieldText } from "./studioFit";
+import { fitCallSign, fitFieldText } from "./studioFit";
 import StudioStage from "./StudioStage";
 
 interface Props {
@@ -41,16 +41,21 @@ export default function StudioPortraitScreen({
   const title = session?.title || "今日台网";
 
   const qthRef = useRef<HTMLSpanElement>(null);
+  const callRef = useRef<HTMLDivElement>(null);
   const [bars, setBars] = useState<number[]>(() =>
     Array.from({ length: BAR_COUNT }, () => 0.15 + Math.random() * 0.3)
   );
 
   useEffect(() => {
     fitFieldText(qthRef.current, 2.6, 1.8);
-  }, [current?.id, current?.qth]);
+    fitCallSign(callRef.current, 20, 11);
+  }, [current?.id, current?.qth, current?.callsign]);
 
   useEffect(() => {
-    const onResize = () => fitFieldText(qthRef.current, 2.6, 1.8);
+    const onResize = () => {
+      fitFieldText(qthRef.current, 2.6, 1.8);
+      fitCallSign(callRef.current, 20, 11);
+    };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -155,7 +160,7 @@ export default function StudioPortraitScreen({
           <span className="n st-mono">{total > 0 ? `第 ${total} 位` : "等待报到"}</span>
           <span className="ln r" />
         </div>
-        <div className={`st-call ${current ? "" : "empty"}`}>{current?.callsign || "—"}</div>
+        <div ref={callRef} className={`st-call ${current ? "" : "empty"}`}>{current?.callsign || "—"}</div>
       </div>
 
       {/* 字段卡 */}
