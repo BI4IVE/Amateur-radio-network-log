@@ -12,7 +12,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-24.x-brightgreen?style=flat-square&logo=nodedotjs&logoColor=white)
 [![赞助支持](https://img.shields.io/badge/赞助支持-济南黄河中继台-orange?style=flat-square)](https://www1.439110.cn/jz/)
 
-<sub>前期由 扣子 AI（Coze Coding）编程完成，1.5.0 版本后由 CodeBuddy CN 接手开发</sub>
+<sub>前期由 扣子 AI（Coze Coding）协助编程完成，1.5.0 版本后由 CodeBuddy CN 协助开发</sub>
 
 </div>
 
