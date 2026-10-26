@@ -396,6 +396,15 @@
   grid-template-rows: calc(var(--u) * 9) calc(var(--u) * 13) auto auto calc(var(--u) * 5) 1fr;
   padding: 0 calc(var(--u) * 6);
 }
+
+/*
+ * 竖屏是单列布局，必须把所有子元素按回唯一那一列。
+ * 否则会继承横屏的 grid-column（.st-hero 是 2，.st-side 是 3，.st-marquee 是 2/4），
+ * 在单列网格里会生成隐式列，导致「字段卡在左、呼号在右」并排错位、呼号被裁。
+ */
+.st-port > * {
+  grid-column: 1 / -1;
+}
 .st-port .st-top {
   grid-row: 1;
   display: flex;
