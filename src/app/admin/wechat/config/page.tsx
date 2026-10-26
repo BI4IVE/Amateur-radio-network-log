@@ -89,7 +89,10 @@ const BIND_MODES: { value: BindMode; label: string; desc: string }[] = [
 
 const FIELD_OPTIONS = [
   { value: "", label: "（不使用）" },
-  { value: "callsign", label: "呼号" },
+  { value: "callsign", label: "呼号（签到人）" },
+  { value: "{callsign}/主控：{controller}", label: "呼号/主控（合并一格）" },
+  { value: "controller", label: "主控" },
+  { value: "title", label: "台网名称" },
   { value: "qth", label: "QTH" },
   { value: "equipment", label: "设备" },
   { value: "antenna", label: "天馈" },

@@ -31,6 +31,8 @@ export type PushRecordParams = {
   recordTime?: Date | string | null
   /** 台网名称（log_sessions.title），用于模板的「会议名称/活动名称」字段 */
   title?: string | null
+  /** [v2.0.3] 本场主控呼号（log_sessions.controller_name），用于模板的「主控」字段 */
+  controller?: string | null
 }
 
 /** 判断给定时间按北京时间是否属于今天 */
@@ -106,6 +108,7 @@ export async function pushRecordNotification(
         signal: params.signal || "-",
         report: params.report || undefined,
         title: meetingTitle,
+        controller: params.controller || "-",
         time,
       })
 

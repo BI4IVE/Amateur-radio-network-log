@@ -95,6 +95,7 @@ export async function POST(
       sessionTime: session.sessionTime,
       recordTime: record.createdAt,
       title: session.title,
+      controller: session.controllerName,
     }).catch((error) => {
       console.error("[records] 微信推送触发异常:", error)
     })

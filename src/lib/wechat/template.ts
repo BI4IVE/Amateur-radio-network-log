@@ -19,6 +19,8 @@ export type TemplateData = {
   time: string
   /** 台网名称（对应 log_sessions.title），映射到模板的「会议名称/活动名称」类字段 */
   title?: string
+  /** [v2.0.3] 本场主控呼号（谁记的这条），可映射到「主控/签到人」类字段 */
+  controller?: string
 }
 
 export type SendResult = {
