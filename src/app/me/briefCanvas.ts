@@ -206,6 +206,9 @@ export function renderBrief(data: SessionBrief, opts: { showNames: boolean }): H
   const headerH = 420
   const cardH = 190
   const sectionTitleH = 78
+  // 人数卡往下压住渐变头，正文必须从卡片下方开始，否则会被卡片遮住
+  const cardY = headerH - 96
+  const bodyStart = cardY + cardH + 56
 
   let bodyH = 0
   bodyH += sectionTitleH + signalBlockH + 40
@@ -213,7 +216,7 @@ export function renderBrief(data: SessionBrief, opts: { showNames: boolean }): H
   bodyH += sectionTitleH + (highlightChips.length > 0 ? nameLayout.height + 68 : 90) + 40
 
   const footerH = 190
-  const totalH = headerH + cardH + 40 + bodyH + footerH
+  const totalH = bodyStart + bodyH + footerH
 
   const canvas = document.createElement("canvas")
   canvas.width = W
@@ -262,7 +265,6 @@ export function renderBrief(data: SessionBrief, opts: { showNames: boolean }): H
   )
 
   // ---------- 人数卡 ----------
-  const cardY = headerH - 96
   ctx.save()
   ctx.shadowColor = "rgba(30,27,75,0.18)"
   ctx.shadowBlur = 40
@@ -302,7 +304,7 @@ export function renderBrief(data: SessionBrief, opts: { showNames: boolean }): H
   ctx.fillText(`开台 ${timeText} · 记录 ${data.people} 条`, metaX, cardY + 136)
 
   // ---------- 正文 ----------
-  let y = headerH + 40
+  let y = bodyStart
 
   const drawSectionTitle = (title: string, en: string) => {
     ctx.fillStyle = C.indigo
