@@ -7,11 +7,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "./live.css";
+import "./studio.css";
 import { useLiveData, useActiveCallers, useScreenConfig } from "./liveData";
 import DefaultScreen from "./screens/DefaultScreen";
 import MinimalScreen from "./screens/MinimalScreen";
 import ArcadeScreen from "./screens/ArcadeScreen";
 import PortraitScreen from "./screens/PortraitScreen";
+import StudioScreen from "./screens/StudioScreen";
+import StudioPortraitScreen from "./screens/StudioPortraitScreen";
 
 export type ScreenType =
   | "default"
@@ -30,6 +33,12 @@ export type ScreenType =
  * 新增受限模板时，只需把模板名加进这个数组。
  */
 const LOGIN_ONLY_SCREENS: ScreenType[] = ["studio", "studioPortrait"];
+
+// 仅登录用户可见的下拉项（匿名用户看不到这两个模板）
+const LOGIN_ONLY_OPTIONS: { value: ScreenType; label: string }[] = [
+  { value: "studio", label: "播控台" },
+  { value: "studioPortrait", label: "播控台 · 竖屏" },
+];
 
 // 右上角下拉：仅电脑版模板
 const SCREEN_OPTIONS: { value: ScreenType; label: string }[] = [
@@ -166,7 +175,7 @@ export default function LivePage() {
           className="live-screen-select"
           title="切换大屏模板"
         >
-          {SCREEN_OPTIONS.map((o) => (
+          {(loggedIn ? [...SCREEN_OPTIONS, ...LOGIN_ONLY_OPTIONS] : SCREEN_OPTIONS).map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
@@ -189,21 +198,9 @@ export default function LivePage() {
       )}
       {screen === "minimal" && <MinimalScreen {...commonProps} />}
       {screen === "arcade" && <ArcadeScreen {...commonProps} />}
-      {/* 播控台模板：仅登录可用（未登录已被上方遮罩拦住），组件上线前给个占位 */}
-      {(screen === "studio" || screen === "studioPortrait") && (
-        <div className="live-locked-overlay">
-          <div className="live-locked-card">
-            <h2 className="live-locked-title">播控台模板建设中</h2>
-            <p className="live-locked-desc">
-              该模板仅登录账号可用。<br />
-              模板上线后，用 <code>?screen=studio</code> 或 <code>?screen=studioPortrait</code> 打开。
-            </p>
-            <button className="live-locked-btn" onClick={() => changeScreen("default")}>
-              返回默认大屏
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 播控台（仅登录可用，匿名已被上方遮罩拦住） */}
+      {screen === "studio" && <StudioScreen {...commonProps} />}
+      {screen === "studioPortrait" && <StudioPortraitScreen {...commonProps} />}
       </>
       )}
     </div>
