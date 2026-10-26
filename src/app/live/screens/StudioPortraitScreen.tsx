@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LiveRecord, SessionInfo, ScreenConfig } from "../liveData";
 import { fitFieldText } from "./studioFit";
+import StudioStage from "./StudioStage";
 
 interface Props {
   session: SessionInfo | null;
@@ -45,11 +46,11 @@ export default function StudioPortraitScreen({
   );
 
   useEffect(() => {
-    fitFieldText(qthRef.current, 2.2, 1.5);
+    fitFieldText(qthRef.current, 2.6, 1.8);
   }, [current?.id, current?.qth]);
 
   useEffect(() => {
-    const onResize = () => fitFieldText(qthRef.current, 2.2, 1.5);
+    const onResize = () => fitFieldText(qthRef.current, 2.6, 1.8);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -97,14 +98,14 @@ export default function StudioPortraitScreen({
 
   if (!session) {
     return (
-      <div className="st-root st-port" data-theme="day">
+      <StudioStage width={1080} height={1920} variant="st-port">
         <div className="st-empty">今日暂无台网</div>
-      </div>
+      </StudioStage>
     );
   }
 
   return (
-    <div className="st-root st-port" data-theme="day">
+    <StudioStage width={1080} height={1920} variant="st-port">
       {/* 顶部 */}
       <div className="st-top">
         <div className="st-live">
@@ -204,6 +205,6 @@ export default function StudioPortraitScreen({
           </div>
         ))}
       </div>
-    </div>
+    </StudioStage>
   );
 }

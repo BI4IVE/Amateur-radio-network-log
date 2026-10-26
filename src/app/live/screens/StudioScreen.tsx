@@ -17,6 +17,7 @@ import {
   ScreenConfig,
 } from "../liveData";
 import { fitFieldText } from "./studioFit";
+import StudioStage from "./StudioStage";
 
 interface Props {
   session: SessionInfo | null;
@@ -47,11 +48,11 @@ export default function StudioScreen({
 
   // QTH 自适应（换人或换屏都重算）
   useEffect(() => {
-    fitFieldText(qthRef.current, 2.15, 1.5);
+    fitFieldText(qthRef.current, 2.6, 1.8);
   }, [current?.id, current?.qth]);
 
   useEffect(() => {
-    const onResize = () => fitFieldText(qthRef.current, 2.15, 1.5);
+    const onResize = () => fitFieldText(qthRef.current, 2.6, 1.8);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -85,14 +86,14 @@ export default function StudioScreen({
 
   if (!session) {
     return (
-      <div className="st-root st-land" data-theme="day">
+      <StudioStage width={1920} height={1080} variant="st-land">
         <div className="st-empty">今日暂无台网</div>
-      </div>
+      </StudioStage>
     );
   }
 
   return (
-    <div className="st-root st-land" data-theme="day">
+    <StudioStage width={1920} height={1080} variant="st-land">
       {/* 左侧竖排 */}
       <div className="st-rail">
         <div className="brand">BR4IN</div>
@@ -219,6 +220,6 @@ export default function StudioScreen({
           天馈、功率与信号报告 · 通联结束后请守听下一轮 · 历史记录与规则详见 <b>个人中心</b> ·
         </div>
       </div>
-    </div>
+    </StudioStage>
   );
 }
