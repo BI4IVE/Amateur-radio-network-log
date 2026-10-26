@@ -15,6 +15,12 @@
   background: #05060a;
 }
 
+/* fill 模式：画布即视口，不需要居中留边 */
+.st-viewport--fill {
+  display: block;
+  background: var(--bg, #f4f1e9);
+}
+
 .st-stage {
   transform: scale(var(--s, 1));
   transform-origin: center center;
@@ -393,8 +399,19 @@
 /* ==================== 竖屏布局 ==================== */
 .st-port {
   display: grid;
-  grid-template-rows: calc(var(--u) * 9) calc(var(--u) * 13) auto auto calc(var(--u) * 5) 1fr;
+  /* 顶部条 / 信息条 / 呼号区 / 字段卡 / 跑马灯 / 评论区
+     呼号、字段、评论用 fr 分配剩余高度：屏幕多高都正好一屏，不留长条空档 */
+  grid-template-rows: calc(var(--u) * 9) calc(var(--u) * 12) 1.05fr 1.15fr calc(var(--u) * 5) 1fr;
   padding: 0 calc(var(--u) * 6);
+}
+
+.st-port .st-fields {
+  align-content: center;
+}
+
+.st-port .st-empty {
+  align-self: center;
+  justify-self: center;
 }
 
 /*
@@ -544,4 +561,28 @@
   font-size: calc(var(--u) * 2.4);
   letter-spacing: 0.3em;
   color: var(--muted);
+}
+
+/* ==================== 竖屏小屏可读性兜底 ====================
+ * fill 模式下 --u 会随真实屏幕变小（手机 390px 宽 → 1u≈3.9px），
+ * 关键文字加 px 下限，避免"版面正确但字看不清"。 */
+.st-port .st-field .k,
+.st-port .st-st .k,
+.st-port .st-kicker {
+  font-size: clamp(9px, calc(var(--u) * 1), 15px);
+}
+.st-port .st-st .v {
+  font-size: clamp(13px, calc(var(--u) * 1.9), 28px);
+}
+.st-port .st-field .v {
+  font-size: clamp(13px, calc(var(--u) * 2.6), 36px);
+}
+.st-port .st-cm .body {
+  font-size: clamp(12px, calc(var(--u) * 1.65), 20px);
+}
+.st-port .st-marquee .inner {
+  font-size: clamp(11px, calc(var(--u) * 1.45), 20px);
+}
+.st-port .st-rc .cs {
+  font-size: clamp(12px, calc(var(--u) * 2.2), 26px);
 }
