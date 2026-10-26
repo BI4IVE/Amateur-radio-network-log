@@ -34,6 +34,8 @@ type Overview = {
     remain?: number | null
     progress?: number
   } | null
+  /** [v2.0.4] 主控等级阶梯（后台可配置），供「主控中心」画台阶 */
+  controllerTiers?: { label: string; min: number }[]
   /** 台网规则（后台配置项 member_rules，换行分隔） */
   rules?: string
   /** 档案默认值（发证机关等，后台可配） */
@@ -112,7 +114,7 @@ type PushLog = {
 type TabKey = "home" | "records" | "my"
 
 /** [v2.0.6] 「我的」页内的子视图：功能列表 / 档案 / 执照 / 绑定 / 推送 */
-type MyView = "menu" | "profile" | "license" | "bind" | "push"
+type MyView = "menu" | "profile" | "license" | "bind" | "push" | "controller"
 
 const WEEKDAY = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
 
@@ -525,6 +527,14 @@ export default function MePage() {
   // 排名勋章颜色（50 名以后为 null，不显示）；[v2.0.3] 徽章显示本月排名，勋章分级随之改用月度名次
   const medalColor = rankMedalColor(data.stats?.rankCurrent ?? 0)
 
+  // [v2.0.4] 主控中心：等级阶梯与当前所在级
+  const cTiers = data.controllerTiers ?? []
+  const cSessions = data.controller?.sessions ?? 0
+  let cCurrent = 0
+  cTiers.forEach((t, i) => {
+    if (cSessions >= t.min) cCurrent = i
+  })
+
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
       <div className="max-w-md mx-auto bg-[#f7f8fb] min-h-screen pb-24">
@@ -864,6 +874,37 @@ export default function MePage() {
 
             {myView === "menu" ? (
               <div className="px-4 pt-3.5 pb-6">
+                {/* [v2.0.4] 主控中心：仅主控过场次的账号可见 */}
+                {data.controller ? (
+                  <button
+                    type="button"
+                    onClick={() => openMyView("controller")}
+                    className="w-full flex items-center gap-3 bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-200 rounded-2xl px-4 py-3.5 mb-3 text-left"
+                  >
+                    <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-[0_2px_6px_rgba(124,58,237,0.14)]">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-[17px] h-[17px] stroke-violet-600 fill-none"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                      >
+                        <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
+                        <path d="M19 11a7 7 0 0 1-14 0" />
+                        <path d="M12 18v3" />
+                      </svg>
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[13.5px] font-extrabold text-violet-900">
+                        主控中心
+                      </span>
+                      <span className="block text-[11px] text-violet-700/80 mt-0.5 truncate">
+                        {data.controller.level ?? "主控"} · 已带 {data.controller.sessions} 场
+                      </span>
+                    </span>
+                    <span className="text-[13px] text-violet-600 shrink-0">›</span>
+                  </button>
+                ) : null}
+
                 <div className="bg-white rounded-2xl overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
                   <button
                     type="button"
@@ -920,10 +961,11 @@ export default function MePage() {
                 </div>
               </div>
             ) : (
+              <>
               <div className="px-4 pt-3">
                 <button
                   type="button"
-                  onClick={() => setMyView("menu")}
+                  onClick={backToMenu}
                   className="inline-flex items-center gap-1 text-[12px] font-bold text-black/55"
                 >
                   <svg
@@ -937,6 +979,103 @@ export default function MePage() {
                   返回我的
                 </button>
               </div>
+
+              {/* [v2.0.4] 主控中心：等级、阶梯、贡献数据 */}
+              {myView === "controller" && data.controller ? (
+                <div className="px-4 pb-6">
+                  <div className="rounded-2xl p-4 text-white bg-gradient-to-br from-violet-600 to-indigo-700 shadow-[0_10px_28px_rgba(79,70,229,0.28)]">
+                    <div className="flex items-center gap-3">
+                      <span className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="w-6 h-6 stroke-white fill-none"
+                          strokeWidth={1.9}
+                          strokeLinecap="round"
+                        >
+                          <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z" />
+                          <path d="M19 11a7 7 0 0 1-14 0" />
+                          <path d="M12 18v3" />
+                        </svg>
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10.5px] tracking-[2px] text-white/65">CURRENT LEVEL</p>
+                        <p className="text-xl font-extrabold leading-tight mt-0.5">
+                          {data.controller.level ?? "主控"}
+                        </p>
+                        <p className="text-[11px] text-white/75 mt-1">
+                          已带 {cSessions} 场 ·{" "}
+                          {data.controller.nextLabel
+                            ? `距「${data.controller.nextLabel}」还差 ${data.controller.remain} 场`
+                            : "已是最高等级"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 h-2 rounded-full bg-white/20 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-white"
+                        style={{ width: `${data.controller.progress ?? 0}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl mt-3 px-3 pt-4 pb-3 shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
+                    <div className="flex items-start">
+                      {cTiers.map((t, i) => {
+                        const done = cSessions >= t.min
+                        const isCurrent = i === cCurrent
+                        return (
+                          <div key={`${t.label}-${t.min}`} className="flex-1 flex flex-col items-center">
+                            <span
+                              className={`w-2.5 h-2.5 rounded-full ${
+                                done ? "bg-violet-600" : "bg-gray-200"
+                              } ${isCurrent ? "ring-2 ring-violet-200 ring-offset-1" : ""}`}
+                            />
+                            <span
+                              className={`mt-1.5 text-[10px] font-extrabold ${
+                                done ? "text-violet-700" : "text-black/30"
+                              }`}
+                            >
+                              {t.label}
+                            </span>
+                            <span
+                              className={`text-[9px] mt-0.5 ${
+                                done ? "text-violet-500/80" : "text-black/25"
+                              }`}
+                            >
+                              {t.min} 场
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-2xl mt-3 grid grid-cols-3 overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
+                    <div className="py-3.5 text-center border-r border-gray-100">
+                      <p className="text-xl font-extrabold text-black tabular-nums">{cSessions}</p>
+                      <p className="text-[10.5px] text-black/45 mt-1">主控场次</p>
+                    </div>
+                    <div className="py-3.5 text-center border-r border-gray-100">
+                      <p className="text-xl font-extrabold text-black tabular-nums">
+                        {data.controller.records}
+                      </p>
+                      <p className="text-[10.5px] text-black/45 mt-1">录入记录</p>
+                    </div>
+                    <div className="py-3.5 text-center">
+                      <p className="text-[13px] font-extrabold text-black">
+                        {fmtMonthDay(data.controller.lastTime)}
+                      </p>
+                      <p className="text-[10.5px] text-black/45 mt-1">最近主控</p>
+                    </div>
+                  </div>
+
+                  <p className="text-[10.5px] text-black/40 mt-3 px-1 leading-5">
+                    口径：只统计已开台的台网场次（预告未开台不计）；等级门槛由管理员在后台设置。
+                  </p>
+                </div>
+              ) : null}
+              </>
             )}
           </>
         ) : null}
