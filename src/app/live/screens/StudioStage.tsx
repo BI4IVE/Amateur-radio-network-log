@@ -79,7 +79,7 @@ export default function StudioStage({
         width: `${width}px`,
         height: `${height}px`,
         "--u": `${Math.min(width, height) / 100}px`,
-      }) as CSSProperties;
+      }) as unknown as CSSProperties;
 
   return (
     <div className={`st-viewport ${isFill ? "st-viewport--fill" : ""}`}>
