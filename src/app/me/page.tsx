@@ -2,8 +2,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { renderBrief } from "./briefCanvas"
 import type { SessionBrief } from "@/lib/me/brief"
+import { domCanvasFactory, renderBrief } from "./briefCanvas"
 
 /**
  * [个人中心] /me
@@ -310,47 +310,80 @@ export default function MePage() {
   const [briefSessionId, setBriefSessionId] = useState<string | null>(null)
   const [briefShowNames, setBriefShowNames] = useState(true)
 
-  /** 拉取简报数据并画成长图；sessionId 为空时后端取最近一场 */
+  /** 前端画长图 → 上传 → 拿到 https 图片地址（微信里可长按保存） */
+  const renderAndUpload = useCallback(async (data: SessionBrief, show: boolean) => {
+    const canvas = renderBrief(data, { showNames: show }, domCanvasFactory) as HTMLCanvasElement
+    const image = canvas.toDataURL("image/png")
+    const res = await fetch(
+      `/api/me/brief/image?sessionId=${encodeURIComponent(data.sessionId)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image }),
+      }
+    )
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || "生成失败")
+    return json.url as string
+  }, [])
+
+  /** 拉取简报数据（场次列表 + 权限校验），再画图上传 */
   const loadBrief = useCallback(
     async (sessionId?: string, showNames?: boolean) => {
       const show = showNames ?? briefShowNames
       setBriefOpen(true)
       setBriefLoading(true)
       setBriefError(null)
+      setBriefImg(null)
       try {
         const qs = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : ""
         const res = await fetch(`/api/me/brief${qs}`)
         const json = await res.json()
         if (!res.ok) throw new Error(json.error || "生成失败")
-        setBriefData(json.brief as SessionBrief)
+        const brief = json.brief as SessionBrief
+        setBriefData(brief)
         setBriefSessions(json.sessions || [])
-        setBriefSessionId(json.brief.sessionId)
-        const canvas = renderBrief(json.brief as SessionBrief, { showNames: show })
-        setBriefImg(canvas.toDataURL("image/png"))
+        setBriefSessionId(brief.sessionId)
+        const url = await renderAndUpload(brief, show)
+        setBriefImg(url)
       } catch (e) {
         setBriefError(e instanceof Error ? e.message : "生成失败")
-      } finally {
         setBriefLoading(false)
       }
     },
-    [briefShowNames]
+    [briefShowNames, renderAndUpload]
   )
 
-  /** 切换「显示呼号」：直接用已有数据重画，不再请求接口 */
-  const toggleBriefNames = (value: boolean) => {
+  /** 切换「显示呼号」：用已取到的数据重画并重新上传 */
+  const toggleBriefNames = async (value: boolean) => {
     setBriefShowNames(value)
-    if (briefData) {
-      const canvas = renderBrief(briefData, { showNames: value })
-      setBriefImg(canvas.toDataURL("image/png"))
+    if (!briefData) return
+    setBriefLoading(true)
+    setBriefError(null)
+    try {
+      const url = await renderAndUpload(briefData, value)
+      setBriefImg(url)
+    } catch (e) {
+      setBriefError(e instanceof Error ? e.message : "生成失败")
+      setBriefLoading(false)
     }
   }
 
-  const saveBrief = () => {
+  /** 在浏览器里直接下载（微信内会被拦截，改用长按保存） */
+  const saveBrief = async () => {
     if (!briefImg) return
-    const a = document.createElement("a")
-    a.href = briefImg
-    a.download = `台网简报-${(briefSessionId || "").slice(0, 8)}.png`
-    a.click()
+    try {
+      const res = await fetch(briefImg)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `台网简报-${(briefSessionId || "").slice(0, 8)}.png`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 4000)
+    } catch {
+      /* 微信内置浏览器会拦截下载，提示用户长按保存 */
+    }
   }
   // [v2.0.6] 执照有效期年数：默认 5 年，可选 3 年
   const [licenseYears, setLicenseYears] = useState(5)
@@ -1141,8 +1174,22 @@ export default function MePage() {
                     ) : briefError ? (
                       <p className="text-red-300 text-center text-sm pt-12">{briefError}</p>
                     ) : briefImg ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={briefImg} alt="台网简报" className="w-full rounded-xl" />
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={briefImg}
+                          alt="台网简报"
+                          className="w-full rounded-xl"
+                          onLoad={() => setBriefLoading(false)}
+                          onError={() => {
+                            setBriefError("图片生成失败，请稍后重试")
+                            setBriefLoading(false)
+                          }}
+                        />
+                        <p className="text-center text-[11px] text-white/60 mt-3 leading-5">
+                          微信里长按图片 → 保存到相册 / 发送给朋友
+                        </p>
+                      </>
                     ) : null}
                   </div>
                 </div>

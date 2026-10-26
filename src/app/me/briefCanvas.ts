@@ -1,12 +1,15 @@
 // @version v2.0.4
 /**
- * [v2.0.4] 台网简报长图（canvas 绘制，1080 宽）
+ * [v2.0.4] 台网简报长图（1080 宽）
  *
- * 为什么自己画而不是截图：项目没有 html2canvas 依赖，证书也是 canvas 画的，
- * 这里沿用同一套做法，导出 PNG 与页面预览完全一致。
+ * 同一份绘制代码供两端复用：
+ * - 前端：传 document.createElement('canvas') 工厂，预览 / 下载；
+ * - 服务端：传 @napi-rs/canvas 的 createCanvas，直接输出 PNG 给微信长按保存。
  *
- * 布局（自上而下）：渐变头 → 人数大卡 → 信号分布 → 本期参与设备 → 本期亮点 → 页脚
- * 标签有上限：新面孔 8、回归 6、设备 6；超出显示「等 N 位」。
+ * 排版注意：
+ * - 所有文字统一走 T() 助手，显式指定字号/字重/颜色，并且每段前后不动 textBaseline，
+ *   避免「画完标签云后全局基线变成 middle，导致后面文字整体上移」这类错位；
+ * - 服务端没有中文粗体，fauxBold=true 时用描边模拟粗体（偏移极小，肉眼与粗体一致）。
  */
 
 import type { SessionBrief } from "@/lib/me/brief"
@@ -14,8 +17,7 @@ import type { SessionBrief } from "@/lib/me/brief"
 const W = 1080
 const PAD = 72
 const CONTENT_W = W - PAD * 2
-
-const FONT = '"PingFang SC","Microsoft YaHei",system-ui,sans-serif'
+const FONT_STACK = '"BR4IN","PingFang SC","Microsoft YaHei",system-ui,sans-serif'
 
 const C = {
   ink: "#111318",
@@ -34,16 +36,42 @@ const C = {
   grayLine: "#e9ebf2",
 }
 
+type Ctx = CanvasRenderingContext2D
+type Factory = (w: number, h: number) => HTMLCanvasElement | unknown
+
+type Opts = { showNames: boolean; fauxBold?: boolean }
+
 type Chip = { text: string; sub?: string; size: number; kind: "new" | "back" | "eq" }
 
-function roundRect(
-  ctx: CanvasRenderingContext2D,
+/** 统一文字绘制：字号 / 字重 / 颜色 / 是否加粗（服务端描边模拟） */
+function T(
+  ctx: Ctx,
+  str: string,
   x: number,
   y: number,
-  w: number,
-  h: number,
-  r: number
+  size: number,
+  weight: number,
+  color: string,
+  faux = false
 ) {
+  ctx.font = `${weight} ${size}px ${FONT_STACK}`
+  ctx.fillStyle = color
+  ctx.textBaseline = "alphabetic"
+  ctx.fillText(str, x, y)
+  if (faux && weight >= 700) {
+    ctx.strokeStyle = color
+    ctx.lineWidth = Math.max(0.6, size * 0.028)
+    ctx.lineJoin = "round"
+    ctx.strokeText(str, x, y)
+  }
+}
+
+function measure(ctx: Ctx, str: string, size: number, weight: number) {
+  ctx.font = `${weight} ${size}px ${FONT_STACK}`
+  return ctx.measureText(str).width
+}
+
+function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
   const rr = Math.min(r, w / 2, h / 2)
   ctx.beginPath()
   ctx.moveTo(x + rr, y)
@@ -54,23 +82,17 @@ function roundRect(
   ctx.closePath()
 }
 
-function chipFont(size: number) {
-  return `900 ${size}px ${FONT}`
-}
-
-function chipWidth(ctx: CanvasRenderingContext2D, chip: Chip) {
-  ctx.font = chipFont(chip.size)
-  const w = ctx.measureText(chip.text).width + chip.size * 1.1
-  if (!chip.sub) return w
-  ctx.font = `700 ${Math.round(chip.size * 0.55)}px ${FONT}`
-  return w + ctx.measureText(chip.sub).width + chip.size * 0.5
+function chipWidth(ctx: Ctx, chip: Ctx extends never ? never : Chip) {
+  const main = measure(ctx, chip.text, chip.size, 900)
+  const sub = chip.sub ? measure(ctx, chip.sub, Math.round(chip.size * 0.55), 700) : 0
+  return main + sub + chip.size * (chip.sub ? 1.5 : 1.1)
 }
 
 function chipHeight(chip: Chip) {
   return Math.round(chip.size * 1.55)
 }
 
-function layoutChips(ctx: CanvasRenderingContext2D, chips: Chip[], maxW: number) {
+function layoutChips(ctx: Ctx, chips: Chip[], maxW: number) {
   const gapX = 18
   const gapY = 16
   const lines: { chips: Chip[]; width: number; height: number }[] = []
@@ -93,16 +115,18 @@ function layoutChips(ctx: CanvasRenderingContext2D, chips: Chip[], maxW: number)
   }
   if (cur.length > 0) lines.push({ chips: cur, width: curW, height: curH })
 
-  const height = lines.reduce((sum, l) => sum + l.height, 0) + Math.max(0, lines.length - 1) * gapY
+  const height =
+    lines.reduce((sum, l) => sum + l.height, 0) + Math.max(0, lines.length - 1) * gapY
   return { lines, height, gapX, gapY }
 }
 
 function drawChips(
-  ctx: CanvasRenderingContext2D,
+  ctx: Ctx,
   chips: Chip[],
   x: number,
   y: number,
-  maxW: number
+  maxW: number,
+  faux: boolean
 ) {
   const { lines, gapX, gapY } = layoutChips(ctx, chips, maxW)
   let cursorY = y
@@ -114,11 +138,11 @@ function drawChips(
       const h = chipHeight(chip)
       const cy = cursorY + (line.height - h) / 2
 
-      ctx.beginPath()
-      const bg =
-        chip.kind === "back" ? C.amberSoft : chip.kind === "new" ? C.blueSoft : C.graySoft
+      const bg = chip.kind === "back" ? C.amberSoft : chip.kind === "new" ? C.blueSoft : C.graySoft
       const border =
         chip.kind === "back" ? C.amberLine : chip.kind === "new" ? C.blueLine : C.grayLine
+      const color = chip.kind === "back" ? C.amber : chip.kind === "new" ? C.blueInk : "#2a2f3d"
+
       roundRect(ctx, cursorX, cy, w, h, h / 2)
       ctx.fillStyle = bg
       ctx.fill()
@@ -126,19 +150,23 @@ function drawChips(
       ctx.strokeStyle = border
       ctx.stroke()
 
-      const color =
-        chip.kind === "back" ? C.amber : chip.kind === "new" ? C.blueInk : "#2a2f3d"
-      ctx.fillStyle = color
-      ctx.textBaseline = "middle"
-      ctx.font = chipFont(chip.size)
       const textX = cursorX + chip.size * 0.55
-      ctx.fillText(chip.text, textX, cy + h / 2 + 1)
+      const baseline = cy + h / 2 + chip.size * 0.36
+      T(ctx, chip.text, textX, baseline, chip.size, 900, color, faux)
 
       if (chip.sub) {
-        ctx.font = `700 ${Math.round(chip.size * 0.55)}px ${FONT}`
-        ctx.fillStyle = chip.kind === "back" ? "#c07a2a" : C.light
-        const subX = textX + chipWidth(ctx, { ...chip, sub: undefined }) - chip.size * 0.55 + chip.size * 0.3
-        ctx.fillText(chip.sub, subX, cy + h / 2 + 2)
+        const subSize = Math.round(chip.size * 0.55)
+        const subX = textX + measure(ctx, chip.text, chip.size, 900) + chip.size * 0.3
+        T(
+          ctx,
+          chip.sub,
+          subX,
+          baseline - chip.size * 0.02,
+          subSize,
+          700,
+          chip.kind === "back" ? "#c07a2a" : C.light,
+          faux
+        )
       }
 
       cursorX += w + gapX
@@ -149,18 +177,23 @@ function drawChips(
   return y + layoutChips(ctx, chips, maxW).height
 }
 
-export function renderBrief(data: SessionBrief, opts: { showNames: boolean }): HTMLCanvasElement {
-  const measure = document.createElement("canvas").getContext("2d")
-  if (!measure) throw new Error("canvas 不可用")
+export function renderBrief(
+  data: SessionBrief,
+  opts: Opts,
+  make: Factory
+): HTMLCanvasElement | unknown {
+  const faux = !!opts.fauxBold
+  const measureCanvas = make(W, 10) as { getContext: (t: "2d") => Ctx | null }
+  const mc = measureCanvas.getContext("2d")
+  if (!mc) throw new Error("canvas 不可用")
 
   const date = new Date(data.sessionTime)
-  const beijing = (d: Date) =>
-    new Intl.DateTimeFormat("zh-CN", {
-      timeZone: "Asia/Shanghai",
-      month: "long",
-      day: "numeric",
-    }).format(d)
-  const week = new Intl.DateTimeFormat("zh-CN", {
+  const dateText = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    month: "long",
+    day: "numeric",
+  }).format(date)
+  const weekText = new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Shanghai",
     weekday: "long",
   }).format(date)
@@ -170,65 +203,69 @@ export function renderBrief(data: SessionBrief, opts: { showNames: boolean }): H
     minute: "2-digit",
     hour12: false,
   }).format(date)
+  const ymText = new Intl.DateTimeFormat("zh-CN", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "long",
+  }).format(date)
 
   // ---------- 标签素材 ----------
-  const nameChips: Chip[] = data.newFaces.names.map((cs, i) => ({
-    text: cs,
-    size: i < 2 ? 32 : 25,
-    kind: "new" as const,
-  }))
-  const backChips: Chip[] =
-    opts.showNames && data.returning.items.length > 0
-      ? data.returning.items.map((r, i) => ({
-          text: r.callsign,
-          sub: `${r.days}天`,
-          size: i === 0 ? 42 : i === 1 ? 32 : 25,
-          kind: "back" as const,
-        }))
-      : []
-
+  const nameChips: Chip[] = opts.showNames
+    ? data.newFaces.names.map((cs, i) => ({
+        text: cs,
+        size: i < 2 ? 32 : 25,
+        kind: "new" as const,
+      }))
+    : []
+  const backChips: Chip[] = opts.showNames
+    ? data.returning.items.map((r, i) => ({
+        text: r.callsign,
+        sub: `${r.days}天`,
+        size: i === 0 ? 42 : i === 1 ? 32 : 25,
+        kind: "back" as const,
+      }))
+    : []
   const eqChips: Chip[] = data.equipments.map((e, i) => ({
     text: e.name,
     sub: String(e.count),
     size: i === 0 ? 42 : i < 3 ? 32 : 25,
     kind: "eq" as const,
   }))
-
   const highlightChips = [...backChips, ...nameChips]
 
-  // ---------- 预排版（算高度） ----------
+  // ---------- 预排版 ----------
   const signalRows = data.signals.slice(0, 6)
   const signalBlockH = signalRows.length * 74
+  const nameLayout = layoutChips(mc, highlightChips, CONTENT_W - 72)
+  const eqLayout = layoutChips(mc, eqChips, CONTENT_W - 72)
 
-  const nameLayout = layoutChips(measure, highlightChips, CONTENT_W - 72)
-  const eqLayout = layoutChips(measure, eqChips, CONTENT_W - 72)
-
-  const headerH = 420
-  const cardH = 190
-  const sectionTitleH = 78
-  // 人数卡往下压住渐变头，正文必须从卡片下方开始，否则会被卡片遮住
-  const cardY = headerH - 96
+  const headerH = 400
+  const cardH = 176
+  const cardY = headerH - 88
   const bodyStart = cardY + cardH + 56
+  const sectionTitleH = 78
 
   let bodyH = 0
   bodyH += sectionTitleH + signalBlockH + 40
-  bodyH += sectionTitleH + (data.equipments.length > 0 ? eqLayout.height + 68 : 90) + 40
-  bodyH += sectionTitleH + (highlightChips.length > 0 ? nameLayout.height + 68 : 90) + 40
+  bodyH += sectionTitleH + (eqChips.length > 0 ? eqLayout.height + 68 : 90) + 40
+  bodyH += sectionTitleH + (highlightChips.length > 0 ? nameLayout.height + 100 : 90) + 40
 
-  const footerH = 190
+  const footerH = 170
   const totalH = bodyStart + bodyH + footerH
 
-  const canvas = document.createElement("canvas")
-  canvas.width = W
-  canvas.height = totalH
+  // ---------- 画布 ----------
+  const canvas = make(W, totalH) as {
+    width: number
+    height: number
+    getContext: (t: "2d") => Ctx | null
+  }
   const ctx = canvas.getContext("2d")
   if (!ctx) throw new Error("canvas 不可用")
 
-  // ---------- 背景 ----------
   ctx.fillStyle = "#ffffff"
   ctx.fillRect(0, 0, W, totalH)
 
-  // ---------- 头部渐变 ----------
+  // 头部渐变
   const grad = ctx.createLinearGradient(0, 0, W, headerH)
   grad.addColorStop(0, "#4f46e5")
   grad.addColorStop(0.55, "#3730a3")
@@ -239,94 +276,73 @@ export function renderBrief(data: SessionBrief, opts: { showNames: boolean }): H
   ctx.globalAlpha = 0.07
   ctx.fillStyle = "#ffffff"
   ctx.beginPath()
-  ctx.arc(W - 60, -60, 230, 0, Math.PI * 2)
+  ctx.arc(W - 60, -60, 220, 0, Math.PI * 2)
   ctx.fill()
   ctx.beginPath()
-  ctx.arc(-40, headerH + 40, 190, 0, Math.PI * 2)
+  ctx.arc(-40, headerH + 40, 180, 0, Math.PI * 2)
   ctx.fill()
   ctx.globalAlpha = 1
 
-  ctx.textBaseline = "alphabetic"
-  ctx.fillStyle = "rgba(255,255,255,0.75)"
-  ctx.font = `600 22px ${FONT}`
-  ctx.fillText("B R 4 I N   台 网 简 报", PAD, 96)
-
-  ctx.fillStyle = "#ffffff"
-  ctx.font = `900 64px ${FONT}`
-  ctx.fillText(`${beijing(date)} · ${week}`, PAD, 190)
-
-  ctx.fillStyle = "rgba(255,255,255,0.82)"
-  ctx.font = `400 24px ${FONT}`
-  const subtitle = data.title || "每日台网"
-  ctx.fillText(
-    `${subtitle} · 济南黄河业余无线电中继台 · 434.110 / 439.110 · 亚音 88.5`,
+  T(ctx, "B R 4 I N   台 网 简 报", PAD, 92, 22, 600, "rgba(255,255,255,0.78)", faux)
+  T(ctx, `${dateText} · ${weekText}`, PAD, 182, 62, 900, "#ffffff", faux)
+  T(
+    ctx,
+    `${data.title || "每日台网"} · 济南黄河业余无线电中继台`,
     PAD,
-    244
+    232,
+    24,
+    400,
+    "rgba(255,255,255,0.82)",
+    faux
   )
+  T(ctx, "434.110 / 439.110 · 亚音 88.5", PAD, 268, 22, 400, "rgba(255,255,255,0.62)", faux)
 
-  // ---------- 人数卡 ----------
+  // 人数卡
   ctx.save()
-  ctx.shadowColor = "rgba(30,27,75,0.18)"
-  ctx.shadowBlur = 40
-  ctx.shadowOffsetY = 12
+  ctx.shadowColor = "rgba(30,27,75,0.16)"
+  ctx.shadowBlur = 36
+  ctx.shadowOffsetY = 10
   ctx.fillStyle = "#ffffff"
-  roundRect(ctx, PAD, cardY, CONTENT_W, cardH, 28)
+  roundRect(ctx, PAD, cardY, CONTENT_W, cardH, 26)
   ctx.fill()
   ctx.restore()
 
-  ctx.fillStyle = C.indigoDeep
-  ctx.font = `900 132px ${FONT}`
-  ctx.textBaseline = "alphabetic"
-  ctx.fillText(String(data.people), PAD + 48, cardY + 132)
+  const bigNum = String(data.people)
+  T(ctx, bigNum, PAD + 46, cardY + 118, 116, 900, C.indigoDeep, faux)
+  const numW = measure(ctx, bigNum, 116, 900)
+  T(ctx, "人", PAD + 46 + numW + 12, cardY + 118, 28, 800, C.light, faux)
 
-  const numW = ctx.measureText(String(data.people)).width
-  ctx.fillStyle = C.light
-  ctx.font = `800 28px ${FONT}`
-  ctx.fillText("人", PAD + 48 + numW + 12, cardY + 132)
-
-  const metaX = PAD + 48 + numW + 90
+  const metaX = PAD + 46 + numW + 96
   ctx.strokeStyle = C.line
   ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(metaX - 44, cardY + 42)
-  ctx.lineTo(metaX - 44, cardY + cardH - 42)
+  ctx.moveTo(metaX - 44, cardY + 36)
+  ctx.lineTo(metaX - 44, cardY + cardH - 36)
   ctx.stroke()
 
-  ctx.fillStyle = C.sub
-  ctx.font = `400 24px ${FONT}`
-  ctx.fillText("主控", metaX, cardY + 74)
-  ctx.fillStyle = C.ink
-  ctx.font = `900 38px ${FONT}`
-  ctx.fillText(data.controller || "—", metaX + 90, cardY + 76)
-
-  ctx.fillStyle = C.sub
-  ctx.font = `400 24px ${FONT}`
-  ctx.fillText(`开台 ${timeText} · 记录 ${data.people} 条`, metaX, cardY + 136)
+  T(ctx, "主控", metaX, cardY + 62, 22, 400, C.sub, faux)
+  T(ctx, data.controller || "—", metaX + 76, cardY + 64, 36, 900, C.ink, faux)
+  T(ctx, `台网时间 ${timeText}`, metaX, cardY + 122, 23, 400, C.sub, faux)
 
   // ---------- 正文 ----------
   let y = bodyStart
 
-  const drawSectionTitle = (title: string, en: string) => {
+  const sectionTitle = (title: string, en: string) => {
     ctx.fillStyle = C.indigo
-    roundRect(ctx, PAD, y + 4, 8, 30, 4)
+    roundRect(ctx, PAD, y + 2, 8, 30, 4)
     ctx.fill()
-    ctx.fillStyle = C.ink
-    ctx.font = `900 30px ${FONT}`
-    ctx.fillText(title, PAD + 24, y + 30)
-    ctx.fillStyle = "#b6bac7"
-    ctx.font = `400 18px ${FONT}`
-    ctx.fillText(en, PAD + 24 + ctx.measureText(title).width + 70, y + 29)
+    T(ctx, title, PAD + 24, y + 30, 30, 900, C.ink, faux)
+    const tw = measure(ctx, title, 30, 900)
+    T(ctx, en, PAD + 24 + tw + 28, y + 29, 18, 400, "#b6bac7", faux)
     y += sectionTitleH
   }
 
-  // 信号分布
-  drawSectionTitle("信号分布", "SIGNAL")
+  sectionTitle("信号分布", "SIGNAL")
   const maxSignal = Math.max(1, ...signalRows.map((s) => s.count))
-  signalRows.forEach((s, i) => {
+  for (let i = 0; i < signalRows.length; i++) {
+    const s = signalRows[i]
     const isTop = i === 0
-    ctx.fillStyle = isTop ? C.amber : C.indigoDeep
-    ctx.font = `900 26px ${FONT}`
-    ctx.fillText(s.label, PAD, y + 30)
+    T(ctx, s.label, PAD, y + 30, 26, 900, isTop ? C.amber : C.indigoDeep, faux)
 
     const trackX = PAD + 170
     const trackW = CONTENT_W - 170 - 230
@@ -348,78 +364,60 @@ export function renderBrief(data: SessionBrief, opts: { showNames: boolean }): H
     ctx.fill()
 
     const pct = data.people > 0 ? Math.round((s.count / data.people) * 100) : 0
-    ctx.fillStyle = C.ink
-    ctx.font = `900 28px ${FONT}`
-    const countText = `${s.count}`
-    const countW = ctx.measureText(countText).width
-    ctx.fillText(countText, trackX + trackW + 26, y + 32)
-    ctx.fillStyle = C.sub
-    ctx.font = `400 22px ${FONT}`
-    ctx.fillText(`位 · ${pct}%`, trackX + trackW + 26 + countW + 6, y + 31)
-
+    const countX = trackX + trackW + 26
+    T(ctx, String(s.count), countX, y + 32, 28, 900, C.ink, faux)
+    const cw = measure(ctx, String(s.count), 28, 900)
+    T(ctx, `位 · ${pct}%`, countX + cw + 8, y + 31, 21, 400, C.sub, faux)
     y += 74
-  })
+  }
   y += 40
 
-  // 本期参与设备
-  drawSectionTitle("本期参与设备", "EQUIPMENT")
+  sectionTitle("本期参与设备", "EQUIPMENT")
   if (eqChips.length > 0) {
-    drawChips(ctx, eqChips, PAD + 36, y, CONTENT_W - 72)
+    drawChips(ctx, eqChips, PAD + 36, y, CONTENT_W - 72, faux)
     y += eqLayout.height + 68
   } else {
-    ctx.fillStyle = C.light
-    ctx.font = `400 24px ${FONT}`
-    ctx.fillText("本期未记录设备", PAD, y + 30)
+    T(ctx, "本期未记录设备", PAD, y + 30, 24, 400, C.light, faux)
     y += 90
   }
   y += 40
 
-  // 本期亮点
-  drawSectionTitle("本期亮点", "HIGHLIGHT")
+  sectionTitle("本期亮点", "HIGHLIGHT")
   if (highlightChips.length > 0) {
-    // 图例
-    const legendY = y + 6
+    const legendY = y + 14
     ctx.beginPath()
-    ctx.arc(PAD + 8, legendY, 6, 0, Math.PI * 2)
+    ctx.arc(PAD + 8, legendY - 6, 6, 0, Math.PI * 2)
     ctx.fillStyle = "#818cf8"
     ctx.fill()
-    ctx.fillStyle = C.sub
-    ctx.font = `400 20px ${FONT}`
-    ctx.fillText(`新面孔 ${data.newFaces.total} 位`, PAD + 24, legendY + 7)
+    T(ctx, `新面孔 ${data.newFaces.total} 位`, PAD + 24, legendY, 20, 400, C.sub, faux)
 
-    const legend2X = PAD + 24 + ctx.measureText(`新面孔 ${data.newFaces.total} 位`).width + 40
+    const l1 = PAD + 24 + measure(ctx, `新面孔 ${data.newFaces.total} 位`, 20, 400) + 40
     ctx.beginPath()
-    ctx.arc(legend2X, legendY, 6, 0, Math.PI * 2)
+    ctx.arc(l1, legendY - 6, 6, 0, Math.PI * 2)
     ctx.fillStyle = "#fbbf24"
     ctx.fill()
-    ctx.fillStyle = C.sub
-    ctx.fillText(`老友回归 ${data.returning.total} 位`, legend2X + 16, legendY + 7)
+    T(ctx, `老友回归 ${data.returning.total} 位`, l1 + 16, legendY, 20, 400, C.sub, faux)
 
-    y += 44
-    drawChips(ctx, highlightChips, PAD + 36, y, CONTENT_W - 72)
-    y += nameLayout.height + 24
+    y += 48
+    drawChips(ctx, highlightChips, PAD + 36, y, CONTENT_W - 72, faux)
+    y += nameLayout.height + 20
 
-    // 「等 N 位」提示
-    const restNames = data.newFaces.total - data.newFaces.names.length
+    const restNames = opts.showNames ? data.newFaces.total - data.newFaces.names.length : 0
     const restBack = opts.showNames ? data.returning.total - data.returning.items.length : 0
-    const restParts: string[] = []
-    if (restNames > 0) restParts.push(`新面孔还有 ${restNames} 位`)
-    if (restBack > 0) restParts.push(`回归还有 ${restBack} 位`)
-    if (restParts.length > 0) {
-      ctx.fillStyle = C.light
-      ctx.font = `400 20px ${FONT}`
-      ctx.fillText(`${restParts.join(" · ")}（未展示）`, PAD + 36, y + 22)
-      y += 40
+    const rest: string[] = []
+    if (restNames > 0) rest.push(`新面孔还有 ${restNames} 位`)
+    if (restBack > 0) rest.push(`回归还有 ${restBack} 位`)
+    if (rest.length > 0) {
+      T(ctx, `${rest.join(" · ")}（未展示）`, PAD + 36, y + 14, 19, 400, C.light, faux)
+      y += 34
     }
   } else {
-    ctx.fillStyle = C.light
-    ctx.font = `400 24px ${FONT}`
-    ctx.fillText("本期没有新面孔与回归", PAD, y + 30)
+    T(ctx, "本期没有新面孔与回归", PAD, y + 30, 24, 400, C.light, faux)
     y += 90
   }
 
   // ---------- 页脚 ----------
-  const footY = totalH - footerH + 40
+  const footY = totalH - footerH + 34
   ctx.strokeStyle = C.line
   ctx.lineWidth = 2
   ctx.setLineDash([10, 8])
@@ -429,17 +427,25 @@ export function renderBrief(data: SessionBrief, opts: { showNames: boolean }): H
   ctx.stroke()
   ctx.setLineDash([])
 
-  ctx.fillStyle = C.ink
-  ctx.font = `900 24px ${FONT}`
-  ctx.fillText("济南黄河业余无线电台网", PAD, footY + 52)
-
-  ctx.fillStyle = C.light
-  ctx.font = `400 19px ${FONT}`
-  ctx.fillText(
-    `log.br4in.cn · 本期由 ${data.controller || "—"} 主控 · ${beijing(date)}`,
+  T(ctx, "济南黄河业余无线电台网", PAD, footY + 46, 23, 900, C.ink, faux)
+  T(
+    ctx,
+    `log.br4in.cn · 本期由 ${data.controller || "—"} 主控 · ${ymText}`,
     PAD,
-    footY + 90
+    footY + 82,
+    19,
+    400,
+    C.light,
+    faux
   )
 
   return canvas
+}
+
+/** 浏览器端工厂 */
+export function domCanvasFactory(w: number, h: number) {
+  const c = document.createElement("canvas")
+  c.width = w
+  c.height = h
+  return c
 }
