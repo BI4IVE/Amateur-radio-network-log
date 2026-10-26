@@ -2,6 +2,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { renderBrief } from "./briefCanvas"
+import type { SessionBrief } from "@/lib/me/brief"
 
 /**
  * [个人中心] /me
@@ -295,6 +297,61 @@ export default function MePage() {
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  // [v2.0.4] 台网简报：仅主控/管理员可生成，长图由 canvas 现画
+  const [briefOpen, setBriefOpen] = useState(false)
+  const [briefLoading, setBriefLoading] = useState(false)
+  const [briefError, setBriefError] = useState<string | null>(null)
+  const [briefImg, setBriefImg] = useState<string | null>(null)
+  const [briefData, setBriefData] = useState<SessionBrief | null>(null)
+  const [briefSessions, setBriefSessions] = useState<
+    { id: string; title: string; sessionTime: string; controller: string }[]
+  >([])
+  const [briefSessionId, setBriefSessionId] = useState<string | null>(null)
+  const [briefShowNames, setBriefShowNames] = useState(true)
+
+  /** 拉取简报数据并画成长图；sessionId 为空时后端取最近一场 */
+  const loadBrief = useCallback(
+    async (sessionId?: string, showNames?: boolean) => {
+      const show = showNames ?? briefShowNames
+      setBriefOpen(true)
+      setBriefLoading(true)
+      setBriefError(null)
+      try {
+        const qs = sessionId ? `?sessionId=${encodeURIComponent(sessionId)}` : ""
+        const res = await fetch(`/api/me/brief${qs}`)
+        const json = await res.json()
+        if (!res.ok) throw new Error(json.error || "生成失败")
+        setBriefData(json.brief as SessionBrief)
+        setBriefSessions(json.sessions || [])
+        setBriefSessionId(json.brief.sessionId)
+        const canvas = renderBrief(json.brief as SessionBrief, { showNames: show })
+        setBriefImg(canvas.toDataURL("image/png"))
+      } catch (e) {
+        setBriefError(e instanceof Error ? e.message : "生成失败")
+      } finally {
+        setBriefLoading(false)
+      }
+    },
+    [briefShowNames]
+  )
+
+  /** 切换「显示呼号」：直接用已有数据重画，不再请求接口 */
+  const toggleBriefNames = (value: boolean) => {
+    setBriefShowNames(value)
+    if (briefData) {
+      const canvas = renderBrief(briefData, { showNames: value })
+      setBriefImg(canvas.toDataURL("image/png"))
+    }
+  }
+
+  const saveBrief = () => {
+    if (!briefImg) return
+    const a = document.createElement("a")
+    a.href = briefImg
+    a.download = `台网简报-${(briefSessionId || "").slice(0, 8)}.png`
+    a.click()
+  }
   // [v2.0.6] 执照有效期年数：默认 5 年，可选 3 年
   const [licenseYears, setLicenseYears] = useState(5)
   const [unbinding, setUnbinding] = useState(false)
@@ -780,65 +837,6 @@ export default function MePage() {
           )}
         </div>
 
-        {/* [v2.0.4] 主控卡：只对主控过场次的账号显示；含等级徽章与升级进度 */}
-        {data.controller ? (
-          <div className="mx-4 mt-3 rounded-2xl px-3.5 py-3.5 bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-200">
-            <div className="flex items-center gap-3">
-              <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-[0_2px_6px_rgba(124,58,237,0.12)]">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-[17px] h-[17px] stroke-violet-600 fill-none"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                >
-                  <path d="M12 12a2 2 0 1 0 0 .01" />
-                  <path d="M16.5 7.5a6.36 6.36 0 0 1 0 9" />
-                  <path d="M7.5 7.5a6.36 6.36 0 0 0 0 9" />
-                </svg>
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-extrabold text-violet-900 flex items-center gap-1.5">
-                  我主控过 {data.controller.sessions} 场台网
-                  {data.controller.level ? (
-                    <span className="px-1.5 py-[1px] rounded-full bg-violet-600 text-white text-[10px] font-bold">
-                      {data.controller.level}
-                    </span>
-                  ) : null}
-                </p>
-                <p className="text-[11px] text-violet-700/80 mt-0.5 truncate">
-                  最近一场 {fmtMonthDay(data.controller.lastTime)} · 累计录入{" "}
-                  {data.controller.records} 条记录
-                </p>
-              </div>
-              <a
-                href="/admin/stats"
-                className="text-[11px] font-extrabold text-violet-700 shrink-0"
-              >
-                运营中心 ›
-              </a>
-            </div>
-
-            {data.controller.nextLabel && data.controller.nextMin ? (
-              <div className="mt-2.5">
-                <div className="h-1.5 rounded-full bg-white/80 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-400 to-violet-600"
-                    style={{ width: `${data.controller.progress ?? 0}%` }}
-                  />
-                </div>
-                <p className="text-[10.5px] text-violet-700/80 mt-1">
-                  距「{data.controller.nextLabel}」还差 {data.controller.remain} 场 ·{" "}
-                  {data.controller.sessions} / {data.controller.nextMin} 场
-                </p>
-              </div>
-            ) : (
-              <p className="text-[10.5px] text-violet-700/80 mt-2.5">
-                已是最高等级 · 感谢你为台网长期压阵
-              </p>
-            )}
-          </div>
-        ) : null}
-
           </>
         ) : null}
 
@@ -1073,6 +1071,80 @@ export default function MePage() {
                   <p className="text-[10.5px] text-black/40 mt-3 px-1 leading-5">
                     口径：只统计已开台的台网场次（预告未开台不计）；等级门槛由管理员在后台设置。
                   </p>
+
+                  {/* [v2.0.4] 台网简报文生图 */}
+                  <button
+                    type="button"
+                    onClick={() => loadBrief()}
+                    className="w-full mt-3 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[14px] font-extrabold shadow-[0_10px_24px_rgba(79,70,229,0.28)]"
+                  >
+                    生成本期简报
+                  </button>
+                  <p className="text-[10.5px] text-black/35 mt-2 px-1 leading-5">
+                    生成长图，可直接发微信群 / 朋友圈；默认取最近一场，可切换场次。
+                  </p>
+                </div>
+              ) : null}
+
+              {/* 简报导图弹层 */}
+              {briefOpen ? (
+                <div className="fixed inset-0 z-[60] bg-black/80 flex flex-col">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setBriefOpen(false)}
+                      className="text-[13px] font-bold text-black/60"
+                    >
+                      ← 关闭
+                    </button>
+                    <span className="text-[13px] font-extrabold text-black">台网简报</span>
+                    <div className="ml-auto flex items-center gap-3">
+                      <label className="flex items-center gap-1.5 text-[11px] text-black/60">
+                        <input
+                          type="checkbox"
+                          checked={briefShowNames}
+                          onChange={(e) => toggleBriefNames(e.target.checked)}
+                          className="w-3.5 h-3.5"
+                        />
+                        显示呼号
+                      </label>
+                      <button
+                        type="button"
+                        onClick={saveBrief}
+                        disabled={!briefImg}
+                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[12px] font-bold disabled:opacity-40"
+                      >
+                        保存图片
+                      </button>
+                    </div>
+                  </div>
+
+                  {briefSessions.length > 1 ? (
+                    <div className="px-4 py-2 bg-white border-b border-gray-100">
+                      <select
+                        value={briefSessionId ?? ""}
+                        onChange={(e) => loadBrief(e.target.value, briefShowNames)}
+                        className="w-full px-2 py-1.5 rounded-lg border border-gray-300 text-[12px] text-black outline-none"
+                      >
+                        {briefSessions.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {fmtDate(s.sessionTime)} · {s.title || "台网"} · {s.controller}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+
+                  <div className="flex-1 overflow-auto p-3">
+                    {briefLoading ? (
+                      <p className="text-white/70 text-center text-sm pt-12">生成中…</p>
+                    ) : briefError ? (
+                      <p className="text-red-300 text-center text-sm pt-12">{briefError}</p>
+                    ) : briefImg ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={briefImg} alt="台网简报" className="w-full rounded-xl" />
+                    ) : null}
+                  </div>
                 </div>
               ) : null}
               </>
