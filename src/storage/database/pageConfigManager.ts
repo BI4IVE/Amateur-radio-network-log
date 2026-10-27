@@ -178,6 +178,14 @@ export class PageConfigManager {
       category: "screen",
       description: "大屏是否对外开放（true=任何人可看，false=仅登录用户可看）",
     },
+    {
+      key: "screen_marquee",
+      value:
+        "本场台网由 {host} 主控 · 接收频率 {rx} 发送频率 {tx} 发送模拟亚音 {tone} · 请按顺序报呼号、QTH、设备、天馈、功率与信号报告 · 通联结束后请守听下一轮 · 历史记录与规则详见 **个人中心** ·",
+      category: "screen",
+      description:
+        "跑马灯文案：{host} 主控呼号 / {rx} 接收频率 / {tx} 发送频率 / {tone} 亚音，**加粗**；留空恢复默认",
+    },
   ]
 
   // [公开配置白名单] 仅白名单内的 key 会返回给匿名访问者（GET /api/page-configs）。
