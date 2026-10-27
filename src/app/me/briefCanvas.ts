@@ -41,7 +41,14 @@ type Factory = (w: number, h: number) => HTMLCanvasElement | unknown
 
 type Opts = { showNames: boolean; fauxBold?: boolean }
 
-type Chip = { text: string; sub?: string; size: number; kind: "new" | "back" | "eq" }
+type Chip = {
+  text: string
+  sub?: string
+  size: number
+  kind: "new" | "back" | "eq"
+  /** 呼号与天数上下两排（回归标签用） */
+  stack?: boolean
+}
 
 /** 统一文字绘制：字号 / 字重 / 颜色 / 是否加粗（服务端描边模拟） */
 function T(
@@ -52,11 +59,13 @@ function T(
   size: number,
   weight: number,
   color: string,
-  faux = false
+  faux = false,
+  align: CanvasTextAlign = "start"
 ) {
   ctx.font = `${weight} ${size}px ${FONT_STACK}`
   ctx.fillStyle = color
   ctx.textBaseline = "alphabetic"
+  ctx.textAlign = align
   ctx.fillText(str, x, y)
   if (faux && weight >= 700) {
     ctx.strokeStyle = color
@@ -64,6 +73,7 @@ function T(
     ctx.lineJoin = "round"
     ctx.strokeText(str, x, y)
   }
+  ctx.textAlign = "start"
 }
 
 function measure(ctx: Ctx, str: string, size: number, weight: number) {
@@ -82,13 +92,22 @@ function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: numb
   ctx.closePath()
 }
 
-function chipWidth(ctx: Ctx, chip: Ctx extends never ? never : Chip) {
+function chipWidth(ctx: Ctx, chip: Chip) {
   const main = measure(ctx, chip.text, chip.size, 900)
-  const sub = chip.sub ? measure(ctx, chip.sub, Math.round(chip.size * 0.55), 700) : 0
+  const subSize = Math.round(chip.size * 0.55)
+  const sub = chip.sub ? measure(ctx, chip.sub, subSize, 700) : 0
+  if (chip.stack) {
+    // 上下两排：宽度取两排里较宽的一个
+    return Math.max(main, sub) + chip.size * 1.2
+  }
   return main + sub + chip.size * (chip.sub ? 1.5 : 1.1)
 }
 
 function chipHeight(chip: Chip) {
+  if (chip.stack) {
+    const subSize = Math.round(chip.size * 0.55)
+    return Math.round(chip.size * 1.35 + subSize * 1.7)
+  }
   return Math.round(chip.size * 1.55)
 }
 
@@ -150,23 +169,25 @@ function drawChips(
       ctx.strokeStyle = border
       ctx.stroke()
 
-      const textX = cursorX + chip.size * 0.55
-      const baseline = cy + h / 2 + chip.size * 0.36
-      T(ctx, chip.text, textX, baseline, chip.size, 900, color, faux)
+      const subColor = chip.kind === "back" ? "#c07a2a" : C.light
+      const subSize = Math.round(chip.size * 0.55)
 
-      if (chip.sub) {
-        const subSize = Math.round(chip.size * 0.55)
-        const subX = textX + measure(ctx, chip.text, chip.size, 900) + chip.size * 0.3
-        T(
-          ctx,
-          chip.sub,
-          subX,
-          baseline - chip.size * 0.02,
-          subSize,
-          700,
-          chip.kind === "back" ? "#c07a2a" : C.light,
-          faux
-        )
+      if (chip.stack) {
+        // 上下两排：呼号在上、天数在下，整体居中
+        const centerX = cursorX + w / 2
+        T(ctx, chip.text, centerX, cy + h * 0.44, chip.size, 900, color, faux, "center")
+        if (chip.sub) {
+          T(ctx, chip.sub, centerX, cy + h * 0.84, subSize, 700, subColor, faux, "center")
+        }
+      } else {
+        const textX = cursorX + chip.size * 0.55
+        const baseline = cy + h / 2 + chip.size * 0.36
+        T(ctx, chip.text, textX, baseline, chip.size, 900, color, faux)
+
+        if (chip.sub) {
+          const subX = textX + measure(ctx, chip.text, chip.size, 900) + chip.size * 0.3
+          T(ctx, chip.sub, subX, baseline - chip.size * 0.02, subSize, 700, subColor, faux)
+        }
       }
 
       cursorX += w + gapX
@@ -220,9 +241,11 @@ export function renderBrief(
   const backChips: Chip[] = opts.showNames
     ? data.returning.items.map((r, i) => ({
         text: r.callsign,
-        sub: `${r.days}天`,
+        sub: `${r.days} 天`,
         size: i === 0 ? 42 : i === 1 ? 32 : 25,
         kind: "back" as const,
+        // 呼号与天数分两排，避免挤在一行
+        stack: true,
       }))
     : []
   const eqChips: Chip[] = data.equipments.map((e, i) => ({
