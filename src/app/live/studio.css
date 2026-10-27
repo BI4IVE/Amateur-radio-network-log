@@ -389,7 +389,7 @@
 }
 .st-marquee .inner {
   white-space: nowrap;
-  font-size: calc(var(--u) * 1.9);
+  font-size: calc(var(--u) * 2.4);
   letter-spacing: 0.22em;
   color: var(--muted);
   animation: st-slide 38s linear infinite;
@@ -513,7 +513,7 @@
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--cardLine);
 }
-.st-port .st-marquee .inner { font-size: calc(var(--u) * 2); letter-spacing: 0.18em; animation-duration: 30s; }
+.st-port .st-marquee .inner { font-size: calc(var(--u) * 2.8); letter-spacing: 0.18em; animation-duration: 30s; }
 
 /* 竖屏：欢迎条上移到 QTH 字段一带（呼号区下方），字号也更大，
  * 4.5 秒后消失；层级压过字段卡，保证读得清。 */
@@ -618,7 +618,7 @@
   font-size: clamp(12px, calc(var(--u) * 1.65), 20px);
 }
 .st-port .st-marquee .inner {
-  font-size: clamp(14px, calc(var(--u) * 2), 30px);
+  font-size: clamp(16px, calc(var(--u) * 2.8), 40px);
 }
 .st-port .st-rc .cs {
   font-size: clamp(12px, calc(var(--u) * 2.2), 26px);
