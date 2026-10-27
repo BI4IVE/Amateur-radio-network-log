@@ -450,16 +450,18 @@ export function renderBrief(
   ctx.stroke()
   ctx.setLineDash([])
 
-  T(ctx, "济南黄河业余无线电台网", PAD, footY + 46, 23, 900, C.ink, faux)
+  // 页脚信息放右下角（不再显示网址）
+  T(ctx, "济南黄河业余无线电台网", W - PAD, footY + 46, 23, 900, C.ink, faux, "right")
   T(
     ctx,
-    `log.br4in.cn · 本期由 ${data.controller || "—"} 主控 · ${ymText}`,
-    PAD,
+    `本期由 ${data.controller || "—"} 主控 · ${ymText}`,
+    W - PAD,
     footY + 82,
     19,
     400,
     C.light,
-    faux
+    faux,
+    "right"
   )
 
   return canvas
