@@ -94,7 +94,8 @@ export default function StudioPortraitScreen({
     return () => clearInterval(timer);
   }, []);
 
-  const timeText = (localTime || "--:--").slice(0, 5);
+  // [v2.0.4] 时钟带秒数（localTime 形如 20:31:45）
+  const timeText = (localTime || "--:--:--").slice(0, 8);
   const now = new Date();
   const week = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][now.getDay()];
   const dateText = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(

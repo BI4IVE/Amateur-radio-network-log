@@ -200,7 +200,11 @@
   letter-spacing: 0.16em;
 }
 .st-spacer { flex: 1; }
-.st-clock { text-align: right; }
+.st-clock {
+  text-align: right;
+  /* 带秒数后整体变宽，往左让一点，别贴着屏幕右边缘 */
+  padding-right: calc(var(--u) * 2.4);
+}
 .st-clock .t {
   font-size: calc(var(--u) * 5.4);
   font-weight: 800;
