@@ -56,10 +56,15 @@ export default function StudioPortraitScreen({
     const days = latest.returningDays;
     if (typeof days === "number" && days >= 30) {
       setWelcome({ callsign: latest.callsign, days });
-      const timer = setTimeout(() => setWelcome(null), 4500);
-      return () => clearTimeout(timer);
     }
   }, [records]);
+
+  // 自动消失单独一个 effect：轮询每 3 秒刷新 records，若把定时器挂在上面会被反复清掉
+  useEffect(() => {
+    if (!welcome) return;
+    const timer = setTimeout(() => setWelcome(null), 6000);
+    return () => clearTimeout(timer);
+  }, [welcome]);
   const [bars, setBars] = useState<number[]>(() =>
     Array.from({ length: BAR_COUNT }, () => 0.15 + Math.random() * 0.3)
   );
