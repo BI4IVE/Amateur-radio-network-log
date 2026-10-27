@@ -446,7 +446,8 @@
 .st-strip {
   grid-row: 2;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* 参与 / 主控 / 接收 / 发送 / 亚音 */
+  grid-template-columns: repeat(5, 1fr);
   align-items: center;
   position: relative;
   z-index: 2;

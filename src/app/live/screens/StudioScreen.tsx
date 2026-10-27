@@ -200,15 +200,15 @@ export default function StudioScreen({
             <span className="v">{host}</span>
           </div>
           <div className="st-kv">
-            <span className="k">TX</span>
-            <span className="v accent st-mono">{screenConfig.txFreq}</span>
-          </div>
-          <div className="st-kv">
-            <span className="k">RX</span>
+            <span className="k">接收频率</span>
             <span className="v accent st-mono">{screenConfig.rxFreq}</span>
           </div>
           <div className="st-kv">
-            <span className="k">TONE</span>
+            <span className="k">发送频率</span>
+            <span className="v accent st-mono">{screenConfig.txFreq}</span>
+          </div>
+          <div className="st-kv">
+            <span className="k">发送亚音</span>
             <span className="v accent st-mono">{screenConfig.tone}</span>
           </div>
         </div>

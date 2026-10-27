@@ -150,11 +150,15 @@ export default function StudioPortraitScreen({
           <span className="v">{host}</span>
         </div>
         <div className="st-st">
-          <span className="k">TX / RX</span>
+          <span className="k">接收</span>
+          <span className="v accent st-mono">{screenConfig.rxFreq}</span>
+        </div>
+        <div className="st-st">
+          <span className="k">发送</span>
           <span className="v accent st-mono">{screenConfig.txFreq}</span>
         </div>
         <div className="st-st">
-          <span className="k">TONE</span>
+          <span className="k">亚音</span>
           <span className="v accent st-mono">{screenConfig.tone}</span>
         </div>
       </div>
