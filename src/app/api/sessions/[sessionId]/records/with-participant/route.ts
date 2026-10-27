@@ -5,6 +5,7 @@ import { logManager, participantManager } from "@/storage/database"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireLogin } from "@/lib/auth"
 import { pushRecordNotification } from "@/lib/wechat/pushService"
+import { getReturningDaysMap } from "@/lib/me/returning"
 
 export async function POST(
   request: NextRequest,
@@ -139,7 +140,19 @@ export async function POST(
       )
     }
 
-    return NextResponse.json({ record, participant: updatedParticipant }, { status: 201 })
+    // [v2.0.4] 回归欢迎：附带「距上次参与天数」，主控台据此提示
+    let returningDays: number | null = null
+    try {
+      const map = await getReturningDaysMap(sessionId)
+      returningDays = map.get(record.callsign.trim().toUpperCase()) ?? null
+    } catch {
+      /* 不影响录入主流程 */
+    }
+
+    return NextResponse.json(
+      { record, participant: updatedParticipant, returningDays },
+      { status: 201 }
+    )
   } catch (error) {
     console.error("Create record with participant error:", error)
     return NextResponse.json(

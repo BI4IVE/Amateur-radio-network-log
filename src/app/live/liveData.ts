@@ -28,6 +28,8 @@ export interface LiveRecord {
   remarks?: string | null;
   createdAt?: string;
   deletedAt?: string | null;
+  /** [v2.0.4] 距上次参与天数（首次参与为 null），用于「回归欢迎」 */
+  returningDays?: number | null;
 }
 
 // 台网频率参数（硬编码兜底，优先使用后台 page_configs 的 screen 分类配置）

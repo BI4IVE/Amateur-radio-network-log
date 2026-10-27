@@ -45,6 +45,21 @@ export default function StudioPortraitScreen({
 
   const qthRef = useRef<HTMLSpanElement>(null);
   const callRef = useRef<HTMLDivElement>(null);
+
+  // [v2.0.4] 回归欢迎：新记录进来且间隔 ≥30 天时浮出提示
+  const [welcome, setWelcome] = useState<{ callsign: string; days: number } | null>(null);
+  const announcedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const latest = records[0];
+    if (!latest?.id || announcedRef.current === latest.id) return;
+    announcedRef.current = latest.id;
+    const days = latest.returningDays;
+    if (typeof days === "number" && days >= 30) {
+      setWelcome({ callsign: latest.callsign, days });
+      const timer = setTimeout(() => setWelcome(null), 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [records]);
   const [bars, setBars] = useState<number[]>(() =>
     Array.from({ length: BAR_COUNT }, () => 0.15 + Math.random() * 0.3)
   );
@@ -216,6 +231,14 @@ export default function StudioPortraitScreen({
           </div>
         )}
       </div>
+
+      {/* [v2.0.4] 回归欢迎：间隔 ≥30 天的老友进场时浮 4.5 秒 */}
+      {welcome ? (
+        <div className="st-welcome">
+          <span className="t1">欢迎 {welcome.callsign} 回归</span>
+          <span className="t2">时隔 {welcome.days} 天</span>
+        </div>
+      ) : null}
     </StudioStage>
   );
 }

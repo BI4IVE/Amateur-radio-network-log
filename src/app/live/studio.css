@@ -28,6 +28,7 @@
 }
 
 .st-root {
+  position: relative;
   --bg: #f4f1e9;
   --glow1: rgba(255, 122, 26, 0.16);
   --glow2: rgba(20, 140, 255, 0.1);
@@ -509,6 +510,9 @@
 }
 .st-port .st-marquee .inner { font-size: calc(var(--u) * 1.45); letter-spacing: 0.18em; animation-duration: 30s; }
 
+/* 竖屏：欢迎条上移，避免压住底部滚动播报 */
+.st-port .st-welcome { bottom: 24%; }
+
 /* 底部：参与者滚动播报（呼号 / 设备 / 天馈 / 信号） */
 .st-roll {
   grid-row: 6;
@@ -606,6 +610,48 @@
 }
 .st-port .st-rc .cs {
   font-size: clamp(12px, calc(var(--u) * 2.2), 26px);
+}
+
+/* ==================== 回归欢迎（浮 4.5 秒） ====================
+ * 位置在呼号区下方、跑马灯上方，不遮挡当前报到者。 */
+.st-welcome {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1);
+  padding: calc(var(--u) * 0.9) calc(var(--u) * 2);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.18), rgba(217, 119, 6, 0.18));
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 calc(var(--u) * 2.6) rgba(251, 191, 36, 0.25),
+    inset 0 0 calc(var(--u) * 1.6) rgba(251, 191, 36, 0.08);
+  animation: st-welcome-in 0.45s ease both;
+  pointer-events: none;
+}
+.st-welcome .t1 {
+  font-size: calc(var(--u) * 1.5);
+  font-weight: 900;
+  color: #ffd28a;
+  letter-spacing: 0.1em;
+}
+.st-welcome .t2 {
+  font-size: calc(var(--u) * 1.15);
+  color: rgba(255, 210, 138, 0.78);
+  letter-spacing: 0.1em;
+}
+@keyframes st-welcome-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(var(--u) * 0.8));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 /* ==================== 直播净屏 ====================

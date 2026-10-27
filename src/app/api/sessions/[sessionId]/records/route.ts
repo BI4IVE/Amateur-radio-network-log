@@ -5,6 +5,7 @@ import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireUser } from "@/lib/auth"
 import { screenReadAuth, maskQthValue } from "@/lib/screenAccess"
 import { pushRecordNotification } from "@/lib/wechat/pushService"
+import { getReturningDaysMap } from "@/lib/me/returning"
 
 export async function GET(
   request: NextRequest,
@@ -30,10 +31,17 @@ export async function GET(
 
     const records = await logManager.getLogRecordsBySessionId(sessionId)
 
+    // [v2.0.4] 回归欢迎：给每条记录附上「距上次参与多少天」，大屏据此弹欢迎条
+    const returningMap = await getReturningDaysMap(sessionId)
+    const withReturning = records.map((r) => ({
+      ...r,
+      returningDays: returningMap.get((r.callsign || "").trim().toUpperCase()) ?? null,
+    }))
+
     // 「匿名 + 公开」组合下脱敏：QTH 保留前 4 字；备注常含完整地址，直接隐藏
     const result = access.maskQth
-      ? records.map((r) => ({ ...r, qth: maskQthValue(r.qth), remarks: "" }))
-      : records
+      ? withReturning.map((r) => ({ ...r, qth: maskQthValue(r.qth), remarks: "" }))
+      : withReturning
     return NextResponse.json({ records: result })
   } catch (error) {
     console.error("Get records error:", error)
@@ -105,7 +113,16 @@ export async function POST(
       await equipmentManager.autoSyncEquipment(body.equipment.trim())
     }
 
-    return NextResponse.json({ record }, { status: 201 })
+    // [v2.0.4] 回归欢迎：把「距上次参与天数」一起返回，主控台可即时提示
+    let returningDays: number | null = null
+    try {
+      const map = await getReturningDaysMap(sessionId)
+      returningDays = map.get(record.callsign.trim().toUpperCase()) ?? null
+    } catch {
+      /* 不影响录入主流程 */
+    }
+
+    return NextResponse.json({ record, returningDays }, { status: 201 })
   } catch (error) {
     console.error("Create record error:", error)
     return NextResponse.json(

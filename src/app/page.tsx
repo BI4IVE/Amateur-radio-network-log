@@ -114,6 +114,10 @@ export default function HomePage() {
 
   const [participants, setParticipants] = useState<Participant[]>([])
   const [records, setRecords] = useState<LogRecord[]>([])
+  // [v2.0.4] 回归欢迎：录入时若该呼号 ≥30 天未参与，给主控一个即时提示
+  const [returningToast, setReturningToast] = useState<{ callsign: string; days: number } | null>(
+    null
+  )
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
 
   // [v1.5.10] 按 id 去重：保留最后出现的一条，确保数组内记录唯一。
@@ -715,6 +719,13 @@ export default function HomePage() {
       // [v1.5.10] 按 id 兜底去重：与 SSE 回声合并时永不产生重复条目
       setRecords((prev) => dedupeRecords([...prev, data.record]))
 
+      // [v2.0.4] 回归欢迎：间隔 ≥30 天时提示主控口头欢迎一下
+      const backDays = Number(data.returningDays)
+      if (Number.isFinite(backDays) && backDays >= 30) {
+        setReturningToast({ callsign: data.record.callsign, days: backDays })
+        window.setTimeout(() => setReturningToast(null), 6000)
+      }
+
       // Reload participants to get updated data
       loadParticipants()
 
@@ -920,6 +931,18 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* [v2.0.4] 回归欢迎提示：录入后浮 6 秒，提示主控口头欢迎 */}
+      {returningToast ? (
+        <div
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 rounded-full px-4 py-2.5 shadow-[0_10px_30px_rgba(180,83,9,0.25)]"
+          style={{ background: "linear-gradient(90deg,#fffbeb,#fde68a)", border: "1px solid #fcd34d" }}
+        >
+          <span className="text-[13px] font-extrabold text-amber-900">
+            欢迎 {returningToast.callsign} 回归
+          </span>
+          <span className="text-[11.5px] text-amber-700">时隔 {returningToast.days} 天</span>
+        </div>
+      ) : null}
       {/* Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
