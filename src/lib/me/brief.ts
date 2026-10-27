@@ -7,7 +7,7 @@
  *
  * 口径：
  * - 只统计未软删的记录；
- * - 信号报告只认 51~59（可带 +），其余（如「稳定」「49」这类录入不规范的值）归入「其他」；
+ * - 信号报告按主控录入的原值归类（49、稳定 等都照实列出），只有空值归为「未填写」；
  * - 新面孔 = 该呼号历史上第一次参与就是本场；
  * - 老友回归 = 本场之前参与过，且与上一次间隔 ≥ 30 天；
  * - 标签有上限（新面孔 8 / 回归 6 / 设备 6），多出来的走「等 N 位」。
@@ -67,13 +67,13 @@ export async function buildSessionBrief(sessionId: string): Promise<SessionBrief
   const [signalRows, eqRows, newRows, backRows] = await Promise.all([
     db.execute(sql`
       select
-        -- 只认 51~59（可带 +）；「稳定」「49」这类不规范录入归入「其他」
-        case when signal ~ '^5[1-9]\\+?$' then signal else '其他' end as label,
+        -- 按主控实际录入的信号报告原样归类（49 也是真实报告），只把空值归为「未填写」
+        case when coalesce(trim(signal), '') = '' then '未填写' else trim(signal) end as label,
         count(*)::int as n
       from log_records
       where session_id = ${sessionId} and deleted_at is null
       group by 1
-      order by 2 desc
+      order by 2 desc, 1 asc
     `),
     db.execute(sql`
       select coalesce(nullif(trim(equipment), ''), '未填写') as name, count(*)::int as n
@@ -125,7 +125,7 @@ export async function buildSessionBrief(sessionId: string): Promise<SessionBrief
   ])
 
   const signals: BriefSignal[] = rowsOf(signalRows).map((r) => ({
-    label: String(r.label ?? "其他"),
+    label: String(r.label ?? "未填写"),
     count: Number(r.n) || 0,
   }))
 
@@ -145,7 +145,9 @@ export async function buildSessionBrief(sessionId: string): Promise<SessionBrief
   }))
 
   const people = Number(head.people) || 0
-  const withSignal = signals.filter((s) => s.label !== "其他").reduce((a, b) => a + b.count, 0)
+  const withSignal = signals
+    .filter((s) => s.label !== "未填写")
+    .reduce((a, b) => a + b.count, 0)
 
   return {
     sessionId: String(head.id),
