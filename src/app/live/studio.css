@@ -515,11 +515,11 @@
 }
 .st-port .st-marquee .inner { font-size: calc(var(--u) * 2); letter-spacing: 0.18em; animation-duration: 30s; }
 
-/* 竖屏：字段卡与滚动播报之间几乎没有空隙，
- * 让欢迎条压住滚动列表顶部（4.5 秒后消失），不遮挡当前报到者。 */
+/* 竖屏：欢迎条上移到 QTH 字段一带（呼号区下方），字号也更大，
+ * 4.5 秒后消失；层级压过字段卡，保证读得清。 */
 .st-port .st-welcome {
-  bottom: 42%;
-  z-index: 6;
+  bottom: 52%;
+  z-index: 8;
 }
 
 /* 底部：参与者滚动播报（呼号 / 设备 / 天馈 / 信号） */
@@ -635,7 +635,7 @@
   display: flex;
   align-items: center;
   gap: calc(var(--u) * 1);
-  padding: calc(var(--u) * 1.3) calc(var(--u) * 2.6);
+  padding: calc(var(--u) * 1.7) calc(var(--u) * 3.4);
   border-radius: 999px;
   background: linear-gradient(90deg, rgba(251, 191, 36, 0.18), rgba(217, 119, 6, 0.18));
   border: 1px solid rgba(251, 191, 36, 0.5);
@@ -645,14 +645,14 @@
   pointer-events: none;
 }
 .st-welcome .t1 {
-  font-size: calc(var(--u) * 2.2);
+  font-size: calc(var(--u) * 3);
   font-weight: 900;
   color: #ffd28a;
   letter-spacing: 0.1em;
 }
 .st-welcome .t2 {
-  font-size: calc(var(--u) * 1.7);
-  color: rgba(255, 210, 138, 0.82);
+  font-size: calc(var(--u) * 2.2);
+  color: rgba(255, 210, 138, 0.86);
   letter-spacing: 0.1em;
 }
 @keyframes st-welcome-in {
