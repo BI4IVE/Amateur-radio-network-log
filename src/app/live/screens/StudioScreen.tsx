@@ -18,6 +18,7 @@ import {
 } from "../liveData";
 import { fitCallSign, fitFieldText } from "./studioFit";
 import StudioStage from "./StudioStage";
+import MarqueeContent from "./MarqueeContent";
 
 interface Props {
   session: SessionInfo | null;
@@ -241,10 +242,15 @@ export default function StudioScreen({
       {/* 跑马灯 */}
       <div className="st-marquee">
         <div className="inner">
-          本场台网由 <b>{host}</b> 主控 · 接收频率 <b>{screenConfig.rxFreq}</b> 发送频率{" "}
-          <b>{screenConfig.txFreq}</b> 发送模拟亚音 <b>{screenConfig.tone}</b> · 请按顺序报呼号、
-          QTH、设备、天馈、功率与信号报告 · 通联结束后请守听下一轮 · 历史记录与规则详见{" "}
-          <b>个人中心</b> ·
+          <MarqueeContent
+            template={screenConfig.marquee}
+            values={{
+              host,
+              rx: screenConfig.rxFreq,
+              tx: screenConfig.txFreq,
+              tone: screenConfig.tone,
+            }}
+          />
         </div>
       </div>
 

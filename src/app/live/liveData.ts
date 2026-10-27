@@ -38,12 +38,18 @@ export const RX_FREQ = "439.110";
 export const TX_TONE = "88.5";
 export const SCREEN_TITLE_DEFAULT = "济南黄河业余无线电中继台BR4IN台网大屏";
 
+/** 跑马灯默认文案：占位符会被替换成实时值（主控跟当前场次走） */
+export const SCREEN_MARQUEE_DEFAULT =
+  "本场台网由 {host} 主控 · 接收频率 {rx} 发送频率 {tx} 发送模拟亚音 {tone} · 请按顺序报呼号、QTH、设备、天馈、功率与信号报告 · 通联结束后请守听下一轮 · 历史记录与规则详见 **个人中心** ·";
+
 // 大屏可配置项（来自后台「页面配置管理 → 大屏配置」）
 export interface ScreenConfig {
   title: string;
   rxFreq: string;
   txFreq: string;
   tone: string;
+  // 跑马灯文案（支持 {host} {rx} {tx} {tone} 与 **粗体**）
+  marquee: string;
   // 是否对外开放（true=任何人可看，false=仅登录用户可看）
   public: boolean;
 }
@@ -55,6 +61,7 @@ export function useScreenConfig(): ScreenConfig {
     rxFreq: RX_FREQ,
     txFreq: TX_FREQ,
     tone: TX_TONE,
+    marquee: SCREEN_MARQUEE_DEFAULT,
     public: false,
   });
 
@@ -72,6 +79,7 @@ export function useScreenConfig(): ScreenConfig {
           rxFreq: map.screen_rx_freq || RX_FREQ,
           txFreq: map.screen_tx_freq || TX_FREQ,
           tone: map.screen_tone || TX_TONE,
+          marquee: map.screen_marquee?.trim() || SCREEN_MARQUEE_DEFAULT,
           public: map.screen_public === "true",
         });
       } catch {
