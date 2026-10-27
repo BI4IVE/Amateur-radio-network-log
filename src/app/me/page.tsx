@@ -1169,11 +1169,8 @@ export default function MePage() {
                   ) : null}
 
                   <div className="flex-1 overflow-auto p-3">
-                    {briefLoading ? (
-                      <p className="text-white/70 text-center text-sm pt-12">生成中…</p>
-                    ) : briefError ? (
-                      <p className="text-red-300 text-center text-sm pt-12">{briefError}</p>
-                    ) : briefImg ? (
+                    {/* 注意顺序：有图就先渲染 <img>（否则 onLoad 永远不触发，会一直停在"生成中"） */}
+                    {briefImg ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -1182,15 +1179,23 @@ export default function MePage() {
                           className="w-full rounded-xl"
                           onLoad={() => setBriefLoading(false)}
                           onError={() => {
-                            setBriefError("图片生成失败，请稍后重试")
+                            setBriefError("图片加载失败，请重试")
                             setBriefLoading(false)
                           }}
                         />
-                        <p className="text-center text-[11px] text-white/60 mt-3 leading-5">
-                          微信里长按图片 → 保存到相册 / 发送给朋友
-                        </p>
+                        {briefLoading ? (
+                          <p className="text-center text-[11px] text-white/50 mt-3">载入中…</p>
+                        ) : (
+                          <p className="text-center text-[11px] text-white/60 mt-3 leading-5">
+                            微信里长按图片 → 保存到相册 / 发送给朋友
+                          </p>
+                        )}
                       </>
-                    ) : null}
+                    ) : briefError ? (
+                      <p className="text-red-300 text-center text-sm pt-12">{briefError}</p>
+                    ) : (
+                      <p className="text-white/70 text-center text-sm pt-12">生成中…</p>
+                    )}
                   </div>
                 </div>
               ) : null}
