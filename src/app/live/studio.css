@@ -640,26 +640,27 @@
   /* 单排显示：永不换行、不挤压 */
   white-space: nowrap;
   max-width: 94%;
-  background: linear-gradient(90deg, rgba(251, 191, 36, 0.26), rgba(217, 119, 6, 0.26));
-  border: 1.5px solid rgba(251, 191, 36, 0.72);
-  box-shadow: 0 0 calc(var(--u) * 3.4) rgba(251, 191, 36, 0.38),
-    inset 0 0 calc(var(--u) * 2) rgba(251, 191, 36, 0.12);
+  /* 实色底：浅色/深色主题下都能压住背景，避免"浅底浅字"看不清 */
+  background: linear-gradient(100deg, #f59e0b, #d9480f);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 calc(var(--u) * 1.2) calc(var(--u) * 3.6) rgba(120, 53, 15, 0.45),
+    0 0 calc(var(--u) * 2.4) rgba(245, 158, 11, 0.55);
   animation: st-welcome-in 0.45s ease both;
   pointer-events: none;
 }
 .st-welcome .t1 {
-  font-size: calc(var(--u) * 3.2);
+  font-size: calc(var(--u) * 3.4);
   font-weight: 900;
-  color: #ffe9b8;
+  color: #ffffff;
   letter-spacing: 0.1em;
-  text-shadow: 0 0 calc(var(--u) * 1.6) rgba(255, 193, 78, 0.8);
+  text-shadow: 0 calc(var(--u) * 0.2) calc(var(--u) * 0.5) rgba(80, 30, 0, 0.55);
 }
 .st-welcome .t2 {
-  font-size: calc(var(--u) * 2.3);
+  font-size: calc(var(--u) * 2.4);
   font-weight: 800;
-  color: #ffd28a;
+  color: rgba(255, 255, 255, 0.95);
   letter-spacing: 0.08em;
-  text-shadow: 0 0 calc(var(--u) * 1.2) rgba(255, 193, 78, 0.55);
+  text-shadow: 0 calc(var(--u) * 0.2) calc(var(--u) * 0.5) rgba(80, 30, 0, 0.5);
 }
 @keyframes st-welcome-in {
   from {
