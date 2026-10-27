@@ -161,6 +161,8 @@ export class LogManager {
     const db = await getDb()
 
     // [轮值表] 仅基于未软删的会话；排除 deletedAt 非空的记录。
+    // [v2.0.4] 口径与个人中心主控成长线一致：只算已开台的台网，预告（status=scheduled）不计，
+    // 否则同一呼号会出现「轮值表 52 / 个人中心 49」这种对不上的情况。
     // 直接按 controllerName 分组（呼号即主控身份），不再按 controllerId 分组。
     const rows = await db
       .select({
@@ -169,7 +171,7 @@ export class LogManager {
         lastSessionAt: sql<Date>`max(${logSessions.sessionTime})`,
       })
       .from(logSessions)
-      .where(isNull(logSessions.deletedAt))
+      .where(and(isNull(logSessions.deletedAt), sql`${logSessions.status} <> 'scheduled'`))
       .groupBy(logSessions.controllerName)
 
     // 归并键：去空格 + 小写，避免 "BI4IVE" / "bi4ive" / " BI4IVE " 被算成不同人；
