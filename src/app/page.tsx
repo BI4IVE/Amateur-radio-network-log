@@ -438,25 +438,51 @@ export default function HomePage() {
     }
   }
 
-  const searchParticipants = async (query: string) => {
-    if (query.length < 2) {
+  // [v2.0.4] 联想请求统一防抖 + 竞态保护：
+  // 旧实现在 onChange 里直接发请求，主控连打三个字符 = 三个请求同时在路上，
+  // 慢的那个后返回会把新结果覆盖掉（表现为"候选变了/对不上"）。
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchAbortRef = useRef<AbortController | null>(null)
+  const searchSeqRef = useRef(0)
+  const fieldTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+
+  const searchParticipants = (query: string) => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+
+    if (query.trim().length < 2) {
+      searchAbortRef.current?.abort()
       setSearchResults([])
       setShowSearchResults(false)
       setSelectedSearchIndex(-1)
       return
     }
 
-    try {
-      const response = await fetch(`/api/participants/search?callsign=${encodeURIComponent(query)}`)
-      const data = await response.json()
-      setSearchResults(data.participants || [])
-      setShowSearchResults(true)
-      setSelectedSearchIndex(-1)
-    } catch (error) {
-      console.error("Search participants error:", error)
-      setSearchResults([])
-      setSelectedSearchIndex(-1)
-    }
+    searchTimerRef.current = setTimeout(async () => {
+      const seq = ++searchSeqRef.current
+      searchAbortRef.current?.abort()
+      const ac = new AbortController()
+      searchAbortRef.current = ac
+
+      try {
+        const response = await fetch(
+          `/api/participants/search?callsign=${encodeURIComponent(query)}`,
+          { signal: ac.signal }
+        )
+        const data = await response.json()
+        // 已有更新的请求在跑，丢弃这次的旧结果
+        if (seq !== searchSeqRef.current) return
+        setSearchResults(data.participants || [])
+        setShowSearchResults(true)
+        setSelectedSearchIndex(-1)
+      } catch (error) {
+        if ((error as Error)?.name === "AbortError") return
+        console.error("Search participants error:", error)
+        if (seq === searchSeqRef.current) {
+          setSearchResults([])
+          setSelectedSearchIndex(-1)
+        }
+      }
+    }, 250)
   }
 
   const selectParticipant = (participant: Participant) => {
@@ -482,16 +508,22 @@ export default function HomePage() {
       return
     }
 
-    try {
-      const response = await fetch(`/api/records/search?field=${field}&query=${encodeURIComponent(query)}`)
-      const data = await response.json()
-      setResults(data.values || [])
-      if (setIndex) setIndex(-1)
-    } catch (error) {
-      console.error(`Search ${field} error:`, error)
-      setResults([])
-      if (setIndex) setIndex(-1)
-    }
+    // [v2.0.4] 按字段防抖，避免每敲一个字都打一次接口
+    if (fieldTimersRef.current[field]) clearTimeout(fieldTimersRef.current[field])
+    fieldTimersRef.current[field] = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/records/search?field=${field}&query=${encodeURIComponent(query)}`
+        )
+        const data = await response.json()
+        setResults(data.values || [])
+        if (setIndex) setIndex(-1)
+      } catch (error) {
+        console.error(`Search ${field} error:`, error)
+        setResults([])
+        if (setIndex) setIndex(-1)
+      }
+    }, 250)
   }
 
   // Search equipment from both equipment library and history records
@@ -502,28 +534,32 @@ export default function HomePage() {
       return
     }
 
-    try {
-      // Fetch from both sources in parallel
-      const [historyRes, libraryRes] = await Promise.all([
-        fetch(`/api/records/search?field=equipment&query=${encodeURIComponent(query)}`),
-        fetch(`/api/admin/equipments/names?query=${encodeURIComponent(query)}`)
-      ])
-      
-      const historyData = await historyRes.json()
-      const libraryData = await libraryRes.json()
-      
-      // Merge results, removing duplicates
-      const historyValues = historyData.values || []
-      const libraryValues = libraryData.names || []
-      const merged = [...new Set([...libraryValues, ...historyValues])]
-      
-      setEquipmentResults(merged)
-      setSelectedEquipmentIndex(-1)
-    } catch (error) {
-      console.error("Search equipment error:", error)
-      setEquipmentResults([])
-      setSelectedEquipmentIndex(-1)
-    }
+    // [v2.0.4] 设备联想要打两个接口，更该防抖
+    if (fieldTimersRef.current.equipment) clearTimeout(fieldTimersRef.current.equipment)
+    fieldTimersRef.current.equipment = setTimeout(async () => {
+      try {
+        // Fetch from both sources in parallel
+        const [historyRes, libraryRes] = await Promise.all([
+          fetch(`/api/records/search?field=equipment&query=${encodeURIComponent(query)}`),
+          fetch(`/api/admin/equipments/names?query=${encodeURIComponent(query)}`),
+        ])
+
+        const historyData = await historyRes.json()
+        const libraryData = await libraryRes.json()
+
+        // Merge results, removing duplicates
+        const historyValues = historyData.values || []
+        const libraryValues = libraryData.names || []
+        const merged = [...new Set([...libraryValues, ...historyValues])]
+
+        setEquipmentResults(merged)
+        setSelectedEquipmentIndex(-1)
+      } catch (error) {
+        console.error("Search equipment error:", error)
+        setEquipmentResults([])
+        setSelectedEquipmentIndex(-1)
+      }
+    }, 250)
   }
 
   const searchParticipantsForEdit = async (query: string) => {
@@ -533,15 +569,21 @@ export default function HomePage() {
       return
     }
 
-    try {
-      const response = await fetch(`/api/participants/search?callsign=${encodeURIComponent(query)}`)
-      const data = await response.json()
-      setEditSearchResults(data.participants || [])
-      setShowEditSearchResults(true)
-    } catch (error) {
-      console.error("Search participants error:", error)
-      setEditSearchResults([])
-    }
+    // [v2.0.4] 同主输入框：防抖，避免连续请求导致结果乱序
+    if (fieldTimersRef.current.editSearch) clearTimeout(fieldTimersRef.current.editSearch)
+    fieldTimersRef.current.editSearch = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/participants/search?callsign=${encodeURIComponent(query)}`
+        )
+        const data = await response.json()
+        setEditSearchResults(data.participants || [])
+        setShowEditSearchResults(true)
+      } catch (error) {
+        console.error("Search participants error:", error)
+        setEditSearchResults([])
+      }
+    }, 250)
   }
 
   const selectParticipantForEdit = (participant: Participant) => {

@@ -469,13 +469,19 @@ export class LogManager {
     // 使用 SQL 查询特定字段
     const condition = (logRecords as any)[field]
 
-    // [v1.5.13 安全] 仅返回未软删的记录，避免公开接口泄露已删除数据。
-    return db
-      .select()
+    // [v2.0.4] 只取该字段并去重：旧实现 select * + limit 50 再在 JS 去重，
+    // 同一设备出现多次时会"占满 50 行"，导致候选只剩一两个值（看着像搜不到）。
+    const rows = await db
+      .selectDistinct({ value: condition })
       .from(logRecords)
       .where(and(like(condition, `%${query}%`), isNull(logRecords.deletedAt)))
-      .orderBy((logRecords as any)[field])
-      .limit(50)
+      .orderBy(condition)
+      .limit(20)
+
+    // 保持原有返回形态（调用方按 field 取值）
+    return rows
+      .filter((r) => r.value)
+      .map((r) => ({ [field]: r.value })) as unknown as LogRecord[]
   }
 
   // Query records by callsign within one year

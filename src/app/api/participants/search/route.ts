@@ -19,20 +19,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ participants: [] })
     }
 
-    // Get all participants and filter by callsign (contains)
-    // [v2.0.2 修复] 与会员档案列表一致，避免会员超过 1000 后联想搜不到
-    const allParticipants = await participantManager.getParticipants({
-      limit: 2000,
-    })
+    // [v2.0.4] 改到 SQL 侧筛选 + 排序 + 截断，只回 10 条必要字段。
+    // 旧实现在 JS 里过滤「一次拉 2000 名会员」，主控每敲一个字就要传 260KB+。
+    const participants = await participantManager.searchByCallsign(callsign, 10)
 
-    const filtered = allParticipants.filter((p) =>
-      p.callsign.toLowerCase().includes(callsign.toLowerCase())
-    )
-
-    // Limit to 10 results
-    const limited = filtered.slice(0, 10)
-
-    return NextResponse.json({ participants: limited })
+    return NextResponse.json({ participants })
   } catch (error) {
     console.error("Search participants error:", error)
     return NextResponse.json(

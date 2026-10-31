@@ -125,6 +125,48 @@ export class ParticipantManager {
       .offset(skip)
   }
 
+  /**
+   * [v2.0.4] 呼号联想：在 SQL 里筛选 + 排序 + 截断，只取需要的列。
+   *
+   * 旧实现是「先把 2000 名会员全查出来（约 266KB）→ 在 JS 里 includes 过滤」，
+   * 主控每打一个字就传一次整表，手机微信里明显卡顿；而且排序是纯字母序，
+   * 「BI4」命中 148 条时用户要的人常被挤到第 11 位之后，看着就像"候选不对"。
+   *
+   * 现在：前缀命中优先 → 最近参与优先 → 字母序，只回 limit 条。
+   */
+  async searchByCallsign(callsign: string, limit = 10): Promise<Participant[]> {
+    await ensureTable()
+    const q = callsign.trim()
+    if (q.length < 2) return []
+
+    const db = await getDb()
+    const like = `%${q}%`
+    const prefix = `${q}%`
+
+    const result = await db.execute(sql`
+      select p.id, p.callsign, p.name, p.qth, p.equipment, p.antenna,
+             p.power, p.signal, p.report, p.remarks
+      from participants p
+      left join lateral (
+        select max(s.session_time) as last_time
+        from log_records r
+        join log_sessions s on r.session_id = s.id
+        where r.deleted_at is null
+          and s.deleted_at is null
+          and upper(trim(r.callsign)) = upper(trim(p.callsign))
+      ) l on true
+      where upper(p.callsign) like upper(${like})
+      order by
+        case when upper(p.callsign) like upper(${prefix}) then 0 else 1 end,
+        l.last_time desc nulls last,
+        p.callsign
+      limit ${limit}
+    `)
+
+    const rows = (result as unknown as { rows?: Record<string, unknown>[] }).rows ?? []
+    return rows as unknown as Participant[]
+  }
+
   async updateParticipant(
     id: string,
     data: UpdateParticipant
