@@ -144,21 +144,23 @@ export class ParticipantManager {
     const prefix = `${q}%`
 
     const result = await db.execute(sql`
+      with last_seen as (
+        -- 先把每位呼号的最近参与时间聚合一次（全表 5k 行 ≈ 5ms），
+        -- 不能写成每行一次的关联子查询：148 次 × 3ms 会让一次联想变成 500ms。
+        select upper(trim(r.callsign)) as cs, max(s.session_time) as lt
+        from log_records r
+        join log_sessions s on r.session_id = s.id
+        where r.deleted_at is null and s.deleted_at is null
+        group by 1
+      )
       select p.id, p.callsign, p.name, p.qth, p.equipment, p.antenna,
              p.power, p.signal, p.report, p.remarks
       from participants p
-      left join lateral (
-        select max(s.session_time) as last_time
-        from log_records r
-        join log_sessions s on r.session_id = s.id
-        where r.deleted_at is null
-          and s.deleted_at is null
-          and upper(trim(r.callsign)) = upper(trim(p.callsign))
-      ) l on true
+      left join last_seen l on l.cs = upper(trim(p.callsign))
       where upper(p.callsign) like upper(${like})
       order by
         case when upper(p.callsign) like upper(${prefix}) then 0 else 1 end,
-        l.last_time desc nulls last,
+        l.lt desc nulls last,
         p.callsign
       limit ${limit}
     `)
