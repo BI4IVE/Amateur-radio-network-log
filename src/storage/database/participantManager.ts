@@ -68,10 +68,12 @@ export class ParticipantManager {
   async getParticipantByCallsign(callsign: string): Promise<Participant | null> {
     await ensureTable()
     const db = await getDb()
+    // [v2.0.4] 按「去空格 + 大写」匹配：历史数据里存在小写呼号，
+    // 用精确匹配会查不到而走新建，进而撞 participants_callsign_unique。
     const [participant] = await db
       .select()
       .from(participants)
-      .where(eq(participants.callsign, callsign))
+      .where(sql`upper(trim(${participants.callsign})) = upper(${callsign.trim()})`)
     return participant || null
   }
 

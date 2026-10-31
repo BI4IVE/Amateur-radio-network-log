@@ -109,14 +109,12 @@ export async function POST(
       console.error("[records.with-participant] 微信推送触发异常:", error)
     })
 
-    // Update or create participant in database
-    const existingParticipant = await participantManager.getParticipantByCallsign(
-      body.callsign
-    )
-
+    // [v2.0.4 修复] 参与者档案统一用「归一化呼号」，并在唯一约束冲突时兜底重试。
+    // 原实现用 body.callsign（可能是小写/带空格）查与写，遇到库中已存在大写同号时会撞
+    // participants_callsign_unique 直接抛错；因为记录已先入库，接口却返回 500，主控会误以为没录上而重复录入。
     const participantData = {
-      callsign: body.callsign,
-      name: body.qth?.split(" ")[0] || body.callsign,
+      callsign: normalizedCallsign,
+      name: body.qth?.split(" ")[0] || normalizedCallsign,
       qth: body.qth || null,
       equipment: body.equipment || null,
       antenna: body.antenna || null,
@@ -126,18 +124,38 @@ export async function POST(
       remarks: body.remarks || null,
     }
 
-    let updatedParticipant
-    if (existingParticipant) {
-      // Update existing participant with latest data
-      updatedParticipant = await participantManager.updateParticipant(
-        existingParticipant.id,
-        participantData
+    let updatedParticipant: Awaited<ReturnType<typeof participantManager.createParticipant>> | null =
+      null
+    try {
+      const existingParticipant = await participantManager.getParticipantByCallsign(
+        normalizedCallsign
       )
-    } else {
-      // Create new participant
-      updatedParticipant = await participantManager.createParticipant(
-        participantData
-      )
+
+      if (existingParticipant) {
+        updatedParticipant = await participantManager.updateParticipant(
+          existingParticipant.id,
+          participantData
+        )
+      } else {
+        updatedParticipant = await participantManager.createParticipant(participantData)
+      }
+    } catch (error) {
+      // 唯一约束冲突：并发录入或历史脏数据，按呼号再取一次并更新到现有那条
+      const code = (error as { code?: string; cause?: { code?: string } } | null)
+      const pgCode = code?.code ?? code?.cause?.code
+      if (pgCode === "23505") {
+        try {
+          const again = await participantManager.getParticipantByCallsign(normalizedCallsign)
+          if (again) {
+            updatedParticipant = await participantManager.updateParticipant(again.id, participantData)
+          }
+        } catch (retryError) {
+          console.error("[records.with-participant] 档案更新重试失败:", retryError)
+        }
+      } else {
+        // 档案失败不影响本次签到：记录已写入，不能因为档案问题让主控以为录入失败
+        console.error("[records.with-participant] 档案更新失败:", error)
+      }
     }
 
     // [v2.0.4] 回归欢迎：附带「距上次参与天数」，主控台据此提示
