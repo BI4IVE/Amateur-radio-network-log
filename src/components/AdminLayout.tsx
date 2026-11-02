@@ -24,6 +24,9 @@ const PREFIX_PATH_PERMISSION: [string, PermissionKey][] = [
   ["/admin/login-logs", "loginlog.view"],
   ["/admin/audit", "audit.view"],
   ["/admin/participants", "member.view"],
+  // [v2.0.6] 新增页面补上权限映射，否则「菜单看得见、点进去 403」
+  ["/admin/donations", "donation.view"],
+  ["/admin/controller-tiers", "pageconfig.manage"],
   ["/admin/page-configs", "pageconfig.manage"],
   ["/admin/upgrade", "upgrade.manage"],
   ["/admin/wechat/config", "push.config"],
