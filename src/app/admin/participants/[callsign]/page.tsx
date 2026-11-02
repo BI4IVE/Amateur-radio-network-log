@@ -57,6 +57,28 @@ type Detail = {
     networkCount?: number
     splitTotal?: number
   }
+  /** [v2.0.6] 支持记录（后台可见全部金额） */
+  donations: {
+    count: number
+    level: {
+      label: string | null
+      min: number | null
+      nextLabel: string | null
+      nextMin: number | null
+      remain: number | null
+      progress: number
+      index: number
+    }
+    amountTotal: number
+    items: {
+      id: string
+      date: string
+      channel: string | null
+      note: string | null
+      amount: number | null
+      anonymous: boolean
+    }[]
+  }
   bindings: {
     id: string
     openid: string
@@ -372,6 +394,67 @@ export default function AdminParticipantDetailPage() {
                   </div>
                   <Row label="最近参与" readonly value={fmt(data.stats.lastTime)} />
                   <Row label="最常信号" readonly value={data.stats.topSignal || "-"} />
+                </div>
+
+                {/* [v2.0.6] 支持记录：后台可见全部金额（个人中心只显示最近一年） */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <h3 className="text-sm font-bold text-black">支持记录</h3>
+                    <a
+                      href="/admin/donations"
+                      className="text-xs font-semibold text-indigo-600 hover:underline"
+                    >
+                      {data.donations.count > 0
+                        ? `${data.donations.count} 次 · 管理 ›`
+                        : "去录入 ›"}
+                    </a>
+                  </div>
+
+                  {data.donations.count === 0 ? (
+                    <p className="px-4 py-6 text-xs text-black/45">暂无支持记录</p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-2.5 p-3.5">
+                        <Kpi value={data.donations.count} label="支持次数" />
+                        <Kpi value={data.donations.level.label ?? "-"} label="档位" />
+                        <Kpi
+                          value={`¥${data.donations.amountTotal.toFixed(0)}`}
+                          label="累计金额"
+                        />
+                      </div>
+                      <div className="border-t border-gray-100">
+                        {data.donations.items.map((d) => (
+                          <div
+                            key={d.id}
+                            className="flex items-center gap-2 px-4 py-2 border-b border-gray-50 last:border-b-0"
+                          >
+                            <span className="text-[11px] text-black/40 tabular-nums shrink-0 w-[62px]">
+                              {d.date}
+                            </span>
+                            <span className="text-xs font-semibold text-black">
+                              {d.channel || "支持"}
+                              {d.note ? (
+                                <span className="ml-1.5 text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded-full px-1.5 py-[1px]">
+                                  {d.note}
+                                </span>
+                              ) : null}
+                              {d.anonymous ? (
+                                <span className="ml-1 text-[10px] text-black/30">匿名</span>
+                              ) : null}
+                            </span>
+                            <span className="ml-auto text-xs font-bold text-amber-700 tabular-nums">
+                              {d.amount === null ? "—" : `¥${d.amount}`}
+                            </span>
+                          </div>
+                        ))}
+                        {data.donations.count > data.donations.items.length ? (
+                          <p className="px-4 py-2 text-[10.5px] text-black/35">
+                            仅显示最近 {data.donations.items.length} 条
+                          </p>
+                        ) : null}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">

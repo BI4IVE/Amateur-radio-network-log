@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { requirePermission } from "@/lib/permissions-server"
 import { computeLicenseInfo, LICENSE_STATE_LABEL, isValidDateString } from "@/lib/me/license"
 import { getDefaultLicenseIssuer } from "@/lib/me/defaults"
+import { computeDonationLevel } from "@/lib/me/donationTier"
 import {
+  donationManager,
   logManager,
   participantManager,
   wechatBindingsManager,
@@ -65,7 +67,7 @@ export async function GET(
       return NextResponse.json({ error: "缺少呼号" }, { status: 400 })
     }
 
-    const [participant, stats, rank, topSignal, bindings, pushLogs, split] =
+    const [participant, stats, rank, topSignal, bindings, pushLogs, split, donations] =
       await Promise.all([
         participantManager.getParticipantByCallsign(callsign),
         logManager.getCallsignStats(callsign),
@@ -75,6 +77,8 @@ export async function GET(
         wechatPushLogManager.list({ callsign, limit: 10 }),
         // [v2.0.5] 设备参与 / 网络参与（详情页「参与情况」展示）
         logManager.getCallsignSplit(callsign),
+        // [v2.0.6] 支持记录（详情页展示，后台可见全部金额）
+        donationManager.listByCallsign(callsign, 50).catch(() => []),
       ])
 
     const auditLogs = await logManager.getParticipantAuditLogs(
@@ -106,6 +110,20 @@ export async function GET(
         deviceCount: split.device,
         networkCount: split.network,
         splitTotal: split.total,
+      },
+      // [v2.0.6] 支持记录：次数、档位、累计金额与最近明细
+      donations: {
+        count: donations.length,
+        level: computeDonationLevel(donations.length),
+        amountTotal: donations.reduce((sum, d) => sum + (d.amount ? Number(d.amount) : 0), 0),
+        items: donations.slice(0, 10).map((d) => ({
+          id: d.id,
+          date: d.donatedAt,
+          channel: d.channel,
+          note: d.note,
+          amount: d.amount === null ? null : Number(d.amount),
+          anonymous: d.anonymous,
+        })),
       },
       bindings: bindings.map((b) => ({
         id: b.id,
