@@ -14,23 +14,44 @@ export async function GET(request: NextRequest) {
   if (guard.error) return guard.error
 
   try {
-    const limitParam = request.nextUrl.searchParams.get("limit")
-    const limit = Math.min(500, Math.max(20, Number(limitParam) || 200))
-    const items = await donationManager.listRecent(limit)
+    const sp = request.nextUrl.searchParams
+    const page = Math.max(1, Number(sp.get("page")) || 1)
+    const pageSize = Math.min(100, Math.max(10, Number(sp.get("pageSize")) || 20))
+    const q = sp.get("q") ?? ""
+    const kindParam = sp.get("kind")
+    const kind = kindParam === "person" || kindParam === "aggregate" ? kindParam : undefined
+    const year = sp.get("year") ?? ""
 
-    // 汇总（仅后台可见）：次数与金额合计
-    let amountTotal = 0
-    for (const it of items) {
-      if (it.amount) amountTotal += Number(it.amount)
-    }
+    const [{ rows, total, amount }, summary, years] = await Promise.all([
+      donationManager.listPaged({
+        q,
+        kind,
+        year,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      }),
+      donationManager.summary({ q, year }),
+      donationManager.years(),
+    ])
+
+    const person = summary.find((s) => s.kind === "person") ?? { count: 0, amount: 0 }
+    const aggregate = summary.find((s) => s.kind === "aggregate") ?? { count: 0, amount: 0 }
 
     return NextResponse.json({
-      items: items.map((it) => ({
+      items: rows.map((it) => ({
         ...it,
         amount: it.amount === null ? null : Number(it.amount),
       })),
-      count: items.length,
-      amountTotal,
+      total,
+      amount,
+      page,
+      pageSize,
+      years,
+      summary: {
+        person,
+        aggregate,
+        all: { count: person.count + aggregate.count, amount: person.amount + aggregate.amount },
+      },
     })
   } catch (error) {
     console.error("List donations error:", error)

@@ -135,6 +135,98 @@ class DonationManager {
     return selectRows(sql`true`, limit)
   }
 
+  /**
+   * [v2.0.6] 后台分页查询：支持呼号/备注搜索、类型筛选、年份筛选。
+   * 返回当页数据 + 命中总数，前端据此翻页。
+   */
+  async listPaged(opts: {
+    q?: string
+    kind?: "person" | "aggregate"
+    year?: string
+    limit?: number
+    offset?: number
+  }): Promise<{ rows: DonationRecord[]; total: number; amount: number }> {
+    await ensureTable()
+    const db = await getDb()
+    const limit = Math.min(200, Math.max(5, opts.limit ?? 20))
+    const offset = Math.max(0, opts.offset ?? 0)
+
+    const conds = [sql`true`]
+    const q = (opts.q ?? "").trim()
+    if (q) {
+      const like = `%${q}%`
+      conds.push(
+        sql`(callsign ilike ${like} or coalesce(note,'') ilike ${like} or coalesce(channel,'') ilike ${like})`
+      )
+    }
+    if (opts.kind) conds.push(sql`kind = ${opts.kind}`)
+    if (opts.year && /^\d{4}$/.test(opts.year)) {
+      conds.push(sql`to_char(donated_at, 'YYYY') = ${opts.year}`)
+    }
+    const where = sql.join(conds, sql` and `)
+
+    const countResult = await db.execute(sql`
+      select count(*)::int as n, coalesce(sum(amount), 0) as amt
+      from donations where ${where}
+    `)
+    const countRows = (countResult as unknown as { rows?: RawRow[] }).rows ?? []
+    const total = Number(countRows[0]?.n ?? 0)
+    const amount = Number(countRows[0]?.amt ?? 0)
+
+    const result = await db.execute(sql`
+      select id, callsign, amount, donated_at, channel, note, anonymous, kind, created_by, created_at
+      from donations
+      where ${where}
+      order by donated_at desc, created_at desc
+      limit ${limit} offset ${offset}
+    `)
+    const rows = (result as unknown as { rows?: RawRow[] }).rows ?? []
+    return { rows: rows.map(toRecord), total, amount }
+  }
+
+  /** 后台：按类型汇总（个人 / 汇总），带相同的搜索与年份条件 */
+  async summary(opts: { q?: string; year?: string }): Promise<
+    { kind: string; count: number; amount: number }[]
+  > {
+    await ensureTable()
+    const db = await getDb()
+    const conds = [sql`true`]
+    const q = (opts.q ?? "").trim()
+    if (q) {
+      const like = `%${q}%`
+      conds.push(
+        sql`(callsign ilike ${like} or coalesce(note,'') ilike ${like} or coalesce(channel,'') ilike ${like})`
+      )
+    }
+    if (opts.year && /^\d{4}$/.test(opts.year)) {
+      conds.push(sql`to_char(donated_at, 'YYYY') = ${opts.year}`)
+    }
+    const where = sql.join(conds, sql` and `)
+
+    const result = await db.execute(sql`
+      select kind, count(*)::int as n, coalesce(sum(amount), 0) as amt
+      from donations where ${where}
+      group by kind
+    `)
+    const rows = (result as unknown as { rows?: RawRow[] }).rows ?? []
+    return rows.map((r) => ({
+      kind: String(r.kind ?? "person"),
+      count: Number(r.n ?? 0),
+      amount: Number(r.amt ?? 0),
+    }))
+  }
+
+  /** 后台：数据里出现过的年份（倒序），用于年份筛选下拉 */
+  async years(): Promise<string[]> {
+    await ensureTable()
+    const db = await getDb()
+    const result = await db.execute(sql`
+      select distinct to_char(donated_at, 'YYYY') as y from donations order by 1 desc
+    `)
+    const rows = (result as unknown as { rows?: RawRow[] }).rows ?? []
+    return rows.map((r) => String(r.y ?? "")).filter(Boolean)
+  }
+
   async create(data: {
     callsign: string
     amount?: number | null
