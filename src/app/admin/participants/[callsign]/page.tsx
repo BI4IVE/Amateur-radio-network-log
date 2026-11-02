@@ -51,6 +51,11 @@ type Detail = {
     topSignal: string | null
     rank: number
     rankedTotal: number
+    /** [v2.0.5] 设备参与次数（真开电台） */
+    deviceCount?: number
+    /** [v2.0.5] 网络参与次数（TT / 抖音 / 滔滔 / 涛涛） */
+    networkCount?: number
+    splitTotal?: number
   }
   bindings: {
     id: string
@@ -359,6 +364,11 @@ export default function AdminParticipantDetailPage() {
                       value={data.stats.rank ? `#${data.stats.rank}` : "-"}
                       label="台网排名"
                     />
+                  </div>
+                  {/* [v2.0.5] 设备参与在前、网络参与在后 */}
+                  <div className="grid grid-cols-2 gap-2.5 px-3.5 pb-3.5">
+                    <Kpi value={data.stats.deviceCount ?? 0} label="设备参与" />
+                    <Kpi value={data.stats.networkCount ?? 0} label="网络参与" />
                   </div>
                   <Row label="最近参与" readonly value={fmt(data.stats.lastTime)} />
                   <Row label="最常信号" readonly value={data.stats.topSignal || "-"} />

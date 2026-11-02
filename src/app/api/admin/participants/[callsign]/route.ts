@@ -65,7 +65,7 @@ export async function GET(
       return NextResponse.json({ error: "缺少呼号" }, { status: 400 })
     }
 
-    const [participant, stats, rank, topSignal, bindings, pushLogs] =
+    const [participant, stats, rank, topSignal, bindings, pushLogs, split] =
       await Promise.all([
         participantManager.getParticipantByCallsign(callsign),
         logManager.getCallsignStats(callsign),
@@ -73,6 +73,8 @@ export async function GET(
         logManager.getCallsignTopSignal(callsign),
         wechatBindingsManager.listByCallsign(callsign),
         wechatPushLogManager.list({ callsign, limit: 10 }),
+        // [v2.0.5] 设备参与 / 网络参与（详情页「参与情况」展示）
+        logManager.getCallsignSplit(callsign),
       ])
 
     const auditLogs = await logManager.getParticipantAuditLogs(
@@ -100,6 +102,10 @@ export async function GET(
         topSignal,
         rank: rank.rank,
         rankedTotal: rank.total,
+        // [v2.0.5] 设备参与在前，网络参与在后
+        deviceCount: split.device,
+        networkCount: split.network,
+        splitTotal: split.total,
       },
       bindings: bindings.map((b) => ({
         id: b.id,

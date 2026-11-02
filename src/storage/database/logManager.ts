@@ -457,6 +457,33 @@ export class LogManager {
   }
 
   /**
+   * [v2.0.5] 单个会员的通联拆分（设备参与 / 网络参与），供会员详情页展示。
+   * 口径与 getParticipationSplit 完全一致。
+   */
+  async getCallsignSplit(
+    callsign: string
+  ): Promise<{ total: number; device: number; network: number }> {
+    const db = await getDb()
+    const result = await db.execute(sql`
+      select count(*)::int as total,
+             count(*) filter (
+               where upper(trim(equipment)) like 'TT%'
+                  or equipment like '%抖音%'
+                  or equipment like '%滔滔%'
+                  or equipment like '%涛涛%'
+             )::int as network
+      from log_records
+      where deleted_at is null
+        and upper(trim(callsign)) = upper(${callsign.trim()})
+    `)
+    const rows = (result as unknown as { rows?: Record<string, unknown>[] }).rows ?? []
+    const row = rows[0] ?? {}
+    const total = Number(row.total ?? 0)
+    const network = Number(row.network ?? 0)
+    return { total, device: Math.max(0, total - network), network }
+  }
+
+  /**
    * [v2.0.5] 按呼号统计通联次数，并区分「设备参与」与「网络参与」。
    *
    * 口径：设备名含 TT / 抖音 / 滔滔 / 涛涛 的算网络参与（不经中继，走网络链路），
