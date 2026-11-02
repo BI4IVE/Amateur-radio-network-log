@@ -1,4 +1,4 @@
-// @version v2.0.4
+// @version v2.0.5
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthUser, type JwtPayload } from "@/lib/auth"
 import { userManager } from "@/storage/database"

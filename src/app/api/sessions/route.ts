@@ -1,4 +1,4 @@
-// @version v2.0.4
+// @version v2.0.5
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, userManager } from "@/storage/database"
 import { getAuthUser, requireAuth } from "@/lib/auth"

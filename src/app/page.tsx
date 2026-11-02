@@ -1,4 +1,4 @@
-// @version v2.0.4
+// @version v2.0.5
 "use client"
 
 import { isAdminRole } from "@/lib/permissions"
@@ -118,6 +118,8 @@ export default function HomePage() {
   const [returningToast, setReturningToast] = useState<{ callsign: string; days: number } | null>(
     null
   )
+  // 回归提示的自动关闭计时器（60 秒，新提示会重置）
+  const returningToastTimerRef = useRef<number | null>(null)
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
 
   // [v1.5.10] 按 id 去重：保留最后出现的一条，确保数组内记录唯一。
@@ -761,11 +763,16 @@ export default function HomePage() {
       // [v1.5.10] 按 id 兜底去重：与 SSE 回声合并时永不产生重复条目
       setRecords((prev) => dedupeRecords([...prev, data.record]))
 
-      // [v2.0.4] 回归欢迎：间隔 ≥30 天时提示主控口头欢迎一下
+      // [v2.0.5] 回归欢迎：间隔 ≥30 天时提示主控口头欢迎一下，显示 60 秒
+      // （主控正在念呼号/报读，6 秒容易错过；新的回归提示会重置计时，避免被上一条提前清掉）
       const backDays = Number(data.returningDays)
       if (Number.isFinite(backDays) && backDays >= 30) {
         setReturningToast({ callsign: data.record.callsign, days: backDays })
-        window.setTimeout(() => setReturningToast(null), 6000)
+        if (returningToastTimerRef.current) clearTimeout(returningToastTimerRef.current)
+        returningToastTimerRef.current = window.setTimeout(
+          () => setReturningToast(null),
+          60_000
+        )
       }
 
       // Reload participants to get updated data

@@ -1,4 +1,4 @@
-// @version v2.0.4
+// @version v2.0.5
 import { pageConfigManager } from "@/storage/database"
 
 /**
