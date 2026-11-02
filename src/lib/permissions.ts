@@ -34,6 +34,8 @@ export type PermissionKey =
   | "binding.review"
   | "bindcode.manage"
   | "memberauth.manage"
+  | "donation.view"
+  | "donation.manage"
   | "pushlog.view"
   | "push.config"
   | "equipment.manage"
@@ -101,6 +103,8 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
       { key: "binding.review", label: "绑定审核" },
       { key: "bindcode.manage", label: "绑定码管理" },
       { key: "memberauth.manage", label: "会员对照表" },
+      { key: "donation.view", label: "支持记录" },
+      { key: "donation.manage", label: "录入支持记录" },
       { key: "pushlog.view", label: "推送日志" },
     ],
   },
@@ -152,6 +156,8 @@ export const ADMIN_PERMISSIONS: PermissionKey[] = [
   "binding.review",
   "bindcode.manage",
   "memberauth.manage",
+  "donation.view",
+  "donation.manage",
   "pushlog.view",
   "push.config",
   "equipment.manage",

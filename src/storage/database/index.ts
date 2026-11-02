@@ -5,6 +5,7 @@ export { logManager } from "./logManager"
 export { pageConfigManager } from "./pageConfigManager"
 export { equipmentManager } from "./equipmentManager"
 export { loginLogManager } from "./loginLogManager"
+export { donationManager } from "./donationManager"
 // [v1.5.21 微信推送]
 export { wechatBindingsManager } from "./wechatBindingsManager"
 export { wechatMemberAuthManager } from "./wechatMemberAuthManager"

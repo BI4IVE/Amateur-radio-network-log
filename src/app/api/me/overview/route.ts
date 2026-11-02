@@ -10,6 +10,7 @@ import {
   parseControllerTiers,
 } from "@/lib/me/controllerLevel"
 import {
+  donationManager,
   logManager,
   pageConfigManager,
   participantManager,
@@ -170,6 +171,10 @@ export async function GET(request: NextRequest) {
           : null,
       // [v2.0.4] 主控等级阶梯（后台可配置），供「主控中心」画台阶
       controllerTiers: controllerTiers.map((t) => ({ label: t.label, min: t.min })),
+      // [v2.0.6] 支持记录条数：为 0 时个人中心不显示入口
+      donationCount: await donationManager
+        .countByCallsign(callsign)
+        .catch(() => 0),
       // [v2.0.2] 台网规则：首次进入弹前 3 行，点更多查看全部
       rules: rulesConfig?.value?.trim() || DEFAULT_MEMBER_RULES,
     })

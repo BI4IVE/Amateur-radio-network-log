@@ -277,6 +277,23 @@ const menuGroups: MenuGroup[] = [
         ),
       },
       {
+        // [v2.0.6] 支持记录：台友赞助（现金 / 物资 / 场地）
+        id: "donations",
+        label: "支持记录",
+        path: "/admin/donations",
+        icon: (
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0-6v3m0 12v3M3 12h3m12 0h3"
+            />
+          </svg>
+        ),
+        requiredRole: "admin",
+      },
+      {
         id: "member-bindings",
         label: "微信绑定",
         path: "/admin/wechat/bindings",

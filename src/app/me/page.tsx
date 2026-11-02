@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { SessionBrief } from "@/lib/me/brief"
+import { DONATION_TIERS } from "@/lib/me/donationTier"
 import { domCanvasFactory, renderBrief } from "./briefCanvas"
 
 /**
@@ -38,6 +39,8 @@ type Overview = {
   } | null
   /** [v2.0.4] 主控等级阶梯（后台可配置），供「主控中心」画台阶 */
   controllerTiers?: { label: string; min: number }[]
+  /** [v2.0.6] 支持记录条数（0 时不显示入口） */
+  donationCount?: number
   /** 台网规则（后台配置项 member_rules，换行分隔） */
   rules?: string
   /** 档案默认值（发证机关等，后台可配） */
@@ -116,7 +119,35 @@ type PushLog = {
 type TabKey = "home" | "records" | "my"
 
 /** [v2.0.6] 「我的」页内的子视图：功能列表 / 档案 / 执照 / 绑定 / 推送 */
-type MyView = "menu" | "profile" | "license" | "bind" | "push" | "controller"
+type MyView = "menu" | "profile" | "license" | "bind" | "push" | "controller" | "donation"
+
+/** [v2.0.6] 支持记录（金额只保留最近一年） */
+interface DonationItem {
+  id: string
+  date: string
+  channel: string | null
+  note: string | null
+  amount: number | null
+  anonymous: boolean
+  withinYear: boolean
+}
+
+interface DonationData {
+  count: number
+  firstYear: number | null
+  years: number
+  lastDate: string | null
+  level: {
+    label: string | null
+    min: number | null
+    nextLabel: string | null
+    nextMin: number | null
+    remain: number | null
+    progress: number
+    index: number
+  }
+  items: DonationItem[]
+}
 
 const WEEKDAY = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
 
@@ -256,6 +287,24 @@ export default function MePage() {
   const [data, setData] = useState<Overview | null>(null)
   const [tab, setTab] = useState<TabKey>("home")
   const [myView, setMyView] = useState<MyView>("menu")
+
+  // [v2.0.6] 支持记录：进入子页才拉取，不拖慢首屏
+  const [donation, setDonation] = useState<DonationData | null>(null)
+  const [donationLoading, setDonationLoading] = useState(false)
+  const [donationError, setDonationError] = useState<string | null>(null)
+  useEffect(() => {
+    if (myView !== "donation" || donation) return
+    setDonationLoading(true)
+    setDonationError(null)
+    fetch("/api/me/donations")
+      .then(async (r) => {
+        const json = await r.json()
+        if (!r.ok) throw new Error(json.error || "读取失败")
+        setDonation(json as DonationData)
+      })
+      .catch((e) => setDonationError(e instanceof Error ? e.message : "读取失败"))
+      .finally(() => setDonationLoading(false))
+  }, [myView, donation])
 
   // [v2.0.6] 三个页面各自独立，切页回到顶部（首页概览较长，避免停留在页面中部）
   const contentRef = useRef<HTMLDivElement>(null)
@@ -936,6 +985,35 @@ export default function MePage() {
                   </button>
                 ) : null}
 
+                {/* [v2.0.6] 支持记录：没有支持过时不显示入口 */}
+                {(data.donationCount ?? 0) > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => openMyView("donation")}
+                    className="w-full flex items-center gap-3 bg-white rounded-2xl px-4 py-3.5 mb-3 text-left shadow-[0_6px_18px_rgba(24,24,60,0.06)]"
+                  >
+                    <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-300 to-orange-500 flex items-center justify-center shrink-0">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-[17px] h-[17px] stroke-white fill-none"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                      >
+                        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 0 0 0-7.8z" />
+                      </svg>
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[13.5px] font-extrabold text-black">
+                        支持记录
+                      </span>
+                      <span className="block text-[11px] text-black/45 mt-0.5 truncate">
+                        累计 {data.donationCount} 次 · 感谢一路同行
+                      </span>
+                    </span>
+                    <span className="text-[13px] text-black/30 shrink-0">›</span>
+                  </button>
+                ) : null}
+
                 <div className="bg-white rounded-2xl overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
                   <button
                     type="button"
@@ -1010,6 +1088,162 @@ export default function MePage() {
                   返回我的
                 </button>
               </div>
+
+              {/* [v2.0.6] 支持记录：档位（同频/共振/长守/满格）+ 明细（金额只显示最近一年） */}
+              {myView === "donation" ? (
+                <div className="px-4 pb-6">
+                  {donationLoading ? (
+                    <p className="text-center text-[12px] text-black/40 py-16">加载中…</p>
+                  ) : donationError ? (
+                    <p className="text-center text-[12px] text-red-500 py-16">{donationError}</p>
+                  ) : donation ? (
+                    <>
+                      <div className="rounded-2xl p-4 text-white bg-gradient-to-br from-amber-500 to-orange-700 shadow-[0_10px_28px_rgba(180,83,9,0.28)]">
+                        <p className="text-[10px] tracking-[2.5px] text-white/75">
+                          {donation.firstYear ? `SUPPORTER SINCE ${donation.firstYear}` : "SUPPORTER"}
+                        </p>
+                        <p className="text-[22px] font-extrabold leading-tight mt-1">
+                          {donation.level.label ?? "同频"}
+                        </p>
+                        <p className="text-[11.5px] text-white/90 mt-1.5">
+                          累计支持 {donation.count} 次
+                          {donation.lastDate ? ` · 最近一次 ${donation.lastDate}` : ""}
+                        </p>
+                        <div className="mt-3 h-2 rounded-full bg-white/25 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-white"
+                            style={{ width: `${donation.level.progress}%` }}
+                          />
+                        </div>
+                        <p className="text-[10.5px] text-white/90 mt-2">
+                          {donation.level.nextLabel && donation.level.nextMin
+                            ? `距「${donation.level.nextLabel}」还差 ${donation.level.remain} 次 · ${donation.count} / ${donation.level.nextMin} 次`
+                            : "已是最高档位 · 感谢长期同行"}
+                        </p>
+                      </div>
+
+                      <div className="bg-white rounded-2xl mt-3 px-3 pt-4 pb-3 shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
+                        <p className="text-[10.5px] text-black/40 tracking-[1px] px-1 mb-3">
+                          支持档位
+                        </p>
+                        <div className="flex items-start">
+                          {DONATION_TIERS.map((t, i) => {
+                            const done = donation.count >= t.min
+                            const isCurrent = i === donation.level.index
+                            return (
+                              <div key={t.label} className="flex-1 flex flex-col items-center">
+                                <span
+                                  className={`w-2.5 h-2.5 rounded-full ${
+                                    done ? "bg-amber-500" : "bg-gray-200"
+                                  } ${isCurrent ? "ring-2 ring-amber-200 ring-offset-1" : ""}`}
+                                />
+                                <span
+                                  className={`mt-1.5 text-[10.5px] font-extrabold ${
+                                    done ? "text-amber-700" : "text-black/30"
+                                  }`}
+                                >
+                                  {t.label}
+                                </span>
+                                <span
+                                  className={`text-[9px] mt-0.5 ${
+                                    done ? "text-amber-500/80" : "text-black/25"
+                                  }`}
+                                >
+                                  {t.min} 次
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-2xl mt-3 grid grid-cols-3 overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
+                        <div className="py-3.5 text-center border-r border-gray-100">
+                          <p className="text-xl font-extrabold text-black tabular-nums">
+                            {donation.count}
+                          </p>
+                          <p className="text-[10.5px] text-black/45 mt-1">累计支持</p>
+                        </div>
+                        <div className="py-3.5 text-center border-r border-gray-100">
+                          <p className="text-xl font-extrabold text-black tabular-nums">
+                            {donation.firstYear ?? "-"}
+                          </p>
+                          <p className="text-[10.5px] text-black/45 mt-1">起始年</p>
+                        </div>
+                        <div className="py-3.5 text-center">
+                          <p className="text-xl font-extrabold text-black tabular-nums">
+                            {donation.years}
+                          </p>
+                          <p className="text-[10.5px] text-black/45 mt-1">支持年数</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-2xl mt-3 overflow-hidden shadow-[0_6px_18px_rgba(24,24,60,0.06)]">
+                        <div className="flex items-center px-4 py-3 border-b border-gray-100">
+                          <span className="text-[12.5px] font-extrabold text-black">支持明细</span>
+                          <span className="ml-auto text-[11px] text-black/40">
+                            共 {donation.count} 次
+                          </span>
+                        </div>
+                        {donation.items.length === 0 ? (
+                          <p className="px-4 py-6 text-[11.5px] text-black/40">暂无记录</p>
+                        ) : (
+                          donation.items.map((it, i) => {
+                            const prev = donation.items[i - 1]
+                            const showSplit = prev?.withinYear && !it.withinYear
+                            return (
+                              <div key={it.id}>
+                                {showSplit ? (
+                                  <div className="flex items-center gap-2.5 px-4 py-2 bg-[#fbfbfd]">
+                                    <span className="flex-1 h-px bg-gray-100" />
+                                    <span className="text-[10px] text-black/30">一年前 · 不显示金额</span>
+                                    <span className="flex-1 h-px bg-gray-100" />
+                                  </div>
+                                ) : null}
+                                <div
+                                  className={`flex items-center gap-2.5 px-4 py-3 border-b border-gray-50 ${
+                                    it.withinYear ? "" : "opacity-60"
+                                  }`}
+                                >
+                                  <span className="w-[62px] text-[10.5px] text-black/40 tabular-nums shrink-0">
+                                    {it.date}
+                                  </span>
+                                  <span className="text-[12.5px] font-bold text-black">
+                                    {it.channel || "支持"}
+                                    {it.note ? (
+                                      <em className="not-italic ml-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 rounded-full px-1.5 py-[1px]">
+                                        {it.note}
+                                      </em>
+                                    ) : null}
+                                  </span>
+                                  <span
+                                    className={`ml-auto tabular-nums ${
+                                      it.withinYear && it.amount !== null
+                                        ? "text-[12.5px] font-extrabold text-amber-700"
+                                        : "text-[10.5px] font-bold text-black/25"
+                                    }`}
+                                  >
+                                    {it.withinYear && it.amount !== null
+                                      ? `¥${it.amount}`
+                                      : it.withinYear
+                                        ? "—"
+                                        : "已记录"}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })
+                        )}
+                      </div>
+
+                      <p className="text-[10.5px] text-black/40 mt-3 px-1 leading-5">
+                        金额只显示最近一年内的记录，更早的保留日期与用途（仍计入累计次数与档位）。
+                        物资支持显示「—」，不折算成金额。
+                      </p>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
 
               {/* [v2.0.4] 主控中心：等级、阶梯、贡献数据 */}
               {myView === "controller" && data.controller ? (
