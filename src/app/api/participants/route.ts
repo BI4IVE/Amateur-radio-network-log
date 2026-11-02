@@ -1,6 +1,6 @@
 // @version v2.0.5
 import { NextRequest, NextResponse } from "next/server"
-import { participantManager, wechatBindingsManager } from "@/storage/database"
+import { logManager, participantManager, wechatBindingsManager } from "@/storage/database"
 import { getAuthUser } from "@/lib/auth"
 import { checkPermission } from "@/lib/permissions-server"
 
@@ -45,11 +45,34 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // [v2.0.5] 通联次数（含设备类型拆分）：AI 统计一次，前端不再逐个查
+    const includeCounts = searchParams.get("includeCounts") === "1"
+    const split = includeCounts ? await logManager.getParticipationSplit() : null
+    const totals = { total: 0, tt: 0, douyin: 0, other: 0, nonTT: 0 }
+
     const merged = participants.map((p) => {
       const binding = bindingMap.get(p.callsign.trim().toUpperCase())
+      const c = split?.get(p.callsign.trim().toUpperCase())
+      if (c) {
+        totals.total += c.total
+        totals.tt += c.tt
+        totals.douyin += c.douyin
+        totals.other += Math.max(0, c.total - c.tt - c.douyin)
+        totals.nonTT += Math.max(0, c.total - c.tt)
+      }
       return {
         ...p,
         bindingStatus: binding?.status ?? null,
+        counts: c
+          ? {
+              total: c.total,
+              tt: c.tt,
+              douyin: c.douyin,
+              other: Math.max(0, c.total - c.tt - c.douyin),
+              // 除去 TT 的通联次数（含抖音娱乐与其他）
+              nonTT: Math.max(0, c.total - c.tt),
+            }
+          : null,
       }
     })
 
@@ -73,6 +96,8 @@ export async function GET(request: NextRequest) {
       activeBindingCount: Array.from(bindingMap.values()).filter(
         (b) => b.status === "active"
       ).length,
+      // 全站汇总（会员中心四格数据）
+      totals: includeCounts ? totals : null,
     })
   } catch (error) {
     console.error("Get participants error:", error)

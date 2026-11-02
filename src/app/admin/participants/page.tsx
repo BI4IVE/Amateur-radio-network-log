@@ -29,6 +29,15 @@ interface Participant {
   licenseExpireDate: string | null
   /** [v1.5.29 会员中心] active / pending / inactive / rejected / null */
   bindingStatus?: string | null
+  /** [v2.0.5] 通联次数拆分（TT / 抖音娱乐 / 其他），none 表示从未参与 */
+  counts?: {
+    total: number
+    tt: number
+    douyin: number
+    other: number
+    /** 除去 TT 的通联次数 */
+    nonTT: number
+  } | null
   createdAt: string
   updatedAt: string | null
 }
@@ -95,6 +104,14 @@ export default function AdminParticipantsPage() {
   const [pageSize, setPageSize] = useState(20)
   // 已绑定微信但没有会员档案的呼号（用于提示与一键补建）
   const [missingProfiles, setMissingProfiles] = useState<string[]>([])
+  // [v2.0.5] 通联次数汇总：总台网 / TT / 抖音娱乐 / 其他
+  const [countTotals, setCountTotals] = useState<{
+    total: number
+    tt: number
+    douyin: number
+    other: number
+    nonTT: number
+  } | null>(null)
   const [backfilling, setBackfilling] = useState(false)
   const [importResult, setImportResult] = useState<{
     success: boolean
@@ -130,10 +147,13 @@ export default function AdminParticipantsPage() {
     try {
       // [v2.0.2 修复] 原来写死 500 条，会员涨到 540 后排序靠后的会员（如 BA4IGG）
       // 根本没被加载，搜索自然搜不到。提高到 2000，超过时需改服务端分页。
-      const res = await fetch("/api/participants?limit=2000&includeBinding=1")
+      const res = await fetch(
+        "/api/participants?limit=2000&includeBinding=1&includeCounts=1"
+      )
       const data = await res.json()
       if (data.participants) setParticipants(data.participants)
       setMissingProfiles(Array.isArray(data.missingProfiles) ? data.missingProfiles : [])
+      if (data.totals) setCountTotals(data.totals)
     } catch (err) { console.error(err) }
     setLoading(false)
   }
@@ -513,6 +533,28 @@ export default function AdminParticipantsPage() {
           </div>
         )}
 
+        {/* [v2.0.5] 会员中心：通联次数总览（按设备类型拆分） */}
+        {countTotals ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            {[
+              { label: "总台网次数", value: countTotals.total, tone: "text-gray-900" },
+              { label: "TT 次数", value: countTotals.tt, tone: "text-amber-600" },
+              { label: "抖音娱乐次数", value: countTotals.douyin, tone: "text-pink-600" },
+              { label: "其他次数", value: countTotals.other, tone: "text-indigo-600" },
+            ].map((card) => (
+              <div
+                key={card.label}
+                className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3"
+              >
+                <p className="text-xs text-gray-500">{card.label}</p>
+                <p className={`text-2xl font-bold tabular-nums mt-1 ${card.tone}`}>
+                  {card.value}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
         {/* 搜索 + 顶部筛选标签 */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 space-y-3">
           <input
@@ -594,15 +636,21 @@ export default function AdminParticipantsPage() {
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">信号</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">报告</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">备注</th>
+                  <th
+                    className="px-3 py-2 text-left text-xs font-medium text-gray-500"
+                    title="括号外为除去 TT 的通联次数；下行小字为总数 / TT / 抖音娱乐 / 其他"
+                  >
+                    通联（除TT）
+                  </th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">执照到期</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td colSpan={14} className="px-3 py-8 text-center text-gray-500">加载中...</td></tr>
+                  <tr><td colSpan={15} className="px-3 py-8 text-center text-gray-500">加载中...</td></tr>
                 ) : filteredParticipants.length === 0 ? (
-                  <tr><td colSpan={14} className="px-3 py-8 text-center text-gray-500">暂无数据</td></tr>
+                  <tr><td colSpan={15} className="px-3 py-8 text-center text-gray-500">暂无数据</td></tr>
                 ) : (
                   pagedParticipants.map((p, idx) => {
                     const lic = licenseCell(p.licenseExpireDate)
@@ -637,6 +685,21 @@ export default function AdminParticipantsPage() {
                       <td className="px-3 py-2 text-gray-600">{p.signal || "-"}</td>
                       <td className="px-3 py-2 text-gray-600">{p.report || "-"}</td>
                       <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{p.remarks || "-"}</td>
+                      {/* [v2.0.5] 通联次数：主数字为「除去 TT」，下行小字拆分 TT / 抖音 / 其他 */}
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span className="font-semibold text-gray-900 tabular-nums">
+                          {p.counts ? p.counts.nonTT : 0}
+                        </span>
+                        <span className="text-xs text-gray-400 ml-1">次</span>
+                        {p.counts && p.counts.total > 0 ? (
+                          <span className="block text-[10px] text-gray-400 tabular-nums">
+                            共 {p.counts.total} · TT {p.counts.tt} · 抖音 {p.counts.douyin} · 其他{" "}
+                            {p.counts.other}
+                          </span>
+                        ) : (
+                          <span className="block text-[10px] text-gray-300">未参与</span>
+                        )}
+                      </td>
                       <td className={`px-3 py-2 text-xs tabular-nums whitespace-nowrap ${lic.className}`}>
                         {lic.text}
                       </td>
