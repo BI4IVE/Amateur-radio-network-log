@@ -457,20 +457,27 @@ export class LogManager {
   }
 
   /**
-   * [v2.0.5] 按呼号统计通联次数，并区分设备类型（TT / 抖音娱乐 / 其他）。
+   * [v2.0.5] 按呼号统计通联次数，并区分「设备参与」与「网络参与」。
    *
-   * 用途：后台会员档案要显示「除去 TT 的通联次数」，会员中心要显示四项分项。
-   * TT 是滔滔链路（不占中继的线上通联），抖音娱乐同理，所以「有效通联」= 总数 − TT。
+   * 口径：设备名含 TT / 抖音 / 滔滔 / 涛涛 的算网络参与（不经中继，走网络链路），
+   * 其余算设备参与（真的开了电台）。展示时设备参与在前、网络参与在后。
+   *
+   * 注意 TT 用「以 TT 开头」匹配而不是任意包含：
+   * 设备库里有「森海克斯8800TT」这种型号，包含 TT 但不是网络通联。
    */
   async getParticipationSplit(): Promise<
-    Map<string, { total: number; tt: number; douyin: number }>
+    Map<string, { total: number; network: number }>
   > {
     const db = await getDb()
     const result = await db.execute(sql`
       select upper(trim(callsign)) as cs,
              count(*)::int as total,
-             count(*) filter (where upper(trim(equipment)) = 'TT')::int as tt,
-             count(*) filter (where trim(equipment) = '抖音娱乐')::int as douyin
+             count(*) filter (
+               where upper(trim(equipment)) like 'TT%'
+                  or equipment like '%抖音%'
+                  or equipment like '%滔滔%'
+                  or equipment like '%涛涛%'
+             )::int as network
       from log_records
       where deleted_at is null
         and coalesce(trim(callsign), '') <> ''
@@ -478,14 +485,13 @@ export class LogManager {
     `)
 
     const rows = (result as unknown as { rows?: Record<string, unknown>[] }).rows ?? []
-    const map = new Map<string, { total: number; tt: number; douyin: number }>()
+    const map = new Map<string, { total: number; network: number }>()
     for (const row of rows) {
       const cs = String(row.cs ?? "").toUpperCase()
       if (!cs) continue
       map.set(cs, {
         total: Number(row.total ?? 0),
-        tt: Number(row.tt ?? 0),
-        douyin: Number(row.douyin ?? 0),
+        network: Number(row.network ?? 0),
       })
     }
     return map

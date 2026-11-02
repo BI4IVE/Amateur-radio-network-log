@@ -45,20 +45,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // [v2.0.5] 通联次数（含设备类型拆分）：AI 统计一次，前端不再逐个查
+    // [v2.0.5] 通联次数（设备参与 / 网络参与）：一次聚合，前端不再逐个查
     const includeCounts = searchParams.get("includeCounts") === "1"
     const split = includeCounts ? await logManager.getParticipationSplit() : null
-    const totals = { total: 0, tt: 0, douyin: 0, other: 0, nonTT: 0 }
+    const totals = { total: 0, device: 0, network: 0 }
 
     const merged = participants.map((p) => {
       const binding = bindingMap.get(p.callsign.trim().toUpperCase())
       const c = split?.get(p.callsign.trim().toUpperCase())
       if (c) {
+        const device = Math.max(0, c.total - c.network)
         totals.total += c.total
-        totals.tt += c.tt
-        totals.douyin += c.douyin
-        totals.other += Math.max(0, c.total - c.tt - c.douyin)
-        totals.nonTT += Math.max(0, c.total - c.tt)
+        totals.device += device
+        totals.network += c.network
       }
       return {
         ...p,
@@ -66,11 +65,10 @@ export async function GET(request: NextRequest) {
         counts: c
           ? {
               total: c.total,
-              tt: c.tt,
-              douyin: c.douyin,
-              other: Math.max(0, c.total - c.tt - c.douyin),
-              // 除去 TT 的通联次数（含抖音娱乐与其他）
-              nonTT: Math.max(0, c.total - c.tt),
+              // 设备参与（真开了电台）
+              device: Math.max(0, c.total - c.network),
+              // 网络参与（TT / 抖音 / 滔滔 / 涛涛）
+              network: c.network,
             }
           : null,
       }

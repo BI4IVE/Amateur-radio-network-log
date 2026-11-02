@@ -29,14 +29,13 @@ interface Participant {
   licenseExpireDate: string | null
   /** [v1.5.29 会员中心] active / pending / inactive / rejected / null */
   bindingStatus?: string | null
-  /** [v2.0.5] 通联次数拆分（TT / 抖音娱乐 / 其他），none 表示从未参与 */
+  /** [v2.0.5] 通联次数拆分：设备参与 / 网络参与（TT、抖音、滔滔、涛涛） */
   counts?: {
     total: number
-    tt: number
-    douyin: number
-    other: number
-    /** 除去 TT 的通联次数 */
-    nonTT: number
+    /** 设备参与（真开了电台） */
+    device: number
+    /** 网络参与（TT / 抖音 / 滔滔 / 涛涛） */
+    network: number
   } | null
   createdAt: string
   updatedAt: string | null
@@ -104,13 +103,11 @@ export default function AdminParticipantsPage() {
   const [pageSize, setPageSize] = useState(20)
   // 已绑定微信但没有会员档案的呼号（用于提示与一键补建）
   const [missingProfiles, setMissingProfiles] = useState<string[]>([])
-  // [v2.0.5] 通联次数汇总：总台网 / TT / 抖音娱乐 / 其他
+  // [v2.0.5] 通联次数汇总：总台网 / 设备参与 / 网络参与
   const [countTotals, setCountTotals] = useState<{
     total: number
-    tt: number
-    douyin: number
-    other: number
-    nonTT: number
+    device: number
+    network: number
   } | null>(null)
   const [backfilling, setBackfilling] = useState(false)
   const [importResult, setImportResult] = useState<{
@@ -533,14 +530,13 @@ export default function AdminParticipantsPage() {
           </div>
         )}
 
-        {/* [v2.0.5] 会员中心：通联次数总览（按设备类型拆分） */}
+        {/* [v2.0.5] 会员中心：通联次数总览（设备参与在前，网络参与在后） */}
         {countTotals ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             {[
               { label: "总台网次数", value: countTotals.total, tone: "text-gray-900" },
-              { label: "TT 次数", value: countTotals.tt, tone: "text-amber-600" },
-              { label: "抖音娱乐次数", value: countTotals.douyin, tone: "text-pink-600" },
-              { label: "其他次数", value: countTotals.other, tone: "text-indigo-600" },
+              { label: "设备参与次数", value: countTotals.device, tone: "text-emerald-600" },
+              { label: "网络参与次数", value: countTotals.network, tone: "text-indigo-600" },
             ].map((card) => (
               <div
                 key={card.label}
@@ -638,9 +634,9 @@ export default function AdminParticipantsPage() {
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">备注</th>
                   <th
                     className="px-3 py-2 text-left text-xs font-medium text-gray-500"
-                    title="括号外为除去 TT 的通联次数；下行小字为总数 / TT / 抖音娱乐 / 其他"
+                    title="主数字为设备参与次数；下行小字为总数 / 设备参与 / 网络参与"
                   >
-                    通联（除TT）
+                    设备参与
                   </th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">执照到期</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">操作</th>
@@ -685,16 +681,15 @@ export default function AdminParticipantsPage() {
                       <td className="px-3 py-2 text-gray-600">{p.signal || "-"}</td>
                       <td className="px-3 py-2 text-gray-600">{p.report || "-"}</td>
                       <td className="px-3 py-2 text-gray-600 max-w-[120px] truncate">{p.remarks || "-"}</td>
-                      {/* [v2.0.5] 通联次数：主数字为「除去 TT」，下行小字拆分 TT / 抖音 / 其他 */}
+                      {/* [v2.0.5] 通联次数：主数字为设备参与，下行小字给出总数 / 设备 / 网络 */}
                       <td className="px-3 py-2 whitespace-nowrap">
                         <span className="font-semibold text-gray-900 tabular-nums">
-                          {p.counts ? p.counts.nonTT : 0}
+                          {p.counts ? p.counts.device : 0}
                         </span>
                         <span className="text-xs text-gray-400 ml-1">次</span>
                         {p.counts && p.counts.total > 0 ? (
                           <span className="block text-[10px] text-gray-400 tabular-nums">
-                            共 {p.counts.total} · TT {p.counts.tt} · 抖音 {p.counts.douyin} · 其他{" "}
-                            {p.counts.other}
+                            共 {p.counts.total} · 设备 {p.counts.device} · 网络 {p.counts.network}
                           </span>
                         ) : (
                           <span className="block text-[10px] text-gray-300">未参与</span>
