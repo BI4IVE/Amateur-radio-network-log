@@ -77,6 +77,7 @@ type Detail = {
       note: string | null
       amount: number | null
       anonymous: boolean
+      kind?: string
     }[]
   }
   bindings: {
@@ -440,6 +441,11 @@ export default function AdminParticipantDetailPage() {
                               ) : null}
                               {d.anonymous ? (
                                 <span className="ml-1 text-[10px] text-black/30">匿名</span>
+                              ) : null}
+                              {d.kind === "aggregate" ? (
+                                <span className="ml-1 text-[10px] text-gray-500 bg-gray-100 rounded-full px-1.5 py-[1px]">
+                                  汇总
+                                </span>
                               ) : null}
                             </span>
                             <span className="ml-auto text-xs font-bold text-amber-700 tabular-nums">

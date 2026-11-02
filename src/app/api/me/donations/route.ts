@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
     }
 
     const callsign = identity.callsign
-    const records = await donationManager.listByCallsign(callsign, 200)
+    // 只统计个人捐助：汇总/其他收入（kind=aggregate）不进个人中心档位
+    const records = await donationManager.listByCallsign(callsign, 200, "person")
 
     const now = Date.now()
     const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000

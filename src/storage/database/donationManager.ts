@@ -29,6 +29,11 @@ async function ensureTable(): Promise<void> {
           created_at timestamp with time zone DEFAULT now() NOT NULL
         )
       `)
+      // [v2.0.6] kind 区分「个人捐助」与「汇总/其他收入」：
+      // 感谢墙与个人中心只认 person，后台账目两者都算。
+      await db.execute(
+        sql`ALTER TABLE donations ADD COLUMN IF NOT EXISTS kind varchar(20) DEFAULT 'person' NOT NULL`
+      )
       await db.execute(
         sql`CREATE INDEX IF NOT EXISTS donations_callsign_idx ON donations (upper(trim(callsign)))`
       )
@@ -51,6 +56,8 @@ export type DonationRecord = {
   channel: string | null
   note: string | null
   anonymous: boolean
+  /** person = 个人捐助；aggregate = 汇总/其他收入（不上感谢墙） */
+  kind: string
   createdBy: string | null
   createdAt: string
 }
@@ -70,6 +77,7 @@ function toRecord(row: RawRow): DonationRecord {
     channel: row.channel ? String(row.channel) : null,
     note: row.note ? String(row.note) : null,
     anonymous: Boolean(row.anonymous),
+    kind: row.kind ? String(row.kind) : "person",
     createdBy: row.created_by ? String(row.created_by) : null,
     createdAt: row.created_at ? String(row.created_at) : "",
   }
@@ -81,7 +89,7 @@ async function selectRows(
 ): Promise<DonationRecord[]> {
   const db = await getDb()
   const result = await db.execute(sql`
-    select id, callsign, amount, donated_at, channel, note, anonymous, created_by, created_at
+    select id, callsign, amount, donated_at, channel, note, anonymous, kind, created_by, created_at
     from donations
     where ${where}
     order by donated_at desc, created_at desc
@@ -92,18 +100,30 @@ async function selectRows(
 }
 
 class DonationManager {
-  /** 某呼号的全部支持记录（新→旧） */
-  async listByCallsign(callsign: string, limit = 100): Promise<DonationRecord[]> {
+  /**
+   * 某呼号的支持记录（新→旧）。
+   * kind 传 "person" 时只取个人捐助（个人中心/感谢墙口径）；不传则全部（后台账目）。
+   */
+  async listByCallsign(
+    callsign: string,
+    limit = 100,
+    kind?: "person" | "aggregate"
+  ): Promise<DonationRecord[]> {
     await ensureTable()
-    return selectRows(sql`upper(trim(callsign)) = upper(${callsign.trim()})`, limit)
+    const where = kind
+      ? sql`upper(trim(callsign)) = upper(${callsign.trim()}) and kind = ${kind}`
+      : sql`upper(trim(callsign)) = upper(${callsign.trim()})`
+    return selectRows(where, limit)
   }
 
+  /** 个人中心只统计个人捐助（汇总/其他收入不算档位） */
   async countByCallsign(callsign: string): Promise<number> {
     await ensureTable()
     const db = await getDb()
     const result = await db.execute(sql`
       select count(*)::int as n from donations
       where upper(trim(callsign)) = upper(${callsign.trim()})
+        and kind = 'person'
     `)
     const rows = (result as unknown as { rows?: RawRow[] }).rows ?? []
     return Number(rows[0]?.n ?? 0)
@@ -122,12 +142,13 @@ class DonationManager {
     channel?: string | null
     note?: string | null
     anonymous?: boolean
+    kind?: "person" | "aggregate"
     createdBy?: string | null
   }): Promise<DonationRecord> {
     await ensureTable()
     const db = await getDb()
     const result = await db.execute(sql`
-      insert into donations (callsign, amount, donated_at, channel, note, anonymous, created_by)
+      insert into donations (callsign, amount, donated_at, channel, note, anonymous, kind, created_by)
       values (
         upper(${data.callsign.trim()}),
         ${data.amount ?? null},
@@ -135,9 +156,10 @@ class DonationManager {
         ${data.channel ?? null},
         ${data.note ?? null},
         ${data.anonymous ?? false},
+        ${data.kind ?? "person"},
         ${data.createdBy ?? null}
       )
-      returning id, callsign, amount, donated_at, channel, note, anonymous, created_by, created_at
+      returning id, callsign, amount, donated_at, channel, note, anonymous, kind, created_by, created_at
     `)
     const rows = (result as unknown as { rows?: RawRow[] }).rows ?? []
     return toRecord(rows[0] ?? {})

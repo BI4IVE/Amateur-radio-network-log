@@ -64,6 +64,8 @@ export async function POST(request: NextRequest) {
       amount = Math.round(n * 100) / 100
     }
 
+    const kind = body?.kind === "aggregate" ? "aggregate" : "person"
+
     const record = await donationManager.create({
       callsign,
       amount,
@@ -71,6 +73,7 @@ export async function POST(request: NextRequest) {
       channel: body?.channel ? String(body.channel).slice(0, 30) : null,
       note: body?.note ? String(body.note).slice(0, 120) : null,
       anonymous: Boolean(body?.anonymous),
+      kind,
       createdBy: guard.user.username ?? null,
     })
 

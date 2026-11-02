@@ -19,6 +19,8 @@ interface DonationItem {
   channel: string | null
   note: string | null
   anonymous: boolean
+  /** person = 个人捐助；aggregate = 汇总/其他收入 */
+  kind: string
   createdBy: string | null
 }
 
@@ -45,6 +47,7 @@ export default function DonationsPage() {
     channel: "微信",
     note: "",
     anonymous: false,
+    kind: "person",
   })
 
   const load = useCallback(async () => {
@@ -84,6 +87,7 @@ export default function DonationsPage() {
           channel: form.channel,
           note: form.note.trim() || null,
           anonymous: form.anonymous,
+          kind: form.kind,
         }),
       })
       const data = await res.json()
@@ -188,6 +192,17 @@ export default function DonationsPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
               />
             </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">类型</label>
+              <select
+                value={form.kind}
+                onChange={(e) => setForm({ ...form, kind: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
+              >
+                <option value="person">个人捐助</option>
+                <option value="aggregate">汇总/其他收入</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 mt-3">
@@ -228,6 +243,7 @@ export default function DonationsPage() {
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">方式</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">金额</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">用途</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">类型</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">录入人</th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">操作</th>
                 </tr>
@@ -235,13 +251,13 @@ export default function DonationsPage() {
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-3 py-8 text-center text-gray-500">
                       加载中...
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-3 py-8 text-center text-gray-500">
+                    <td colSpan={8} className="px-3 py-8 text-center text-gray-500">
                       还没有记录
                     </td>
                   </tr>
@@ -263,6 +279,17 @@ export default function DonationsPage() {
                       </td>
                       <td className="px-3 py-2 text-gray-600 max-w-[180px] truncate">
                         {it.note || "-"}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                            it.kind === "aggregate"
+                              ? "bg-gray-100 text-gray-600"
+                              : "bg-emerald-50 text-emerald-700"
+                          }`}
+                        >
+                          {it.kind === "aggregate" ? "汇总" : "个人"}
+                        </span>
                       </td>
                       <td className="px-3 py-2 text-gray-400 text-xs">{it.createdBy || "-"}</td>
                       <td className="px-3 py-2">

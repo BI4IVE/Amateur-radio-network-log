@@ -123,6 +123,7 @@ export async function GET(
           note: d.note,
           amount: d.amount === null ? null : Number(d.amount),
           anonymous: d.anonymous,
+          kind: d.kind,
         })),
       },
       bindings: bindings.map((b) => ({
