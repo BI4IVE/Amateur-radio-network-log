@@ -109,6 +109,15 @@ export default function AdminParticipantsPage() {
     device: number
     network: number
   } | null>(null)
+  // [v2.0.6] 服务端分页：命中总数与各标签计数
+  const [total, setTotal] = useState(0)
+  const [counts, setCounts] = useState({
+    all: 0,
+    active: 0,
+    pending: 0,
+    none: 0,
+    expiring: 0,
+  })
   const [backfilling, setBackfilling] = useState(false)
   const [importResult, setImportResult] = useState<{
     success: boolean
@@ -136,19 +145,32 @@ export default function AdminParticipantsPage() {
     const u = JSON.parse(userStr)
     if (!isAdminRole(u.role)) { router.push("/"); return }
     setUser(u)
-    loadParticipants()
+    // 首次加载交给下面的 [page, pageSize] effect，避免重复请求
   }, [])
 
-  const loadParticipants = async () => {
+  // [v2.0.6] 服务端搜索 + 分页：前端只拿当前页，搜索/筛选都在服务端做
+  const loadParticipants = async (opts?: { page?: number; pageSize?: number; q?: string; binding?: string }) => {
     setLoading(true)
     try {
-      // [v2.0.2 修复] 原来写死 500 条，会员涨到 540 后排序靠后的会员（如 BA4IGG）
-      // 根本没被加载，搜索自然搜不到。提高到 2000，超过时需改服务端分页。
-      const res = await fetch(
-        "/api/participants?limit=2000&includeBinding=1&includeCounts=1"
-      )
+      const p = opts?.page ?? page
+      const ps = opts?.pageSize ?? pageSize
+      const qq = opts?.q ?? searchTerm
+      const bf = opts?.binding ?? bindingFilter
+      const params = new URLSearchParams({
+        paged: "1",
+        page: String(p),
+        pageSize: String(ps),
+        includeBinding: "1",
+        includeCounts: "1",
+      })
+      if (qq.trim()) params.set("q", qq.trim())
+      if (bf) params.set("binding", bf)
+
+      const res = await fetch(`/api/participants?${params.toString()}`)
       const data = await res.json()
       if (data.participants) setParticipants(data.participants)
+      setTotal(Number(data.total) || 0)
+      if (data.counts) setCounts(data.counts)
       setMissingProfiles(Array.isArray(data.missingProfiles) ? data.missingProfiles : [])
       if (data.totals) setCountTotals(data.totals)
     } catch (err) { console.error(err) }
@@ -372,9 +394,21 @@ export default function AdminParticipantsPage() {
     XLSX.writeFile(wb, "设备库导入模板.xlsx")
   }
 
-  const handleExportAll = () => {
+  // [v2.0.6] 列表已分页，「导出全部」必须单独取全量，否则只导出当前页
+  const handleExportAll = async () => {
+    let all = participants
+    if (total > participants.length) {
+      try {
+        const res = await fetch("/api/participants?limit=2000&includeBinding=1")
+        const data = await res.json()
+        if (Array.isArray(data.participants)) all = data.participants
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
     const headers = ["呼号", "姓名", "QTH", "设备", "天线", "功率", "信号", "报告", "备注"]
-    const data = participants.map((p) => [
+    const data = all.map((p) => [
       p.callsign, p.name || "", p.qth || "", p.equipment || "",
       p.antenna || "", p.power || "", p.signal || "", p.report || "", p.remarks || "",
     ])
@@ -388,47 +422,35 @@ export default function AdminParticipantsPage() {
     XLSX.writeFile(wb, "设备库数据导出.xlsx")
   }
 
-  const filteredParticipants = participants.filter((p) => {
-    const keyword = searchTerm.trim().toLowerCase()
-    const matchKeyword =
-      !keyword ||
-      p.callsign.toLowerCase().includes(keyword) ||
-      (p.name && p.name.toLowerCase().includes(keyword)) ||
-      (p.equipment && p.equipment.toLowerCase().includes(keyword)) ||
-      (p.memberNo && p.memberNo.includes(keyword))
+  // [v2.0.6] 服务端已完成搜索与筛选，这里直接用返回的当页数据
+  const filteredParticipants = participants
+  const pagedParticipants = participants
+  const pendingCount = counts.pending
+  const activeCount = counts.active
+  const noneCount = counts.none
+  const expiringCount = counts.expiring
 
-    if (!matchKeyword) return false
-
-    if (bindingFilter === "active") return p.bindingStatus === "active"
-    if (bindingFilter === "pending") return p.bindingStatus === "pending"
-    if (bindingFilter === "none") return !p.bindingStatus
-    if (bindingFilter === "expiring") {
-      const cell = licenseCell(p.licenseExpireDate)
-      return cell.className.includes("amber") || cell.className.includes("red")
-    }
-    return true
-  })
-
-  const pendingCount = participants.filter((p) => p.bindingStatus === "pending").length
-  const activeCount = participants.filter((p) => p.bindingStatus === "active").length
-  const noneCount = participants.filter((p) => !p.bindingStatus).length
-  const isExpiring = (p: Participant) => {
-    const cell = licenseCell(p.licenseExpireDate)
-    return cell.className.includes("amber") || cell.className.includes("red")
-  }
-  const expiringCount = participants.filter(isExpiring).length
-
-  // [v2.0.0] 分页切片（数据量 < 500，前端分页足够）
-  const totalPages = Math.max(1, Math.ceil(filteredParticipants.length / pageSize))
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const currentPage = Math.min(page, totalPages)
-  const pagedParticipants = filteredParticipants.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  )
 
+  // 搜索框防抖：停止输入 350ms 后再请求
+  const searchLoadedRef = useRef(false)
   useEffect(() => {
-    setPage(1)
-  }, [searchTerm, bindingFilter, pageSize])
+    if (!searchLoadedRef.current) {
+      searchLoadedRef.current = true
+      return
+    }
+    const timer = setTimeout(() => {
+      setPage(1)
+      loadParticipants({ page: 1 })
+    }, 350)
+    return () => clearTimeout(timer)
+  }, [searchTerm, bindingFilter])
+
+  // 翻页 / 每页条数变化时重新拉取（首次进入也走这里）
+  useEffect(() => {
+    loadParticipants({ page, pageSize })
+  }, [page, pageSize])
 
   if (!user) return null
 
@@ -613,7 +635,7 @@ export default function AdminParticipantsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700">
-              会员档案（共 {filteredParticipants.length} 条，第 {currentPage} / {totalPages} 页）
+              会员档案（共 {total} 条，第 {currentPage} / {totalPages} 页）
             </span>
           </div>
           <div className="overflow-x-auto">
@@ -744,7 +766,7 @@ export default function AdminParticipantsPage() {
                 </option>
               ))}
             </select>
-            条 · 共 {filteredParticipants.length} 条
+            条 · 共 {total} 条
           </div>
           <div className="flex items-center gap-1.5">
             <button

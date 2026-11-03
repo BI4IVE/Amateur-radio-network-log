@@ -24,6 +24,13 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get("limit")
     const includeBinding = searchParams.get("includeBinding") === "1"
 
+    // [v2.0.6] 服务端搜索 + 分页：前端只取当前页，避免一次传几百 KB
+    const paged = searchParams.get("paged") === "1"
+    const page = Math.max(1, Number(searchParams.get("page")) || 1)
+    const pageSize = Math.min(100, Math.max(10, Number(searchParams.get("pageSize")) || 20))
+    const keyword = (searchParams.get("q") ?? "").trim().toLowerCase()
+    const bindingFilter = searchParams.get("binding") ?? "all"
+
     const participants = await participantManager.getParticipants({
       filters: { callsign, name },
       limit: limit ? parseInt(limit, 10) : undefined,
@@ -86,6 +93,57 @@ export async function GET(request: NextRequest) {
       .filter(([callsign, b]) => b.status === "active" && !profileCallsigns.has(callsign))
       .map(([callsign]) => callsign)
       .sort()
+
+    // [v2.0.6] 服务端筛选 + 分页
+    if (paged) {
+      // 执照临期口径与前端一致：≤90 天内到期（含已过期）
+      const isExpiring = (value: string | null | undefined) => {
+        if (!value) return false
+        const today = new Date()
+        const t0 = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+        const t1 = Date.parse(`${value}T00:00:00Z`)
+        if (Number.isNaN(t1)) return false
+        const days = Math.round((t1 - t0) / 86400000)
+        return days <= 90
+      }
+
+      const matched = merged.filter((p) => {
+        if (keyword) {
+          const hay = `${p.callsign ?? ""} ${p.name ?? ""} ${p.equipment ?? ""} ${p.memberNo ?? ""}`
+          if (!hay.toLowerCase().includes(keyword)) return false
+        }
+        if (bindingFilter === "active") return p.bindingStatus === "active"
+        if (bindingFilter === "pending") return p.bindingStatus === "pending"
+        if (bindingFilter === "none") return !p.bindingStatus
+        if (bindingFilter === "expiring") return isExpiring(p.licenseExpireDate)
+        return true
+      })
+
+      const counts = {
+        all: merged.length,
+        active: merged.filter((p) => p.bindingStatus === "active").length,
+        pending: merged.filter((p) => p.bindingStatus === "pending").length,
+        none: merged.filter((p) => !p.bindingStatus).length,
+        expiring: merged.filter((p) => isExpiring(p.licenseExpireDate)).length,
+      }
+
+      const total = matched.length
+      const start = (page - 1) * pageSize
+      const pageRows = matched.slice(start, start + pageSize)
+
+      return NextResponse.json({
+        participants: pageRows,
+        total,
+        page,
+        pageSize,
+        counts,
+        pendingCount,
+        missingProfiles,
+        activeBindingCount: Array.from(bindingMap.values()).filter((b) => b.status === "active")
+          .length,
+        totals: includeCounts ? totals : null,
+      })
+    }
 
     return NextResponse.json({
       participants: merged,
