@@ -31,9 +31,12 @@ export async function GET(request: NextRequest) {
     const keyword = (searchParams.get("q") ?? "").trim().toLowerCase()
     const bindingFilter = searchParams.get("binding") ?? "all"
 
+    // 分页模式下必须取全量再在内存里切片（getParticipants 默认只取 100 条，
+    // 之前漏传导致"总人数/标签计数"只统计了前 100 人）
+    const effectiveLimit = limit ? parseInt(limit, 10) : paged ? 5000 : undefined
     const participants = await participantManager.getParticipants({
       filters: { callsign, name },
-      limit: limit ? parseInt(limit, 10) : undefined,
+      limit: effectiveLimit,
     })
 
     if (!includeBinding) {
