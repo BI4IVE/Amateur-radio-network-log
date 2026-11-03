@@ -16,8 +16,10 @@ export async function GET(request: NextRequest) {
     const controllerId = searchParams.get("controllerId") || undefined
 
     // 获取所有台网会话（如果有 controllerId，则过滤）
+    // [v2.0.6] getLogSessions 默认只取 100 场，聚合统计必须传大 limit，否则老场次被截断
     const sessions = await logManager.getLogSessions({
-      controllerId
+      controllerId,
+      limit: 10000,
     })
     const sessionsData = Array.isArray(sessions) ? sessions : (sessions as any).sessions || []
 

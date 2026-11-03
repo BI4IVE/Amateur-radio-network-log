@@ -34,8 +34,10 @@ export async function GET(request: NextRequest) {
     const targetDate =
       dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : beijingDate(new Date())
 
+    // [v2.0.6] 默认 limit=100 会导致查历史日期时只在前 100 场里找，老日期查不到
     const sessions = await logManager.getLogSessions({
       controllerId,
+      limit: 10000,
     })
 
     const activeSessions = sessions.filter((session) => {

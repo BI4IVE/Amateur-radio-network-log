@@ -15,7 +15,8 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams
     const skip = parseInt(searchParams.get("skip") || "0")
-    const limit = parseInt(searchParams.get("limit") || "200")
+    // [v2.0.6] 台网历史管理按天增长（约 1 场/天），默认上限提高到 1000，避免老场次从列表消失
+    const limit = Math.min(parseInt(searchParams.get("limit") || "1000"), 5000)
 
     const sessions = await logManager.getLogSessions({ skip, limit })
 
