@@ -5,7 +5,7 @@ import { logManager, participantManager } from "@/storage/database"
 import { isSessionExpired } from "@/storage/database/utils/sessionUtils"
 import { getAuthUser, requireLogin } from "@/lib/auth"
 import { pushRecordNotification } from "@/lib/wechat/pushService"
-import { getReturningDaysMap } from "@/lib/me/returning"
+import { getReturningDays } from "@/lib/me/returning"
 
 export async function POST(
   request: NextRequest,
@@ -158,11 +158,10 @@ export async function POST(
       }
     }
 
-    // [v2.0.4] 回归欢迎：附带「距上次参与天数」，主控台据此提示
+    // [v2.0.6] 回归欢迎：只算当前呼号的间隔（轻量单点查询）
     let returningDays: number | null = null
     try {
-      const map = await getReturningDaysMap(sessionId)
-      returningDays = map.get(record.callsign.trim().toUpperCase()) ?? null
+      returningDays = await getReturningDays(sessionId, record.callsign)
     } catch {
       /* 不影响录入主流程 */
     }
