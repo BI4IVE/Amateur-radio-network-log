@@ -1,6 +1,6 @@
 "use client"
 
-// @version v2.0.5
+// @version v2.0.6
 /**
  * 后台「主控等级」设置
  *

@@ -1,6 +1,6 @@
 "use client"
 
-// @version v2.0.5
+// @version v2.0.6
 import { useEffect, useState } from "react"
 import { formatDateTimeCN } from "@/utils/dateFormat"
 

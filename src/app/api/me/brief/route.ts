@@ -1,4 +1,4 @@
-// @version v2.0.5
+// @version v2.0.6
 /**
  * [v2.0.4] 台网简报数据 GET /api/me/brief?sessionId=xxx
  *

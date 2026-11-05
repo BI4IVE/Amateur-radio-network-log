@@ -1,6 +1,6 @@
 "use client";
 
-// @version v2.0.5
+// @version v2.0.6
 /**
  * 播控台大屏（竖屏 9:16 · 竖屏直播用）
  *

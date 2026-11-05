@@ -1,4 +1,4 @@
-// @version v2.0.5
+// @version v2.0.6
 import { NextRequest, NextResponse } from "next/server"
 import { requirePermission } from "@/lib/permissions-server"
 import { logManager } from "@/storage/database/logManager"

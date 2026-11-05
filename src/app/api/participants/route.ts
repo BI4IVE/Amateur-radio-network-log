@@ -1,4 +1,4 @@
-// @version v2.0.5
+// @version v2.0.6
 import { NextRequest, NextResponse } from "next/server"
 import { logManager, participantManager, wechatBindingsManager } from "@/storage/database"
 import { getAuthUser } from "@/lib/auth"

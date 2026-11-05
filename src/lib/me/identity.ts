@@ -1,4 +1,4 @@
-// @version v2.0.5
+// @version v2.0.6
 import { readWechatSession } from "@/lib/wechat/session"
 import { wechatBindingsManager } from "@/storage/database"
 
